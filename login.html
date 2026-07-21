@@ -11,9 +11,7 @@
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-md-5">
-                <!-- Red border on top -->
                 <div class="card shadow-lg border-0 border-top border-danger border-4 rounded-lg mt-5">
-                    <!-- Black Header -->
                     <div class="card-header bg-dark text-white text-center py-4">
                         <h3 class="font-weight-light my-2 text-danger fw-bold">🎓 Newage Education</h3>
                         <p class="mb-0 text-light">Portal Login</p>
@@ -30,16 +28,16 @@
                             </div>
                             <div class="mb-4">
                                 <label class="form-label fw-bold text-danger">Login As</label>
-                                <select class="form-select border-danger">
+                                <!-- ID add kora hoyeche jate JavaScript eta dhorte pare -->
+                                <select class="form-select border-danger" id="roleSelect">
                                     <option value="ceo">CEO</option>
-                                    <!-- Receptionist bad dewa hoyeche -->
                                     <option value="employee">Employee / Counselor</option>
                                     <option value="student">Student</option>
                                 </select>
                             </div>
                             <div class="d-grid">
-                                <!-- Red Button -->
-                                <a href="index.html" class="btn btn-danger btn-lg fw-bold">Login</a>
+                                <!-- href theke link shoriye onclick add kora hoyeche -->
+                                <button type="button" onclick="loginCheck()" class="btn btn-danger btn-lg fw-bold">Login</button>
                             </div>
                         </form>
                     </div>
@@ -47,6 +45,21 @@
             </div>
         </div>
     </div>
+
+    <!-- Chotto JavaScript Trick -->
+    <script>
+        function loginCheck() {
+            var selectedRole = document.getElementById("roleSelect").value;
+            
+            if (selectedRole === "ceo") {
+                window.location.href = "index.html";
+            } else if (selectedRole === "employee") {
+                window.location.href = "employee.html";
+            } else if (selectedRole === "student") {
+                window.location.href = "student.html";
+            }
+        }
+    </script>
 
 </body>
 </html>
