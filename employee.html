@@ -3,46 +3,327 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Newage Education - Employee Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Employee Portal - Newage Education</title>
+    <!-- Bootstrap 5.3 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-light">
-    <nav class="navbar navbar-dark bg-dark shadow-sm border-bottom border-danger border-3">
-        <div class="container">
-            <a class="navbar-brand fw-bold text-white" href="#">🎓 Newage Education | <span class="text-danger">Employee Portal</span></a>
-            <a href="login.html" class="btn btn-sm btn-outline-danger fw-bold">Logout</a>
+<body class="d-flex flex-column min-vh-100">
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-newage">
+        <div class="container-fluid">
+            <a class="navbar-brand text-white" href="employee.html">
+                <span>🎓</span> Newage Education <span class="portal-badge">Employee Portal</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                <ul class="navbar-nav align-items-center">
+                    <li class="nav-item me-3">
+                        <span class="text-white-50"><i class="bi bi-person-workspace me-1"></i> Welcome, Kabir (Counselor)</span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-newage-outline py-1 px-3 btn-sm" href="login.html">
+                            <i class="bi bi-box-arrow-right me-1"></i> Logout
+                        </a>
+                    </li>
+                </ul>
+            </div>
         </div>
     </nav>
-    <div class="container mt-5">
-        <div class="row">
-            <div class="col-md-7 mb-4">
-                <div class="card shadow border-0 border-top border-dark border-4">
-                    <div class="card-header bg-dark text-white fw-bold border-bottom border-danger border-2">Assigned Tasks from CEO</div>
-                    <div class="card-body bg-white">
-                        <h5 class="text-danger fw-bold">Task: Check Student Documents</h5>
-                        <p class="text-dark">CEO apnake Sakib-er IELTS ebong HSC document verify korar task diyechen.</p>
-                        <hr class="border-danger">
-                        <form>
-                            <div class="mb-3">
-                                <label class="form-label fw-bold text-dark">Work Update / Details</label>
-                                <textarea class="form-control border-dark" rows="3" placeholder="Kaj koto tuku hoyeche seta ekhane likhun..."></textarea>
+
+    <!-- Main Workspace -->
+    <main class="container my-4 flex-grow-1 animate-fade-up">
+
+        <!-- Welcome & Status Banner -->
+        <div class="card-newage-dark p-4 mb-4 text-white">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h2 class="mb-1 text-white">Counselor Terminal</h2>
+                    <p class="text-white-50 mb-0">Assigned Destination Markets: Canada, Australia, United Kingdom.</p>
+                </div>
+                <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                    <span class="badge bg-danger p-2"><i class="bi bi-shield-lock me-1"></i> Secure Workspace</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            
+            <!-- LEFT COLUMN: Task Management -->
+            <div class="col-lg-6">
+                <div class="card-newage h-100">
+                    <div class="card-header-newage bg-dark text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 text-white"><i class="bi bi-clipboard-pulse me-2"></i>Tasks From CEO</h5>
+                        <span class="badge bg-danger" id="taskCountBadge">1 Pending</span>
+                    </div>
+                    <div class="p-4" id="taskContentContainer">
+                        <!-- Individual Task card -->
+                        <div class="card p-3 border-warning-subtle bg-warning-subtle bg-opacity-10 mb-4" id="activeTaskCard">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="fw-bold mb-0 text-dark">Verify Sakib's IELTS Score</h6>
+                                <span class="badge bg-warning text-dark">High Priority</span>
                             </div>
-                            <button type="button" class="btn btn-danger fw-bold px-4">Submit Work to CEO</button>
-                        </form>
+                            <p class="small text-muted mb-3">
+                                <strong>Instructions:</strong> Please match the scores provided in Sakib Rahman's digital application form with the physical/PDF IELTS TRF uploaded in the document vault. Ensure speaking and writing bands are correct.
+                            </p>
+                            <div class="mb-3">
+                                <label for="workUpdatesText" class="form-label fw-semibold text-muted small">Work Submission Updates</label>
+                                <textarea class="form-control" id="workUpdatesText" rows="3" placeholder="Describe updates, verification results, or notes for the CEO here..." required></textarea>
+                            </div>
+                            <button class="btn btn-newage-red w-100" id="submitWorkBtn" onclick="submitWork()">
+                                <i class="bi bi-send-check me-1"></i> Submit Work to CEO
+                            </button>
+                        </div>
+                        
+                        <!-- Work Completed Placeholder (hidden initially) -->
+                        <div id="noTasksContainer" class="text-center py-5 d-none">
+                            <div class="fs-1 text-success mb-3"><i class="bi bi-patch-check-fill"></i></div>
+                            <h5 class="fw-bold">All Tasks Complete!</h5>
+                            <p class="text-muted small">Great job! There are no pending CEO assignments currently.</p>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-5">
-                <div class="card shadow border-0 border-top border-danger border-4">
-                    <div class="card-header bg-danger text-white fw-bold">➕ Student Data Entry</div>
-                    <div class="card-body bg-white">
-                        <p class="text-muted small fw-bold">Notun student-ke portal-e add korar jonno application form fill-up korun.</p>
-                        <!-- Ekhane link add kora hoyeche -->
-                        <a href="application_form.html" class="btn btn-dark w-100 fw-bold py-2 mt-3">📝 Open Application Form</a>
+
+            <!-- RIGHT COLUMN: Student Management -->
+            <div class="col-lg-6">
+                <div class="card-newage h-100">
+                    <div class="card-header-newage bg-dark text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 text-white"><i class="bi bi-people-fill me-2"></i>Student Management</h5>
                     </div>
+                    <div class="p-4">
+                        <p class="text-muted small mb-4">Quick actions to input student data, review document packages, and process student profile changes.</p>
+                        
+                        <!-- Quick Actions List -->
+                        <div class="list-group mb-4">
+                            <a href="application_form.html" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between p-3">
+                                <div>
+                                    <i class="bi bi-file-earmark-plus text-danger fs-5 me-3"></i>
+                                    <strong>Open Application Form</strong>
+                                    <div class="text-muted small">New student data entry profile creation</div>
+                                </div>
+                                <i class="bi bi-chevron-right text-muted"></i>
+                            </a>
+                            <a href="#" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between p-3" data-bs-toggle="modal" data-bs-target="#viewSubmittedDocsModal">
+                                <div>
+                                    <i class="bi bi-folder-check text-danger fs-5 me-3"></i>
+                                    <strong>View Submitted Documents</strong>
+                                    <div class="text-muted small">Verify student uploads and certificate authenticity</div>
+                                </div>
+                                <i class="bi bi-chevron-right text-muted"></i>
+                            </a>
+                            <a href="#" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between p-3" data-bs-toggle="modal" data-bs-target="#infoUpdatesModal">
+                                <div>
+                                    <i class="bi bi-arrow-repeat text-danger fs-5 me-3"></i>
+                                    <strong>Pending Info Updates</strong>
+                                    <div class="text-muted small">Requests for profile data modifications</div>
+                                </div>
+                                <span class="badge bg-danger rounded-pill" id="employeeRequestBadge">1</span>
+                            </a>
+                        </div>
+
+                        <!-- Active Assigned Student Board -->
+                        <h6 class="fw-bold mb-3"><i class="bi bi-journal-album text-danger me-2"></i>Your Case Files</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle small">
+                                <thead>
+                                    <tr class="table-light">
+                                        <th>Student ID</th>
+                                        <th>Name</th>
+                                        <th>Destination</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>#8201</td>
+                                        <td><strong>Sakib Rahman</strong></td>
+                                        <td>Canada (University of Toronto)</td>
+                                        <td><span class="badge bg-info text-dark">Offer Received</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>#8202</td>
+                                        <td><strong>Amina Chowdhury</strong></td>
+                                        <td>UK (University of Manchester)</td>
+                                        <td><span class="badge bg-warning text-dark">Visa Lodged</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>#8203</td>
+                                        <td><strong>Samiul Islam</strong></td>
+                                        <td>Australia (UNSW Sydney)</td>
+                                        <td><span class="badge bg-success">Visa Approved</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="footer-newage">
+        <div class="container text-center">
+            <p class="mb-0">&copy; 2026 Newage Education. All rights reserved. | Counselor Workstation Portal</p>
+        </div>
+    </footer>
+
+    <!-- MODAL 1: View Submitted Documents -->
+    <div class="modal fade" id="viewSubmittedDocsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white border-bottom border-danger">
+                    <h5 class="modal-title text-white">Student Uploaded Files</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="studentSelectFilter" class="form-label fw-bold">Filter By Student</label>
+                        <select class="form-select" id="studentSelectFilter" onchange="filterDocuments()">
+                            <option value="Sakib Rahman">Sakib Rahman (ID: #8201)</option>
+                            <option value="Amina Chowdhury">Amina Chowdhury (ID: #8202)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle small">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Document Title</th>
+                                    <th>File Name</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="studentDocsTableBody">
+                                <tr data-student="Sakib Rahman">
+                                    <td>Passport Copy</td>
+                                    <td><i class="bi bi-file-earmark-pdf text-danger me-1"></i> Passport_Sakib.pdf</td>
+                                    <td><span class="badge bg-success">Uploaded</span></td>
+                                    <td><button class="btn btn-xs btn-outline-dark py-0 px-2" onclick="alert('Viewing Passport_Sakib.pdf')">Review</button></td>
+                                </tr>
+                                <tr data-student="Sakib Rahman">
+                                    <td>SSC Certificate</td>
+                                    <td><i class="bi bi-file-earmark-pdf text-danger me-1"></i> SSC_Cert_Sakib.pdf</td>
+                                    <td><span class="badge bg-success">Uploaded</span></td>
+                                    <td><button class="btn btn-xs btn-outline-dark py-0 px-2" onclick="alert('Viewing SSC_Cert_Sakib.pdf')">Review</button></td>
+                                </tr>
+                                <tr data-student="Sakib Rahman">
+                                    <td>IELTS Test Report</td>
+                                    <td><i class="bi bi-file-earmark-pdf text-danger me-1"></i> IELTS_TRF_Sakib.pdf</td>
+                                    <td><span class="badge bg-success">Uploaded</span></td>
+                                    <td><button class="btn btn-xs btn-outline-dark py-0 px-2" onclick="alert('Viewing IELTS_TRF_Sakib.pdf')">Review</button></td>
+                                </tr>
+                                <tr data-student="Amina Chowdhury" class="d-none">
+                                    <td>Passport Copy</td>
+                                    <td><i class="bi bi-file-earmark-pdf text-danger me-1"></i> Passport_Amina.pdf</td>
+                                    <td><span class="badge bg-success">Uploaded</span></td>
+                                    <td><button class="btn btn-xs btn-outline-dark py-0 px-2" onclick="alert('Viewing Passport_Amina.pdf')">Review</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-newage-dark" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- MODAL 2: Pending Info Updates -->
+    <div class="modal fade" id="infoUpdatesModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white border-bottom border-danger">
+                    <h5 class="modal-title text-white">Student Info Correction Queue</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="correctionRequestWrapper">
+                        <div class="card p-3 border-danger-subtle bg-danger-subtle bg-opacity-10 mb-3">
+                            <div class="d-flex justify-content-between mb-2">
+                                <strong>Sakib Rahman (#8201)</strong>
+                                <span class="text-danger small fw-bold">Pending</span>
+                            </div>
+                            <p class="small text-muted mb-3">
+                                <strong>Update Required:</strong> "Hello, my date of birth in my portal is locked as 1999-10-10, but on my passport, it is 1998-10-10. Please correct it."
+                            </p>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-success btn-sm w-50" onclick="processCorrection('Forwarded to CEO for unlocking')">
+                                    <i class="bi bi-arrow-right-short"></i> Forward to CEO
+                                </button>
+                                <button class="btn btn-outline-secondary btn-sm w-50" onclick="processCorrection('Decline correction request')">
+                                    <i class="bi bi-x"></i> Reject
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="noCorrectionsMsg" class="text-center py-4 d-none">
+                        <i class="bi bi-check-circle text-success fs-1 mb-2"></i>
+                        <p class="text-muted mb-0">No pending student profile correction requests.</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-newage-dark" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5.3 JS Bundle CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- JS Logic -->
+    <script>
+        function submitWork() {
+            const text = document.getElementById('workUpdatesText').value.trim();
+            if (!text) {
+                alert('Please fill out the Work Submission Updates textarea before submitting.');
+                return;
+            }
+            
+            alert('Your work progress update has been logged and sent to the CEO dashboard!');
+            
+            // Hide task, show completion state
+            document.getElementById('activeTaskCard').classList.add('d-none');
+            document.getElementById('noTasksContainer').classList.remove('d-none');
+            
+            // Update badge
+            document.getElementById('taskCountBadge').innerText = '0 Pending';
+            document.getElementById('taskCountBadge').className = 'badge bg-success';
+        }
+
+        function filterDocuments() {
+            const selectValue = document.getElementById('studentSelectFilter').value;
+            const rows = document.querySelectorAll('#studentDocsTableBody tr');
+            
+            rows.forEach(row => {
+                if (row.getAttribute('data-student') === selectValue) {
+                    row.classList.remove('d-none');
+                } else {
+                    row.classList.add('d-none');
+                }
+            });
+        }
+
+        function processCorrection(status) {
+            alert(`Correction Request Processed: ${status}`);
+            document.getElementById('correctionRequestWrapper').innerHTML = '';
+            document.getElementById('noCorrectionsMsg').classList.remove('d-none');
+            
+            // Update badges
+            document.getElementById('employeeRequestBadge').classList.add('d-none');
+        }
+    </script>
 </body>
 </html>
