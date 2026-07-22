@@ -3,59 +3,513 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Newage Education - Student Portal</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Student Portal - Newage Education</title>
+    <!-- Bootstrap 5.3 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-light">
-    <nav class="navbar navbar-dark bg-dark shadow-sm border-bottom border-danger border-3">
-        <div class="container">
-            <a class="navbar-brand fw-bold text-white" href="#">🎓 Newage Education | <span class="text-danger">Student Portal</span></a>
-            <a href="login.html" class="btn btn-sm btn-outline-danger">Logout</a>
+<body class="d-flex flex-column min-vh-100">
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-newage">
+        <div class="container-fluid">
+            <a class="navbar-brand text-white" href="student.html">
+                <span>🎓</span> Newage Education <span class="portal-badge">Student Portal</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                <ul class="navbar-nav align-items-center">
+                    <li class="nav-item me-3">
+                        <span class="text-white-50"><i class="bi bi-mortarboard me-1"></i> Student ID: #8201</span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-newage-outline py-1 px-3 btn-sm" href="login.html">
+                            <i class="bi bi-box-arrow-right me-1"></i> Logout
+                        </a>
+                    </li>
+                </ul>
+            </div>
         </div>
     </nav>
-    <div class="container mt-4">
-        <div class="row">
-            <div class="col-md-4">
-                <div class="card shadow-sm mb-4 border-0">
-                    <div class="card-header bg-dark text-white fw-bold">My Profile</div>
-                    <div class="card-body bg-white">
-                        <p><strong>Name:</strong> Sakib Hasan</p>
-                        <p><strong>Qualification:</strong> HSC, IELTS (6.5)</p>
-                        <hr class="border-danger">
-                        <p><strong>Assigned Counselor:</strong> Mr. Rahim</p>
-                        <button class="btn btn-outline-dark btn-sm w-100 fw-bold">Message Counselor</button>
-                        <!-- Ekhane link add kora hoyeche -->
-                        <a href="application_form.html" class="btn btn-danger btn-sm w-100 fw-bold mt-2">📝 Fill Application Form</a>
-                    </div>
-                </div>
-                <div class="card shadow-sm border-0 border-danger border-1">
-                    <div class="card-header bg-danger text-white fw-bold">Visa & Application</div>
-                    <div class="card-body text-center bg-white">
-                        <h5 class="text-dark fw-bold">Offer Letter Received!</h5>
-                        <p class="text-muted">Metropolitan University, UK</p>
-                        <button class="btn btn-dark btn-sm fw-bold">Upload Visa Documents</button>
-                    </div>
+
+    <!-- Interactive Workspace -->
+    <main class="container my-4 flex-grow-1 animate-fade-up">
+
+        <!-- Top Alert / Success Banner -->
+        <div class="alert alert-newage-success d-flex align-items-center justify-content-between p-3 mb-4" role="alert">
+            <div class="d-flex align-items-center">
+                <span class="fs-4 me-3"><i class="bi bi-gift-fill text-success animate-bounce"></i></span>
+                <div>
+                    <strong class="d-block text-dark">Latest Portal Update</strong>
+                    <span class="small text-success fw-bold">🎉 Offer Letter Received!</span>
+                    <span class="text-muted small ms-2">from University of Toronto (MSc in Data Science)</span>
                 </div>
             </div>
-            <div class="col-md-8">
-                <div class="card shadow-sm border-0">
-                    <div class="card-header bg-dark text-white fw-bold border-bottom border-danger border-2">Recommended Courses For You</div>
-                    <div class="card-body bg-white">
-                        <p class="text-dark">Tomar IELTS ebong HSC result-er upor vitti kore nicher course gulo match koreche:</p>
-                        <ul class="list-group">
-                            <li class="list-group-item d-flex justify-content-between align-items-center border-dark">
-                                <strong>BSc in Web Programming - UK</strong>
-                                <button class="btn btn-sm btn-danger fw-bold">Apply Now</button>
+            <span class="badge bg-success py-2 px-3">2 Hours Ago</span>
+        </div>
+
+        <div class="row g-4">
+            
+            <!-- LEFT COLUMN: Profile, Actions & Recommendations -->
+            <div class="col-lg-4">
+                
+                <!-- My Profile Card -->
+                <div class="card-newage mb-4">
+                    <div class="card-header-newage bg-dark text-white text-center py-4">
+                        <div class="position-relative d-inline-block mb-2">
+                            <div class="bg-danger text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 70px; height: 70px; font-size: 2rem;">
+                                SR
+                            </div>
+                        </div>
+                        <h5 class="mb-1 text-white fw-bold">Sakib Rahman</h5>
+                        <p class="text-white-50 small mb-0"><i class="bi bi-envelope me-1"></i> sakib@gmail.com</p>
+                    </div>
+                    <div class="p-3">
+                        <ul class="list-group list-group-flush small mb-3">
+                            <li class="list-group-item d-flex justify-content-between px-0">
+                                <span class="text-muted">Qualifications:</span>
+                                <strong>B.Sc. in CSE</strong>
                             </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-center border-dark">
-                                <strong>Diploma in Software Engineering - Canada</strong>
-                                <button class="btn btn-sm btn-danger fw-bold">Apply Now</button>
+                            <li class="list-group-item d-flex justify-content-between px-0">
+                                <span class="text-muted">Assigned Counselor:</span>
+                                <strong class="text-danger">Kabir Hossain</strong>
                             </li>
                         </ul>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-newage-dark btn-sm" data-bs-toggle="modal" data-bs-target="#viewInfoModal">
+                                <i class="bi bi-file-person me-1"></i> View My Information
+                            </button>
+                            <button class="btn btn-newage-outline btn-sm" data-bs-toggle="modal" data-bs-target="#messageCounselorModal">
+                                <i class="bi bi-chat-left-dots me-1"></i> Message Counselor
+                            </button>
+                        </div>
                     </div>
+                </div>
+
+                <!-- Info Correction Trigger -->
+                <div class="card-newage p-3 mb-4 text-center">
+                    <h6 class="fw-bold mb-2">Found details mismatch?</h6>
+                    <p class="text-muted small mb-3">Submit correction request for locked information directly to admin staff.</p>
+                    <button class="btn btn-warning btn-sm w-100 fw-semibold" data-bs-toggle="modal" data-bs-target="#requestUpdateModal">
+                        <i class="bi bi-pencil-square me-1"></i> Request Info Update
+                    </button>
+                </div>
+
+                <!-- Navigation Switcher Button (Upload Documents Trigger) -->
+                <div class="card-newage p-3 mb-4 border-danger">
+                    <button class="btn btn-newage-red w-100 py-3 pulse-glow-button" id="uploadDocsToggleBtn" onclick="toggleRightWorkspace(true)">
+                        <i class="bi bi-folder-symlink fs-5 me-2"></i> 📂 Upload Documents
+                    </button>
+                </div>
+
+                <!-- Recommended Courses Card -->
+                <div class="card-newage mb-4">
+                    <div class="card-header-newage bg-light border-bottom">
+                        <h6 class="mb-0 fw-bold"><i class="bi bi-compass text-danger me-2"></i>Recommended Courses</h6>
+                    </div>
+                    <div class="p-3">
+                        <div class="list-group list-group-flush gap-2">
+                            <div class="card p-2 border-light-subtle bg-light">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="small fw-bold mb-1 text-dark">MSc in Data Science</h6>
+                                        <div class="text-muted" style="font-size: 0.75rem;">University of Toronto, Canada</div>
+                                    </div>
+                                    <button class="btn btn-xs btn-newage-red py-0 px-2 small" onclick="applyCourse('MSc in Data Science (Toronto)')">Apply</button>
+                                </div>
+                            </div>
+                            <div class="card p-2 border-light-subtle bg-light">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="small fw-bold mb-1 text-dark">MSc in Artificial Intelligence</h6>
+                                        <div class="text-muted" style="font-size: 0.75rem;">University of Manchester, UK</div>
+                                    </div>
+                                    <button class="btn btn-xs btn-newage-red py-0 px-2 small" onclick="applyCourse('MSc in AI (Manchester)')">Apply</button>
+                                </div>
+                            </div>
+                            <div class="card p-2 border-light-subtle bg-light">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="small fw-bold mb-1 text-dark">Master of Data Science</h6>
+                                        <div class="text-muted" style="font-size: 0.75rem;">UNSW Sydney, Australia</div>
+                                    </div>
+                                    <button class="btn btn-xs btn-newage-red py-0 px-2 small" onclick="applyCourse('Master of Data Science (UNSW)')">Apply</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- RIGHT COLUMN: Dynamic Workspace -->
+            <div class="col-lg-8">
+                
+                <!-- STATE A: Welcome Message (Default) -->
+                <div class="card-newage h-100 p-5 text-center d-flex flex-column justify-content-center align-items-center" id="welcomeWorkspace">
+                    <div class="fs-1 text-danger opacity-50 mb-4 animate-bounce">
+                        <i class="bi bi-cloud-arrow-up-fill" style="font-size: 4.5rem;"></i>
+                    </div>
+                    <h3 class="fw-bold mb-2">Student Digital Document Cabinet</h3>
+                    <p class="text-muted text-center max-width-500 mb-4">
+                        Submit and manage all your certificates, transcripts, recommendation letters, and financial credentials required for visa and university applications.
+                    </p>
+                    <div class="bg-light p-3 rounded mb-4 text-start border" style="max-width: 480px;">
+                        <h6 class="fw-bold mb-2"><i class="bi bi-info-circle-fill text-danger me-2"></i>Getting Started Instructions:</h6>
+                        <ol class="small text-muted mb-0 ps-3">
+                            <li class="mb-1">Click the <strong class="text-danger">"📂 Upload Documents"</strong> button in the left sidebar.</li>
+                            <li class="mb-1">Select the correct files corresponding to each requirement.</li>
+                            <li class="mb-1">Confirm that file statuses turn to green checkboxes <i class="bi bi-check-circle-fill text-success"></i>.</li>
+                            <li>Click "Submit All Documents" at the bottom to notify your counselor.</li>
+                        </ol>
+                    </div>
+                    <button class="btn btn-newage-red px-4 py-2" onclick="toggleRightWorkspace(true)">
+                        <i class="bi bi-folder-open me-2"></i> Open Document Cabinet
+                    </button>
+                </div>
+
+                <!-- STATE B: Document Upload Checklist (Toggle active) -->
+                <div class="card-newage h-100 d-none" id="uploadWorkspace">
+                    <div class="card-header-newage bg-dark text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 text-white"><i class="bi bi-folder2-open me-2"></i>Document Verification Checklist</h5>
+                        <button class="btn btn-sm btn-outline-light border-0" onclick="toggleRightWorkspace(false)">
+                            <i class="bi bi-x-lg"></i> Close Cabinet
+                        </button>
+                    </div>
+                    <div class="p-4">
+                        <p class="text-muted small mb-3">Upload clear PDF scans or image files of the required documents below.</p>
+                        
+                        <div class="table-responsive" style="max-height: 480px; overflow-y: auto;">
+                            <table class="table table-sm align-middle">
+                                <thead class="table-light sticky-top">
+                                    <tr>
+                                        <th>Document Type</th>
+                                        <th style="width: 50%;">Select File</th>
+                                        <th class="text-center" style="width: 15%;">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Row 1 -->
+                                    <tr class="doc-upload-row">
+                                        <td class="small fw-semibold">SSC Certificate</td>
+                                        <td>
+                                            <input type="file" class="form-control form-control-sm doc-file-input" onchange="handleFileSelected(this)">
+                                        </td>
+                                        <td class="text-center status-col">
+                                            <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
+                                        </td>
+                                    </tr>
+                                    <!-- Row 2 -->
+                                    <tr class="doc-upload-row">
+                                        <td class="small fw-semibold">SSC Marksheet</td>
+                                        <td>
+                                            <input type="file" class="form-control form-control-sm doc-file-input" onchange="handleFileSelected(this)">
+                                        </td>
+                                        <td class="text-center status-col">
+                                            <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
+                                        </td>
+                                    </tr>
+                                    <!-- Row 3 -->
+                                    <tr class="doc-upload-row">
+                                        <td class="small fw-semibold">HSC Certificate</td>
+                                        <td>
+                                            <input type="file" class="form-control form-control-sm doc-file-input" onchange="handleFileSelected(this)">
+                                        </td>
+                                        <td class="text-center status-col">
+                                            <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
+                                        </td>
+                                    </tr>
+                                    <!-- Row 4 -->
+                                    <tr class="doc-upload-row">
+                                        <td class="small fw-semibold">HSC Marksheet</td>
+                                        <td>
+                                            <input type="file" class="form-control form-control-sm doc-file-input" onchange="handleFileSelected(this)">
+                                        </td>
+                                        <td class="text-center status-col">
+                                            <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
+                                        </td>
+                                    </tr>
+                                    <!-- Row 5 -->
+                                    <tr class="doc-upload-row">
+                                        <td class="small fw-semibold">Recommendation Letter (2 Copies)</td>
+                                        <td>
+                                            <input type="file" class="form-control form-control-sm doc-file-input" onchange="handleFileSelected(this)">
+                                        </td>
+                                        <td class="text-center status-col">
+                                            <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
+                                        </td>
+                                    </tr>
+                                    <!-- Row 6 -->
+                                    <tr class="doc-upload-row">
+                                        <td class="small fw-semibold">Passport</td>
+                                        <td>
+                                            <input type="file" class="form-control form-control-sm doc-file-input" onchange="handleFileSelected(this)">
+                                        </td>
+                                        <td class="text-center status-col">
+                                            <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
+                                        </td>
+                                    </tr>
+                                    <!-- Row 7 -->
+                                    <tr class="doc-upload-row">
+                                        <td class="small fw-semibold">Student NID</td>
+                                        <td>
+                                            <input type="file" class="form-control form-control-sm doc-file-input" onchange="handleFileSelected(this)">
+                                        </td>
+                                        <td class="text-center status-col">
+                                            <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
+                                        </td>
+                                    </tr>
+                                    <!-- Row 8 -->
+                                    <tr class="doc-upload-row">
+                                        <td class="small fw-semibold">CV</td>
+                                        <td>
+                                            <input type="file" class="form-control form-control-sm doc-file-input" onchange="handleFileSelected(this)">
+                                        </td>
+                                        <td class="text-center status-col">
+                                            <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
+                                        </td>
+                                    </tr>
+                                    <!-- Row 9 -->
+                                    <tr class="doc-upload-row">
+                                        <td class="small fw-semibold">SOP</td>
+                                        <td>
+                                            <input type="file" class="form-control form-control-sm doc-file-input" onchange="handleFileSelected(this)">
+                                        </td>
+                                        <td class="text-center status-col">
+                                            <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
+                                        </td>
+                                    </tr>
+                                    <!-- Row 10 -->
+                                    <tr class="doc-upload-row">
+                                        <td class="small fw-semibold">Bank Statement</td>
+                                        <td>
+                                            <input type="file" class="form-control form-control-sm doc-file-input" onchange="handleFileSelected(this)">
+                                        </td>
+                                        <td class="text-center status-col">
+                                            <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
+                                        </td>
+                                    </tr>
+                                    <!-- Row 11 -->
+                                    <tr class="doc-upload-row">
+                                        <td class="small fw-semibold">Other Documents</td>
+                                        <td>
+                                            <input type="file" class="form-control form-control-sm doc-file-input" onchange="handleFileSelected(this)">
+                                        </td>
+                                        <td class="text-center status-col">
+                                            <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Table Footer Buttons -->
+                        <div class="d-flex justify-content-between align-items-center mt-3 border-top pt-3">
+                            <button class="btn btn-secondary btn-sm" onclick="toggleRightWorkspace(false)">
+                                <i class="bi bi-arrow-left-short"></i> Back to Home
+                            </button>
+                            <button class="btn btn-newage-red btn-sm" onclick="submitAllDocs()">
+                                <i class="bi bi-cloud-arrow-up me-1"></i> Submit All Documents
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="footer-newage">
+        <div class="container text-center">
+            <p class="mb-0">&copy; 2026 Newage Education. All rights reserved. | Student Application Portal</p>
+        </div>
+    </footer>
+
+    <!-- MODAL 1: View My Information (Locked View) -->
+    <div class="modal fade" id="viewInfoModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-md">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white border-bottom border-danger">
+                    <h5 class="modal-title text-white"><i class="bi bi-lock-fill text-danger me-1"></i> Locked Profile Record</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body small">
+                    <div class="alert alert-warning py-2 mb-3">
+                        <i class="bi bi-info-circle-fill me-1"></i> This information has been officially locked. Contact your counselor to request changes.
+                    </div>
+                    
+                    <h6 class="fw-bold border-bottom pb-1 text-danger">Personal Details</h6>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6"><strong>Full Name:</strong> Sakib Rahman</div>
+                        <div class="col-6"><strong>Date of Birth:</strong> 1999-10-10</div>
+                        <div class="col-6"><strong>Email:</strong> sakib@gmail.com</div>
+                        <div class="col-6"><strong>Contact No:</strong> +880 1712-345678</div>
+                        <div class="col-6"><strong>Gender:</strong> Male</div>
+                        <div class="col-6"><strong>Post Code:</strong> 1209</div>
+                        <div class="col-12"><strong>Address:</strong> House 45, Road 12, Dhanmondi, Dhaka</div>
+                    </div>
+
+                    <h6 class="fw-bold border-bottom pb-1 text-danger">Academic Qualifications</h6>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6"><strong>S.S.C Result:</strong> GPA 5.00/5.00 (2018)</div>
+                        <div class="col-6"><strong>H.S.C Result:</strong> GPA 5.00/5.00 (2020)</div>
+                        <div class="col-6"><strong>Bachelor:</strong> CGPA 3.65/4.00 (2024)</div>
+                        <div class="col-6"><strong>Major:</strong> Computer Science & Engineering</div>
+                    </div>
+
+                    <h6 class="fw-bold border-bottom pb-1 text-danger">English Test Score</h6>
+                    <div class="row g-2">
+                        <div class="col-6"><strong>Test Name:</strong> IELTS Academic</div>
+                        <div class="col-6"><strong>Overall Score:</strong> 7.5</div>
+                        <div class="col-12"><strong>Bands:</strong> Listening: 8.0, Reading: 7.5, Writing: 6.5, Speaking: 7.0</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-newage-dark btn-sm" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- MODAL 2: Message Counselor -->
+    <div class="modal fade" id="messageCounselorModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white border-bottom border-danger">
+                    <h5 class="modal-title text-white">Chat with Counselor</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="chatForm" onsubmit="sendMessage(event)">
+                    <div class="modal-body">
+                        <div class="alert alert-secondary py-2 small mb-3">
+                            You are messaging your counselor <strong>Kabir Hossain</strong>.
+                        </div>
+                        <div class="mb-3">
+                            <label for="counselorMessage" class="form-label fw-bold small text-muted">Your Message</label>
+                            <textarea class="form-control" id="counselorMessage" rows="4" placeholder="Type your message here..." required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-newage-red btn-sm">Send Message</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: Request Update -->
+    <div class="modal fade" id="requestUpdateModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white border-bottom border-danger">
+                    <h5 class="modal-title text-white">Request Profile Data Correction</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="correctionRequestForm" onsubmit="submitCorrectionRequest(event)">
+                    <div class="modal-body">
+                        <div class="alert alert-info py-2 small mb-3">
+                            <i class="bi bi-info-circle-fill"></i> Data changes are subject to review and confirmation by administrative managers.
+                        </div>
+                        <div class="mb-3">
+                            <label for="correctionMessage" class="form-label fw-bold small text-muted">Describe modifications required</label>
+                            <textarea class="form-control" id="correctionMessage" rows="4" placeholder="Detail any misspelled names, incorrect dates, or marks. e.g. 'Please change my DOB to 1998-10-10...'" required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-newage-red btn-sm">Submit Request</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5.3 JS Bundle CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- JavaScript States and Functions -->
+    <script>
+        function toggleRightWorkspace(showUploads) {
+            const welcomeCard = document.getElementById('welcomeWorkspace');
+            const uploadCard = document.getElementById('uploadWorkspace');
+
+            if (showUploads) {
+                welcomeCard.classList.add('d-none');
+                uploadCard.classList.remove('d-none');
+            } else {
+                welcomeCard.classList.remove('d-none');
+                uploadCard.classList.add('d-none');
+            }
+        }
+
+        function handleFileSelected(input) {
+            const row = input.closest('tr');
+            const statusCell = row.querySelector('.status-col');
+
+            if (input.files && input.files.length > 0) {
+                // Change status icon from cross to checkmark
+                statusCell.innerHTML = `<span class="text-success fs-5"><i class="bi bi-check-circle-fill"></i></span>`;
+            } else {
+                // Change back to cross
+                statusCell.innerHTML = `<span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>`;
+            }
+        }
+
+        function submitAllDocs() {
+            // Count total uploads
+            const rows = document.querySelectorAll('.doc-upload-row');
+            let uploadedCount = 0;
+            
+            rows.forEach(row => {
+                const input = row.querySelector('.doc-file-input');
+                if (input.files && input.files.length > 0) {
+                    uploadedCount++;
+                }
+            });
+
+            if (uploadedCount === 0) {
+                alert('You have not selected any files yet. Please upload at least one document before submitting.');
+                return;
+            }
+
+            alert(`Successfully submitted ${uploadedCount} out of ${rows.length} documents. Your counselor has been notified to verify them.`);
+            toggleRightWorkspace(false);
+        }
+
+        function applyCourse(courseName) {
+            alert(`Application request submitted successfully for course: ${courseName}!`);
+        }
+
+        function sendMessage(event) {
+            event.preventDefault();
+            const message = document.getElementById('counselorMessage').value.trim();
+            if (message) {
+                alert('Message sent successfully! Kabir Hossain will respond shortly.');
+                document.getElementById('chatForm').reset();
+                const modal = bootstrap.Modal.getInstance(document.getElementById('messageCounselorModal'));
+                modal.hide();
+            }
+        }
+
+        function submitCorrectionRequest(event) {
+            event.preventDefault();
+            const message = document.getElementById('correctionMessage').value.trim();
+            if (message) {
+                alert('Data correction request sent successfully. Admin team will review and contact you.');
+                document.getElementById('correctionRequestForm').reset();
+                const modal = bootstrap.Modal.getInstance(document.getElementById('requestUpdateModal'));
+                modal.hide();
+            }
+        }
+    </script>
 </body>
 </html>
