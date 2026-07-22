@@ -3,63 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Newage Education - Login</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Login - Newage Education Portal</title>
+    <!-- Bootstrap 5.3 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-light d-flex align-items-center" style="height: 100vh;">
+<body class="login-body">
 
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-md-5">
-                <div class="card shadow-lg border-0 border-top border-danger border-4 rounded-lg mt-5">
-                    <div class="card-header bg-dark text-white text-center py-4">
-                        <h3 class="font-weight-light my-2 text-danger fw-bold">🎓 Newage Education</h3>
-                        <p class="mb-0 text-light">Portal Login</p>
-                    </div>
-                    <div class="card-body p-4 bg-white">
-                        <form>
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Email address</label>
-                                <input type="email" class="form-control border-dark" placeholder="name@example.com">
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Password</label>
-                                <input type="password" class="form-control border-dark" placeholder="Enter password">
-                            </div>
-                            <div class="mb-4">
-                                <label class="form-label fw-bold text-danger">Login As</label>
-                                <!-- ID add kora hoyeche jate JavaScript eta dhorte pare -->
-                                <select class="form-select border-danger" id="roleSelect">
-                                    <option value="ceo">CEO</option>
-                                    <option value="employee">Employee / Counselor</option>
-                                    <option value="student">Student</option>
-                                </select>
-                            </div>
-                            <div class="d-grid">
-                                <!-- href theke link shoriye onclick add kora hoyeche -->
-                                <button type="button" onclick="loginCheck()" class="btn btn-danger btn-lg fw-bold">Login</button>
-                            </div>
-                        </form>
-                    </div>
+    <div class="login-card animate-fade-up">
+        <!-- Logo and Heading -->
+        <div class="text-center mb-4">
+            <h2 class="text-white mb-1">
+                <span>🎓</span> Newage Education
+            </h2>
+            <p class="text-muted small">Global Study Abroad & Immigration consultancy</p>
+            <div class="border-bottom border-secondary opacity-25 my-3"></div>
+            <h5 class="text-white-50 fw-normal">Portal Sign In</h5>
+        </div>
+
+        <!-- Form -->
+        <form id="loginForm" onsubmit="handleLogin(event)">
+            <!-- Email -->
+            <div class="mb-3">
+                <label for="emailInput" class="form-label">Email Address</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-dark border-secondary text-secondary"><i class="bi bi-envelope"></i></span>
+                    <input type="email" class="form-control" id="emailInput" placeholder="name@newage.com" required value="demo@newage.com">
                 </div>
             </div>
+
+            <!-- Password -->
+            <div class="mb-3">
+                <label for="passwordInput" class="form-label">Password</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-dark border-secondary text-secondary"><i class="bi bi-lock"></i></span>
+                    <input type="password" class="form-control" id="passwordInput" placeholder="••••••••" required value="password123">
+                </div>
+            </div>
+
+            <!-- Role Dropdown -->
+            <div class="mb-4">
+                <label for="roleSelect" class="form-label">Sign In As</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-dark border-secondary text-secondary"><i class="bi bi-person-badge"></i></span>
+                    <select class="form-select" id="roleSelect" required>
+                        <option value="" disabled>Choose role...</option>
+                        <option value="CEO" selected>CEO</option>
+                        <option value="Employee">Employee / Counselor</option>
+                        <option value="Student">Student</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Login Button -->
+            <button type="submit" class="btn btn-newage-red w-100 py-2 pulse-glow-button">
+                Sign In <i class="bi bi-arrow-right-short ms-1"></i>
+            </button>
+        </form>
+
+        <div class="text-center mt-4">
+            <span class="text-muted small">Need assistance? <a href="#" class="text-danger text-decoration-none">Contact IT Support</a></span>
         </div>
     </div>
 
-    <!-- Chotto JavaScript Trick -->
+    <!-- Bootstrap 5.3 JS Bundle CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
     <script>
-        function loginCheck() {
-            var selectedRole = document.getElementById("roleSelect").value;
+        function handleLogin(event) {
+            event.preventDefault();
+            const role = document.getElementById('roleSelect').value;
             
-            if (selectedRole === "ceo") {
-                window.location.href = "index.html";
-            } else if (selectedRole === "employee") {
-                window.location.href = "employee.html";
-            } else if (selectedRole === "student") {
-                window.location.href = "student.html";
+            if (role === 'CEO') {
+                window.location.href = 'index.html';
+            } else if (role === 'Employee') {
+                window.location.href = 'employee.html';
+            } else if (role === 'Student') {
+                window.location.href = 'student.html';
             }
         }
     </script>
-
 </body>
 </html>
