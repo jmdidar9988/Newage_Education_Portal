@@ -1,0 +1,406 @@
+/* 
+   Newage Education Shared Stylesheet
+   Theme: Modern, Premium Black, Red & Light-gray
+*/
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+
+:root {
+    --ne-dark-bg: #0f0f12;
+    --ne-card-dark: #16161b;
+    --ne-accent-red: #dc2626;
+    --ne-accent-red-hover: #b91c1c;
+    --ne-light-bg: #f8fafc;
+    --ne-text-dark: #1e293b;
+    --ne-text-muted: #64748b;
+    --ne-border-color: #e2e8f0;
+    --ne-gradient-dark: linear-gradient(135deg, #1e1e24 0%, #0a0a0c 100%);
+    --ne-gradient-red: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+    --ne-glow-red: 0 0 15px rgba(220, 38, 38, 0.4);
+    --ne-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+    --ne-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.06);
+    --ne-shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.12);
+    --ne-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Global Styles */
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--ne-light-bg);
+    color: var(--ne-text-dark);
+    font-size: 0.95rem;
+    overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+}
+
+/* Navbar Customizations */
+.navbar-newage {
+    background: var(--ne-gradient-dark);
+    border-bottom: 2px solid var(--ne-accent-red);
+    box-shadow: var(--ne-shadow-md);
+    padding: 0.8rem 1.5rem;
+}
+
+.navbar-newage .navbar-brand {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 1.4rem;
+    letter-spacing: -0.5px;
+}
+
+.navbar-newage .navbar-brand span {
+    color: var(--ne-accent-red);
+    position: relative;
+    display: inline-block;
+}
+
+.navbar-newage .portal-badge {
+    background-color: rgba(220, 38, 38, 0.15);
+    color: #ff8a8a;
+    border: 1px solid rgba(220, 38, 38, 0.3);
+    font-weight: 500;
+    font-size: 0.8rem;
+    padding: 0.3rem 0.8rem;
+    border-radius: 50px;
+    margin-left: 10px;
+}
+
+/* Premium Card Styles */
+.card-newage {
+    background: #ffffff;
+    border: 1px solid var(--ne-border-color);
+    border-radius: 16px;
+    box-shadow: var(--ne-shadow-sm);
+    transition: var(--ne-transition);
+    overflow: hidden;
+}
+
+.card-newage:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--ne-shadow-md);
+}
+
+.card-newage .card-header-newage {
+    background-color: #ffffff;
+    border-bottom: 1px solid var(--ne-border-color);
+    padding: 1.25rem 1.5rem;
+}
+
+.card-newage-dark {
+    background: var(--ne-gradient-dark);
+    color: #ffffff;
+    border: none;
+    border-radius: 16px;
+    box-shadow: var(--ne-shadow-md);
+    transition: var(--ne-transition);
+}
+
+.card-newage-dark:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+}
+
+/* Custom Buttons */
+.btn-newage-red {
+    background: var(--ne-gradient-red);
+    color: #ffffff;
+    border: none;
+    font-weight: 600;
+    border-radius: 8px;
+    padding: 0.6rem 1.5rem;
+    box-shadow: 0 4px 10px rgba(220, 38, 38, 0.2);
+    transition: var(--ne-transition);
+}
+
+.btn-newage-red:hover {
+    background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%);
+    color: #ffffff;
+    box-shadow: var(--ne-glow-red);
+    transform: translateY(-1px);
+}
+
+.btn-newage-dark {
+    background: #111827;
+    color: #ffffff;
+    border: 1px solid #374151;
+    font-weight: 600;
+    border-radius: 8px;
+    padding: 0.6rem 1.5rem;
+    transition: var(--ne-transition);
+}
+
+.btn-newage-dark:hover {
+    background: #1f2937;
+    color: #ffffff;
+    transform: translateY(-1px);
+}
+
+.btn-newage-outline {
+    background: transparent;
+    color: var(--ne-accent-red);
+    border: 1.5px solid var(--ne-accent-red);
+    font-weight: 600;
+    border-radius: 8px;
+    padding: 0.6rem 1.5rem;
+    transition: var(--ne-transition);
+}
+
+.btn-newage-outline:hover {
+    background: var(--ne-accent-red);
+    color: #ffffff;
+    box-shadow: var(--ne-glow-red);
+    transform: translateY(-1px);
+}
+
+/* Custom badges */
+.badge-newage-red {
+    background-color: var(--ne-accent-red);
+    color: white;
+    font-weight: 600;
+    font-size: 0.75rem;
+    padding: 0.35em 0.65em;
+    border-radius: 50px;
+}
+
+/* Alerts Customizations */
+.alert-newage-success {
+    background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
+    border-left: 5px solid #22c55e;
+    border-top: 1px solid #bbf7d0;
+    border-right: 1px solid #bbf7d0;
+    border-bottom: 1px solid #bbf7d0;
+    border-radius: 12px;
+    box-shadow: var(--ne-shadow-sm);
+    color: #166534;
+    transition: var(--ne-transition);
+}
+
+.alert-newage-success:hover {
+    box-shadow: var(--ne-shadow-md);
+}
+
+/* Form Styles - Paper style digital form */
+.paper-form {
+    background: #ffffff;
+    border: 1px solid var(--ne-border-color);
+    border-radius: 16px;
+    box-shadow: var(--ne-shadow-lg);
+    position: relative;
+    padding: 3rem;
+}
+
+.paper-form::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 6px;
+    background: var(--ne-gradient-red);
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+}
+
+.form-section-title {
+    font-family: 'Outfit', sans-serif;
+    color: var(--ne-dark-bg);
+    border-left: 4px solid var(--ne-accent-red);
+    padding-left: 10px;
+    margin-bottom: 1.5rem;
+    margin-top: 2rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 1rem;
+    letter-spacing: 0.5px;
+}
+
+.form-section-title:first-of-type {
+    margin-top: 0;
+}
+
+.paper-form label {
+    font-weight: 500;
+    color: #475569;
+    font-size: 0.85rem;
+    margin-bottom: 0.4rem;
+}
+
+.paper-form .form-control, 
+.paper-form .form-select {
+    border: 1.5px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.92rem;
+    transition: var(--ne-transition);
+}
+
+.paper-form .form-control:focus, 
+.paper-form .form-select:focus {
+    border-color: var(--ne-accent-red);
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
+}
+
+/* Tables styling */
+.table-newage {
+    border-collapse: separate;
+    border-spacing: 0 8px;
+}
+
+.table-newage thead th {
+    background-color: #1e293b !important;
+    color: #ffffff !important;
+    font-weight: 600;
+    border: none;
+    padding: 12px 16px;
+    font-family: 'Outfit', sans-serif;
+}
+
+.table-newage thead th:first-child {
+    border-top-left-radius: 8px;
+}
+
+.table-newage thead th:last-child {
+    border-top-right-radius: 8px;
+}
+
+.table-newage tbody tr {
+    box-shadow: var(--ne-shadow-sm);
+    transition: var(--ne-transition);
+}
+
+.table-newage tbody tr:hover {
+    transform: scale(1.005);
+    box-shadow: var(--ne-shadow-md);
+}
+
+.table-newage tbody td {
+    background-color: #ffffff;
+    border-top: 1px solid var(--ne-border-color);
+    border-bottom: 1px solid var(--ne-border-color);
+    padding: 14px 16px;
+    vertical-align: middle;
+}
+
+.table-newage tbody tr td:first-child {
+    border-left: 1px solid var(--ne-border-color);
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+}
+
+.table-newage tbody tr td:last-child {
+    border-right: 1px solid var(--ne-border-color);
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
+/* Login Page Custom Style */
+.login-body {
+    background: radial-gradient(circle at center, #1c1c24 0%, #0a0a0d 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.login-card {
+    background: rgba(22, 22, 27, 0.8);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    padding: 3rem 2.5rem;
+    width: 100%;
+    max-width: 440px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+}
+
+.login-card .form-control,
+.login-card .form-select {
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    transition: var(--ne-transition);
+}
+
+.login-card .form-control::placeholder {
+    color: rgba(255, 255, 255, 0.35);
+}
+
+.login-card .form-control:focus,
+.login-card .form-select:focus {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-color: var(--ne-accent-red);
+    box-shadow: var(--ne-glow-red);
+    color: #ffffff;
+}
+
+.login-card label {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.85rem;
+    margin-bottom: 0.4rem;
+}
+
+.login-card select option {
+    background-color: var(--ne-card-dark);
+    color: white;
+}
+
+/* Animations */
+@keyframes pulseGlow {
+    0% {
+        box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(220, 38, 38, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+    }
+}
+
+.pulse-glow-button {
+    animation: pulseGlow 2s infinite;
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-up {
+    animation: slideInUp 0.5s ease forwards;
+}
+
+/* Custom interactive classes */
+.list-group-item-action:hover {
+    background-color: #f1f5f9;
+    border-left: 3px solid var(--ne-accent-red);
+    padding-left: 20px !important;
+}
+
+.list-group-item-action {
+    transition: var(--ne-transition);
+    border-left: 3px solid transparent;
+}
+
+/* Footer styling */
+.footer-newage {
+    background-color: #0f0f12;
+    color: #94a3b8;
+    border-top: 1px solid #1e293b;
+    padding: 1.5rem 0;
+    font-size: 0.85rem;
+    margin-top: auto;
+}
