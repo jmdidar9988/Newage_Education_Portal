@@ -3,201 +3,327 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Newage Education - Application Form</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Student Data Entry Form - Newage Education</title>
+    <!-- Bootstrap 5.3 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-light">
+<body class="d-flex flex-column min-vh-100">
 
     <!-- Navbar -->
-    <nav class="navbar navbar-dark bg-dark shadow-sm border-bottom border-danger border-3">
-        <div class="container">
-            <a class="navbar-brand fw-bold text-white" href="#">🎓 Newage Education | <span class="text-danger">Data Entry Portal</span></a>
-            <div>
-                <!-- Dashbord e ferot jabar button -->
-                <a href="employee.html" class="btn btn-sm btn-outline-light me-2">Back to Dashboard</a>
-                <a href="login.html" class="btn btn-sm btn-danger">Logout</a>
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-newage">
+        <div class="container-fluid">
+            <a class="navbar-brand text-white" href="#" onclick="goBack()">
+                <span>🎓</span> Newage Education <span class="portal-badge">Data Entry Portal</span>
+            </a>
+            <div class="ms-auto">
+                <button onclick="goBack()" class="btn btn-newage-outline py-1 px-3 btn-sm">
+                    <i class="bi bi-arrow-left-circle me-1"></i> Back to Dashboard
+                </button>
             </div>
         </div>
     </nav>
 
-    <!-- Main Form Container -->
-    <div class="container mt-4 mb-5">
-        <div class="card shadow-lg border-0 border-top border-danger border-4">
-            
-            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-3">
-                <h3 class="fw-bold mb-0 text-danger">APPLICATION FORM</h3>
-                <div class="d-flex align-items-center">
-                    <label class="me-2 fw-bold text-light">Date:</label>
-                    <input type="date" class="form-control form-control-sm border-danger">
+    <!-- Main Form Area -->
+    <main class="container my-5 flex-grow-1 animate-fade-up">
+        <div class="row justify-content-center">
+            <div class="col-xl-10">
+                
+                <!-- Toast Placement -->
+                <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+                    <div id="saveToast" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                <i class="bi bi-check-circle-fill me-2"></i> Student application profile saved successfully!
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                    </div>
                 </div>
-            </div>
 
-            <div class="card-body bg-white px-5">
-                <form>
-                    <!-- Personal Info Section -->
-                    <div class="mb-4">
-                        <h5 class="fw-bold text-white bg-dark p-2 rounded text-center mb-3 border-start border-danger border-4" style="width: 250px; margin: 0 auto;">Personal Info</h5>
-                        <div class="row g-3">
-                            <div class="col-md-8">
-                                <label class="fw-bold text-dark">Name</label>
-                                <input type="text" class="form-control border-dark">
-                            </div>
-                            <div class="col-md-4">
-                                <label class="fw-bold text-dark">Date of Birth</label>
-                                <input type="date" class="form-control border-dark">
-                            </div>
-                            <div class="col-md-4">
-                                <label class="fw-bold text-dark">Contact</label>
-                                <input type="text" class="form-control border-dark">
-                            </div>
-                            <div class="col-md-4">
-                                <label class="fw-bold text-dark">Email</label>
-                                <input type="email" class="form-control border-dark">
-                            </div>
-                            <div class="col-md-4">
-                                <label class="fw-bold text-dark">Post Code</label>
-                                <input type="text" class="form-control border-dark">
-                            </div>
-                            <div class="col-md-4">
-                                <label class="fw-bold text-dark">Gender</label>
-                                <select class="form-select border-dark">
-                                    <option>Male</option>
-                                    <option>Female</option>
-                                    <option>Other</option>
-                                </select>
-                            </div>
-                            <div class="col-md-8">
-                                <label class="fw-bold text-dark">Address</label>
-                                <input type="text" class="form-control border-dark">
+                <!-- Paper Form Card -->
+                <div class="paper-form">
+                    
+                    <!-- Header -->
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center border-bottom pb-4 mb-4">
+                        <div>
+                            <h2 class="fw-bold mb-1 text-dark text-uppercase">Student Application Record</h2>
+                            <p class="text-muted mb-0">Fill out all sections below to register a new candidate profile in Newage database.</p>
+                        </div>
+                        <div class="mt-3 mt-md-0">
+                            <label for="entryDate" class="form-label mb-1 text-muted fw-semibold d-block">Record Entry Date</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-calendar-date"></i></span>
+                                <input type="date" class="form-control" id="entryDate" style="max-width: 170px;" required>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Educational Info Section -->
-                    <div class="mb-4 mt-5">
-                        <h5 class="fw-bold text-white bg-dark p-2 rounded text-center mb-3 border-start border-danger border-4" style="width: 250px; margin: 0 auto;">Educational Info</h5>
+                    <!-- Form Content -->
+                    <form id="applicationForm" onsubmit="handleFormSubmit(event)">
+                        
+                        <!-- SECTION 1: Personal Info -->
+                        <div class="form-section-title">Personal Information</div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="fullName">Full Name (As in Passport)</label>
+                                <input type="text" class="form-control" id="fullName" placeholder="e.g. Sakib Rahman" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="dob">Date of Birth</label>
+                                <input type="date" class="form-control" id="dob" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="gender">Gender</label>
+                                <select class="form-select" id="gender" required>
+                                    <option value="" disabled selected>Select...</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label for="contactNo">Contact Number</label>
+                                <input type="tel" class="form-control" id="contactNo" placeholder="e.g. +880 1712-345678" required>
+                            </div>
+                            <div class="col-md-5">
+                                <label for="email">Email Address</label>
+                                <input type="email" class="form-control" id="email" placeholder="e.g. sakib@gmail.com" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="postCode">Post Code</label>
+                                <input type="text" class="form-control" id="postCode" placeholder="e.g. 1209" required>
+                            </div>
+
+                            <div class="col-12">
+                                <label for="address">Permanent Address</label>
+                                <textarea class="form-control" id="address" rows="2" placeholder="e.g. House 45, Road 12, Dhanmondi, Dhaka" required></textarea>
+                            </div>
+                        </div>
+
+                        <!-- SECTION 2: Educational Info -->
+                        <div class="form-section-title">Educational Profile</div>
                         <div class="table-responsive">
-                            <table class="table table-bordered border-dark text-center align-middle">
-                                <thead class="table-dark text-danger">
+                            <table class="table table-bordered align-middle">
+                                <thead class="table-dark">
                                     <tr>
-                                        <th>Degree</th>
-                                        <th>Result</th>
-                                        <th>Passing Year</th>
-                                        <th>Subject / Major</th>
+                                        <th style="width: 20%;">Degree Level</th>
+                                        <th style="width: 25%;">Result / GPA / CGPA</th>
+                                        <th style="width: 20%;">Passing Year</th>
+                                        <th style="width: 35%;">Subject / Major</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td class="fw-bold">S.S.C</td>
-                                        <td><input type="text" class="form-control form-control-sm border-dark"></td>
-                                        <td><input type="text" class="form-control form-control-sm border-dark"></td>
-                                        <td><input type="text" class="form-control form-control-sm border-dark"></td>
+                                        <td class="fw-semibold">S.S.C</td>
+                                        <td><input type="text" class="form-control form-control-sm" placeholder="e.g. GPA 5.00/5.00" required></td>
+                                        <td><input type="number" class="form-control form-control-sm" placeholder="e.g. 2018" min="1990" max="2030" required></td>
+                                        <td><input type="text" class="form-control form-control-sm" placeholder="e.g. Science" required></td>
                                     </tr>
                                     <tr>
-                                        <td class="fw-bold">H.S.C</td>
-                                        <td><input type="text" class="form-control form-control-sm border-dark"></td>
-                                        <td><input type="text" class="form-control form-control-sm border-dark"></td>
-                                        <td><input type="text" class="form-control form-control-sm border-dark"></td>
+                                        <td class="fw-semibold">H.S.C</td>
+                                        <td><input type="text" class="form-control form-control-sm" placeholder="e.g. GPA 5.00/5.00" required></td>
+                                        <td><input type="number" class="form-control form-control-sm" placeholder="e.g. 2020" min="1990" max="2030" required></td>
+                                        <td><input type="text" class="form-control form-control-sm" placeholder="e.g. Science" required></td>
                                     </tr>
                                     <tr>
-                                        <td class="fw-bold">Bachelor</td>
-                                        <td><input type="text" class="form-control form-control-sm border-dark"></td>
-                                        <td><input type="text" class="form-control form-control-sm border-dark"></td>
-                                        <td><input type="text" class="form-control form-control-sm border-dark"></td>
+                                        <td class="fw-semibold">Bachelor</td>
+                                        <td><input type="text" class="form-control form-control-sm" placeholder="e.g. CGPA 3.65/4.00"></td>
+                                        <td><input type="number" class="form-control form-control-sm" placeholder="e.g. 2024" min="1990" max="2030"></td>
+                                        <td><input type="text" class="form-control form-control-sm" placeholder="e.g. CSE"></td>
                                     </tr>
                                     <tr>
-                                        <td class="fw-bold">Master</td>
-                                        <td><input type="text" class="form-control form-control-sm border-dark"></td>
-                                        <td><input type="text" class="form-control form-control-sm border-dark"></td>
-                                        <td><input type="text" class="form-control form-control-sm border-dark"></td>
+                                        <td class="fw-semibold">Master</td>
+                                        <td><input type="text" class="form-control form-control-sm" placeholder="e.g. CGPA 3.80/4.00"></td>
+                                        <td><input type="number" class="form-control form-control-sm" placeholder="e.g. 2025" min="1990" max="2030"></td>
+                                        <td><input type="text" class="form-control form-control-sm" placeholder="e.g. Software Engineering"></td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
-                    </div>
 
-                    <!-- English Language & Preferences -->
-                    <div class="row mt-5">
-                        <!-- Left Column -->
-                        <div class="col-md-6 pe-md-4">
-                            <!-- English Language -->
-                            <h5 class="fw-bold text-white bg-dark p-2 rounded text-center mb-3 border-start border-danger border-4" style="width: 200px; margin: 0 auto;">English Language</h5>
-                            <div class="mb-2">
-                                <label class="fw-bold text-dark">Test Name :</label>
-                                <input type="text" class="form-control form-control-sm border-dark">
+                        <!-- SECTION 3: English Language -->
+                        <div class="form-section-title">English Language Proficiency</div>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label for="testName">Test Name</label>
+                                <select class="form-select" id="testName" required>
+                                    <option value="" disabled selected>Select Test...</option>
+                                    <option value="IELTS">IELTS Academic</option>
+                                    <option value="TOEFL">TOEFL iBT</option>
+                                    <option value="PTE">PTE Academic</option>
+                                    <option value="Duolingo">Duolingo English Test</option>
+                                    <option value="Waived">English Waiver (MOI)</option>
+                                </select>
                             </div>
-                            <div class="mb-2">
-                                <label class="fw-bold text-dark">Date :</label>
-                                <input type="date" class="form-control form-control-sm border-dark">
+                            <div class="col-md-4">
+                                <label for="testDate">Test Exam Date</label>
+                                <input type="date" class="form-control" id="testDate">
                             </div>
-                            <div class="mb-3">
-                                <label class="fw-bold text-dark">Overall Score :</label>
-                                <input type="text" class="form-control form-control-sm border-dark w-50">
-                            </div>
-                            <label class="fw-bold text-dark">Individual scores:</label>
-                            <div class="d-flex gap-2 text-center">
-                                <div><label class="small fw-bold">L</label><input type="text" class="form-control form-control-sm border-dark"></div>
-                                <div><label class="small fw-bold">R</label><input type="text" class="form-control form-control-sm border-dark"></div>
-                                <div><label class="small fw-bold">W</label><input type="text" class="form-control form-control-sm border-dark"></div>
-                                <div><label class="small fw-bold">S</label><input type="text" class="form-control form-control-sm border-dark"></div>
+                            <div class="col-md-4">
+                                <label for="overallScore">Overall Score</label>
+                                <input type="number" class="form-control" id="overallScore" placeholder="e.g. 7.5" step="0.1" min="0" max="120">
                             </div>
 
-                            <!-- Course Preferences -->
-                            <h5 class="fw-bold text-white bg-dark p-2 rounded text-center mt-5 mb-3 border-start border-danger border-4" style="width: 150px; margin: 0 auto;">Course</h5>
-                            <div class="mb-2">
-                                <label class="fw-bold text-dark small">1st Choice:</label>
-                                <input type="text" class="form-control form-control-sm border-dark">
-                            </div>
-                            <div class="mb-2">
-                                <label class="fw-bold text-dark small">2nd Choice:</label>
-                                <input type="text" class="form-control form-control-sm border-dark">
+                            <!-- Individual Band Scores Grid -->
+                            <div class="col-12">
+                                <div class="bg-light p-3 rounded border">
+                                    <span class="d-block mb-2 fw-semibold text-muted small text-uppercase">Individual Section Scores (For IELTS / PTE)</span>
+                                    <div class="row g-2">
+                                        <div class="col-6 col-md-3">
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text bg-dark text-white">Listening</span>
+                                                <input type="number" class="form-control" placeholder="e.g. 8.0" step="0.5" min="0" max="99">
+                                            </div>
+                                        </div>
+                                        <div class="col-6 col-md-3">
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text bg-dark text-white">Reading</span>
+                                                <input type="number" class="form-control" placeholder="e.g. 7.5" step="0.5" min="0" max="99">
+                                            </div>
+                                        </div>
+                                        <div class="col-6 col-md-3">
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text bg-dark text-white">Writing</span>
+                                                <input type="number" class="form-control" placeholder="e.g. 6.5" step="0.5" min="0" max="99">
+                                            </div>
+                                        </div>
+                                        <div class="col-6 col-md-3">
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text bg-dark text-white">Speaking</span>
+                                                <input type="number" class="form-control" placeholder="e.g. 7.0" step="0.5" min="0" max="99">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Right Column -->
-                        <div class="col-md-6 ps-md-4 border-start border-danger">
-                            <!-- Country Preferences -->
-                            <h5 class="fw-bold text-white bg-dark p-2 rounded text-center mb-3 border-start border-danger border-4" style="width: 150px; margin: 0 auto;">Country</h5>
-                            <div class="mb-2">
-                                <label class="fw-bold text-dark small">1st Choice:</label>
-                                <input type="text" class="form-control form-control-sm border-dark">
+                        <!-- SECTION 4: Preferences -->
+                        <div class="form-section-title">Course & Destination Preferences</div>
+                        <div class="row g-3 mb-5">
+                            <!-- Course Choices -->
+                            <div class="col-md-6">
+                                <label for="courseChoice1">1st Choice Course</label>
+                                <input type="text" class="form-control" id="courseChoice1" placeholder="e.g. MSc in Data Science" required>
                             </div>
-                            <div class="mb-2">
-                                <label class="fw-bold text-dark small">2nd Choice:</label>
-                                <input type="text" class="form-control form-control-sm border-dark">
-                            </div>
-                            <div class="mb-4">
-                                <label class="fw-bold text-dark small">3rd Choice:</label>
-                                <input type="text" class="form-control form-control-sm border-dark">
+                            <div class="col-md-6">
+                                <label for="courseChoice2">2nd Choice Course</label>
+                                <input type="text" class="form-control" id="courseChoice2" placeholder="e.g. MSc in Business Analytics" required>
                             </div>
 
-                            <!-- University Preferences -->
-                            <h5 class="fw-bold text-white bg-dark p-2 rounded text-center mt-4 mb-3 border-start border-danger border-4" style="width: 150px; margin: 0 auto;">University</h5>
-                            <div class="mb-2">
-                                <label class="fw-bold text-dark small">1st Choice:</label>
-                                <input type="text" class="form-control form-control-sm border-dark">
+                            <!-- Country Choices -->
+                            <div class="col-md-4">
+                                <label for="country1">1st Choice Country</label>
+                                <select class="form-select" id="country1" required>
+                                    <option value="" disabled selected>Select country...</option>
+                                    <option value="Canada">Canada</option>
+                                    <option value="United Kingdom">United Kingdom</option>
+                                    <option value="Australia">Australia</option>
+                                    <option value="United States">United States</option>
+                                    <option value="Germany">Germany</option>
+                                </select>
                             </div>
-                            <div class="mb-2">
-                                <label class="fw-bold text-dark small">2nd Choice:</label>
-                                <input type="text" class="form-control form-control-sm border-dark">
+                            <div class="col-md-4">
+                                <label for="country2">2nd Choice Country</label>
+                                <select class="form-select" id="country2" required>
+                                    <option value="" disabled selected>Select country...</option>
+                                    <option value="Canada">Canada</option>
+                                    <option value="United Kingdom">United Kingdom</option>
+                                    <option value="Australia">Australia</option>
+                                    <option value="United States">United States</option>
+                                    <option value="Germany">Germany</option>
+                                </select>
                             </div>
-                            <div class="mb-4">
-                                <label class="fw-bold text-dark small">3rd Choice:</label>
-                                <input type="text" class="form-control form-control-sm border-dark">
+                            <div class="col-md-4">
+                                <label for="country3">3rd Choice Country</label>
+                                <select class="form-select" id="country3" required>
+                                    <option value="" disabled selected>Select country...</option>
+                                    <option value="Canada">Canada</option>
+                                    <option value="United Kingdom">United Kingdom</option>
+                                    <option value="Australia">Australia</option>
+                                    <option value="United States">United States</option>
+                                    <option value="Germany">Germany</option>
+                                </select>
+                            </div>
+
+                            <!-- University Choices -->
+                            <div class="col-md-4">
+                                <label for="uni1">1st Choice University</label>
+                                <input type="text" class="form-control" id="uni1" placeholder="e.g. University of Toronto" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="uni2">2nd Choice University</label>
+                                <input type="text" class="form-control" id="uni2" placeholder="e.g. University of Manchester" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="uni3">3rd Choice University</label>
+                                <input type="text" class="form-control" id="uni3" placeholder="e.g. University of Melbourne" required>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Submit Button -->
-                    <hr class="border-danger mt-5">
-                    <div class="text-center">
-                        <button type="button" class="btn btn-danger btn-lg px-5 fw-bold shadow">Save Student Application Data</button>
-                    </div>
+                        <!-- Submit Button -->
+                        <div class="border-top pt-4 text-center">
+                            <button type="submit" class="btn btn-newage-red btn-lg px-5">
+                                <i class="bi bi-save me-2"></i> Save Student Application Data
+                            </button>
+                        </div>
 
-                </form>
+                    </form>
+
+                </div>
+
             </div>
         </div>
-    </div>
+    </main>
 
+    <!-- FOOTER -->
+    <footer class="footer-newage">
+        <div class="container text-center">
+            <p class="mb-0">&copy; 2026 Newage Education. All rights reserved. | Core Database Entry Module</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5.3 JS Bundle CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- JavaScript Navigation & Form Actions -->
+    <script>
+        // Set today's date in entry date picker on load
+        window.addEventListener('DOMContentLoaded', () => {
+            const dateInput = document.getElementById('entryDate');
+            const today = new Date().toISOString().split('T')[0];
+            dateInput.value = today;
+        });
+
+        function goBack() {
+            if (document.referrer.includes('employee.html')) {
+                window.location.href = 'employee.html';
+            } else {
+                window.location.href = 'index.html'; // Default to CEO Dashboard
+            }
+        }
+
+        function handleFormSubmit(event) {
+            event.preventDefault();
+            
+            // Show toast
+            const toastEl = document.getElementById('saveToast');
+            const toast = new bootstrap.Toast(toastEl);
+            toast.show();
+
+            // Reset form but keep date
+            const savedDate = document.getElementById('entryDate').value;
+            document.getElementById('applicationForm').reset();
+            document.getElementById('entryDate').value = savedDate;
+
+            // Scroll back to top smoothly
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
 </body>
 </html>
