@@ -15,7 +15,64 @@
         html {
             scroll-behavior: smooth;
         }
-        /* Destination card styling */
+        /* Style adjustments to match screenshot exactly */
+        .navbar-landing {
+            background: #ffffff;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            padding: 0.75rem 2rem;
+        }
+        .navbar-landing .nav-link {
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: #334155;
+            transition: var(--ne-transition);
+        }
+        .navbar-landing .nav-link:hover {
+            color: var(--ne-accent-red);
+        }
+        .navbar-landing .nav-link.active-link {
+            color: #d97706 !important; /* Gold/Orange color from screenshot */
+        }
+        .navbar-landing .dropdown-toggle::after {
+            vertical-align: 0.15em;
+            margin-left: 0.35em;
+            border-top: 0.3em solid;
+            border-right: 0.3em solid transparent;
+            border-bottom: 0;
+            border-left: 0.3em solid transparent;
+        }
+        .btn-apply-now {
+            background-color: #dc2626;
+            color: #ffffff;
+            font-weight: 600;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 6px;
+            transition: var(--ne-transition);
+        }
+        .btn-apply-now:hover {
+            background-color: #b91c1c;
+            color: #ffffff;
+            box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
+        }
+        .hero-btn {
+            background-color: rgba(255, 255, 255, 0.9);
+            color: #1e293b;
+            font-weight: 600;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--ne-transition);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .hero-btn:hover {
+            background-color: #ffffff;
+            color: #0f172a;
+            transform: translateY(-2px);
+        }
         .dest-card {
             border-radius: 12px;
             overflow: hidden;
@@ -42,7 +99,6 @@
         .dest-card:hover .dest-img {
             transform: scale(1.08);
         }
-        /* Stat counter box */
         .stat-box {
             background: #ffffff;
             border-radius: 12px;
@@ -61,11 +117,11 @@
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-landing sticky-top">
         <div class="container">
-            <!-- Brand Logo -->
+            <!-- Brand Logo (Exactly NWC style format) -->
             <a class="navbar-brand d-flex align-items-center" href="#">
-                <div class="logo-box me-2">
-                    <span class="logo-red">🎓 Newage</span>
-                    <span class="logo-dark">Education</span>
+                <div class="logo-box-nwc">
+                    <div class="logo-top-red">NWE</div>
+                    <div class="logo-bottom-black">EDUCATION</div>
                 </div>
             </a>
             
@@ -75,27 +131,48 @@
 
             <!-- Navigation Links -->
             <div class="collapse navbar-collapse" id="navbarContent">
-                <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
+                <ul class="navbar-nav mx-auto mb-2 mb-lg-0 align-items-center">
                     <li class="nav-item">
-                        <a class="nav-link active" href="#">Home</a>
+                        <a class="nav-link active-link" href="#">Home</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">Study Destinations</a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="alert('Canada Destination details')">Canada</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="alert('UK Destination details')">United Kingdom</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="alert('Australia Destination details')">Australia</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="alert('USA Destination details')">United States</a></li>
+                        </ul>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#about">About Us</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#destinations">Study Destinations</a>
+                        <a class="nav-link" href="#" onclick="alert('Browse partner universities database')">Universities</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">Our Services</a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="alert('Student Counseling')">Student Counseling</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="alert('Visa guidance')">Visa Processing</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="alert('Scholarship matching')">Scholarship Guidance</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">Blogs & Events</a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="alert('Upcoming Seminars')">Upcoming Seminars</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="alert('Latest news blogs')">Academic Blogs</a></li>
+                        </ul>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#services">Our Services</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" onclick="alert('Our Global Offices: Dhaka, Toronto, London, Sydney')">Global Branches</a>
+                        <a class="nav-link" href="#" onclick="alert('Our Global Offices: Dhaka, Toronto, London, Sydney')">Newage Global Branches</a>
                     </li>
                 </ul>
 
                 <!-- Apply Now (Sign In Button) -->
-                <button class="btn btn-newage-red pulse-glow-button px-4 py-2" data-bs-toggle="modal" data-bs-target="#loginModal">
-                    <i class="bi bi-send-check me-1"></i> Apply Now
+                <button class="btn btn-apply-now pulse-glow-button" data-bs-toggle="modal" data-bs-target="#loginModal">
+                    Apply Now
                 </button>
             </div>
         </div>
@@ -104,7 +181,7 @@
     <!-- Main Hero / About Area -->
     <main class="flex-grow-1">
         
-        <!-- Hero Section -->
+        <!-- Hero Section (Tower Bridge Background) -->
         <section class="hero-section">
             <div class="hero-overlay"></div>
             <div class="container hero-container">
@@ -117,12 +194,12 @@
                         <p class="hero-description">
                             We aim to establish a bond between millions of students, their dreams of achieving successful careers, and our partner universities.
                         </p>
-                        <div class="hero-btn-group d-flex flex-wrap gap-3">
-                            <button class="btn hero-btn-white" data-bs-toggle="modal" data-bs-target="#appointmentModal">
-                                <i class="bi bi-calendar-event me-2 text-danger"></i> Book Appointment
+                        <div class="d-flex flex-wrap gap-3">
+                            <button class="btn hero-btn" data-bs-toggle="modal" data-bs-target="#appointmentModal">
+                                <i class="bi bi-calendar-event text-danger"></i> Book Appointment
                             </button>
-                            <button class="btn hero-btn-outline" data-bs-toggle="modal" data-bs-target="#intakeModal">
-                                <i class="bi bi-mortarboard me-2"></i> September 2026 Intake
+                            <button class="btn hero-btn" data-bs-toggle="modal" data-bs-target="#intakeModal">
+                                <i class="bi bi-mortarboard"></i> September 2026 Intake
                             </button>
                         </div>
                     </div>
@@ -310,9 +387,9 @@
 
     </main>
 
-    <!-- Floating WhatsApp Widget -->
-    <div class="floating-whatsapp" onclick="toggleWhatsAppChat()">
-        <i class="bi bi-whatsapp"></i>
+    <!-- Floating WhatsApp Widget (Pill style matching screenshot) -->
+    <div class="floating-whatsapp-pill" onclick="toggleWhatsAppChat()">
+        <i class="bi bi-whatsapp"></i> WhatsApp
     </div>
 
     <!-- WhatsApp Chat Popup -->
