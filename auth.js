@@ -1,4 +1,4 @@
-// Firebase Authentication Module for Newage Education Web Portal
+// Firebase Authentication & Firestore Module for Newage Education Web Portal
 // Modular Firebase SDK v10
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -8,6 +8,13 @@ import {
     createUserWithEmailAndPassword, 
     signInWithEmailAndPassword 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+import { 
+    getFirestore, 
+    collection, 
+    addDoc, 
+    serverTimestamp 
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 // Firebase configuration provided by user
 const firebaseConfig = {
@@ -20,7 +27,7 @@ const firebaseConfig = {
   measurementId: "G-17R34MNL2Q"
 };
 
-// Initialize Firebase
+// Initialize Firebase App
 const app = initializeApp(firebaseConfig);
 
 let analytics = null;
@@ -30,7 +37,10 @@ try {
     console.warn("Analytics not enabled in non-browser context or blocked", e);
 }
 
+// Initialize Auth and Firestore
 export const auth = getAuth(app);
+export const db = getFirestore(app);
+export { collection, addDoc, serverTimestamp };
 
 /**
  * Identify user role strictly based on string matching logic
@@ -181,10 +191,145 @@ export async function handleFirebaseSignUp(event) {
 }
 
 /**
+ * Saves Student Application Form data to Firestore 'students' collection
+ * @param {Event} event 
+ */
+export async function saveStudentApplication(event) {
+    event.preventDefault();
+
+    const form = document.getElementById('applicationForm');
+    const submitBtn = document.getElementById('submitBtn') || (form ? form.querySelector('button[type="submit"]') : null);
+    const alertContainer = document.getElementById('alertContainer');
+
+    if (alertContainer) alertContainer.innerHTML = '';
+
+    const originalBtnText = submitBtn ? submitBtn.innerHTML : '<i class="bi bi-save me-2"></i> Save Student Application Data';
+
+    // 1. UI Loading state
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Saving...';
+    }
+
+    try {
+        // 2. Gather full student application record
+        const studentData = {
+            entryDate: document.getElementById('entryDate')?.value || '',
+            personalInfo: {
+                fullName: document.getElementById('fullName')?.value || '',
+                dob: document.getElementById('dob')?.value || '',
+                gender: document.getElementById('gender')?.value || '',
+                contactNo: document.getElementById('contactNo')?.value || '',
+                email: document.getElementById('email')?.value || '',
+                postCode: document.getElementById('postCode')?.value || '',
+                address: document.getElementById('address')?.value || ''
+            },
+            educationalProfile: {
+                ssc: {
+                    gpa: document.getElementById('sscGpa')?.value || '',
+                    passingYear: document.getElementById('sscYear')?.value || '',
+                    major: document.getElementById('sscMajor')?.value || ''
+                },
+                hsc: {
+                    gpa: document.getElementById('hscGpa')?.value || '',
+                    passingYear: document.getElementById('hscYear')?.value || '',
+                    major: document.getElementById('hscMajor')?.value || ''
+                },
+                bachelor: {
+                    cgpa: document.getElementById('bachelorGpa')?.value || '',
+                    passingYear: document.getElementById('bachelorYear')?.value || '',
+                    major: document.getElementById('bachelorMajor')?.value || ''
+                },
+                master: {
+                    cgpa: document.getElementById('masterGpa')?.value || '',
+                    passingYear: document.getElementById('masterYear')?.value || '',
+                    major: document.getElementById('masterMajor')?.value || ''
+                }
+            },
+            englishProficiency: {
+                testName: document.getElementById('testName')?.value || '',
+                testDate: document.getElementById('testDate')?.value || '',
+                overallScore: document.getElementById('overallScore')?.value || '',
+                sectionScores: {
+                    listening: document.getElementById('listeningScore')?.value || '',
+                    reading: document.getElementById('readingScore')?.value || '',
+                    writing: document.getElementById('writingScore')?.value || '',
+                    speaking: document.getElementById('speakingScore')?.value || ''
+                }
+            },
+            preferences: {
+                courseChoices: [
+                    document.getElementById('courseChoice1')?.value || '',
+                    document.getElementById('courseChoice2')?.value || ''
+                ].filter(Boolean),
+                countryChoices: [
+                    document.getElementById('country1')?.value || '',
+                    document.getElementById('country2')?.value || '',
+                    document.getElementById('country3')?.value || ''
+                ].filter(Boolean),
+                universityChoices: [
+                    document.getElementById('uni1')?.value || '',
+                    document.getElementById('uni2')?.value || '',
+                    document.getElementById('uni3')?.value || ''
+                ].filter(Boolean)
+            },
+            createdAt: serverTimestamp()
+        };
+
+        // 3. Write document to 'students' collection in Firestore
+        const docRef = await addDoc(collection(db, "students"), studentData);
+        console.log("Student Application Record Saved in Firestore with ID:", docRef.id);
+
+        // 4. UI Success Feedback
+        if (alertContainer) {
+            alertContainer.innerHTML = `
+                <div class="alert alert-success alert-dismissible fade show shadow-sm py-3 mb-4" role="alert">
+                    <i class="bi bi-check-circle-fill me-2 fs-5 align-middle"></i> 
+                    <strong>Student Application Saved Successfully!</strong> Record registered in Firestore database (Ref ID: <code>${docRef.id}</code>).
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>`;
+        }
+
+        // Trigger Bootstrap Toast if active
+        const toastEl = document.getElementById('saveToast');
+        if (toastEl && window.bootstrap) {
+            const toast = new bootstrap.Toast(toastEl);
+            toast.show();
+        }
+
+        // Reset form fields while preserving current date
+        const savedDate = document.getElementById('entryDate')?.value;
+        if (form) form.reset();
+        if (savedDate && document.getElementById('entryDate')) {
+            document.getElementById('entryDate').value = savedDate;
+        }
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    } catch (error) {
+        console.error("Error saving student application to Firestore:", error);
+        if (alertContainer) {
+            alertContainer.innerHTML = `
+                <div class="alert alert-danger alert-dismissible fade show shadow-sm py-3 mb-4" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2 fs-5 align-middle"></i> 
+                    <strong>Failed to Save Application:</strong> ${error.message || 'Database write error. Please check your internet connection.'}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>`;
+        }
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
+        }
+    }
+}
+
+/**
  * Expose helper functions globally for inline HTML event handlers
  */
 window.handleFirebaseLogin = handleFirebaseLogin;
 window.handleFirebaseSignUp = handleFirebaseSignUp;
+window.saveStudentApplication = saveStudentApplication;
 window.updateDetectedRoleUI = updateDetectedRoleUI;
 window.setDemoCredentials = function(email) {
     const emailInput = document.getElementById('emailInput');
