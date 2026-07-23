@@ -1,12 +1,30 @@
 # Lightweight PowerShell HTTP Server
 # Runs natively on Windows without requiring Node/Python.
 
-$port = 8000
+param (
+    [int]$port = 8080
+)
+
 $listener = New-Object System.Net.HttpListener
-$listener.Prefixes.Add("http://localhost:$port/")
+$started = $false
+
+while (-not $started -and $port -lt 8100) {
+    try {
+        $listener.Prefixes.Clear()
+        $listener.Prefixes.Add("http://localhost:$port/")
+        $listener.Start()
+        $started = $true
+    } catch {
+        $port++
+    }
+}
+
+if (-not $started) {
+    Write-Error "Failed to start HTTP listener on ports 8080-8100."
+    exit 1
+}
 
 try {
-    $listener.Start()
     Write-Host "========================================="
     Write-Host " Newage Education Web Portal Local Server "
     Write-Host " Running at: http://localhost:$port/      "
