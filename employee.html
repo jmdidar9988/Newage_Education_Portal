@@ -96,6 +96,12 @@
                 <div class="card-newage h-100">
                     <div class="card-header-newage bg-dark text-white d-flex justify-content-between align-items-center">
                         <h5 class="mb-0 text-white"><i class="bi bi-people-fill me-2"></i>Student Management</h5>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-danger" id="studentCountBadge">0 Records</span>
+                            <button class="btn btn-sm btn-outline-light py-1 px-2" onclick="fetchStudents()" title="Refresh database records">
+                                <i class="bi bi-arrow-clockwise me-1"></i> Refresh
+                            </button>
+                        </div>
                     </div>
                     <div class="p-4">
                         <p class="text-muted small mb-4">Quick actions to input student data, review document packages, and process student profile changes.</p>
@@ -128,36 +134,30 @@
                             </a>
                         </div>
 
-                        <!-- Active Assigned Student Board -->
-                        <h6 class="fw-bold mb-3"><i class="bi bi-journal-album text-danger me-2"></i>Your Case Files</h6>
+                        <!-- Firestore Live Student Database Table -->
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold mb-0"><i class="bi bi-database-check text-danger me-2"></i>Firestore Student Records</h6>
+                            <button class="btn btn-sm btn-outline-danger py-0 px-2" style="font-size: 0.75rem;" onclick="fetchStudents()">
+                                <i class="bi bi-arrow-clockwise me-1"></i> Sync
+                            </button>
+                        </div>
                         <div class="table-responsive">
-                            <table class="table table-sm align-middle small">
-                                <thead>
-                                    <tr class="table-light">
-                                        <th>Student ID</th>
+                            <table class="table table-hover align-middle small">
+                                <thead class="table-dark">
+                                    <tr>
                                         <th>Name</th>
-                                        <th>Destination</th>
-                                        <th>Status</th>
+                                        <th>Email</th>
+                                        <th>Preferred Country</th>
+                                        <th>Applied Course</th>
+                                        <th>Action</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody id="studentsTableBody">
                                     <tr>
-                                        <td>#8201</td>
-                                        <td><strong>Sakib Rahman</strong></td>
-                                        <td>Canada (University of Toronto)</td>
-                                        <td><span class="badge bg-info text-dark">Offer Received</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>#8202</td>
-                                        <td><strong>Amina Chowdhury</strong></td>
-                                        <td>UK (University of Manchester)</td>
-                                        <td><span class="badge bg-warning text-dark">Visa Lodged</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>#8203</td>
-                                        <td><strong>Samiul Islam</strong></td>
-                                        <td>Australia (UNSW Sydney)</td>
-                                        <td><span class="badge bg-success">Visa Approved</span></td>
+                                        <td colspan="5" class="text-center py-4 text-muted">
+                                            <span class="spinner-border spinner-border-sm text-danger me-2" role="status" aria-hidden="true"></span>
+                                            Loading student records from Firestore...
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -280,8 +280,29 @@
         </div>
     </div>
 
+    <!-- MODAL: View Student Details -->
+    <div class="modal fade" id="studentDetailModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content text-dark border-secondary">
+                <div class="modal-header bg-dark text-white border-bottom border-danger">
+                    <h5 class="modal-title text-white" id="studentDetailModalTitle"><i class="bi bi-person-vcard me-2"></i>Student Record File</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4" id="studentDetailModalBody">
+                    <!-- Populated dynamically by viewStudentDetails() -->
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm px-4" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap 5.3 JS Bundle CDN -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Firebase Auth & Firestore Module -->
+    <script type="module" src="auth.js"></script>
 
     <!-- JS Logic -->
     <script>

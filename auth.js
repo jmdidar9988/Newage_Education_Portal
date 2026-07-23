@@ -13,6 +13,9 @@ import {
     getFirestore, 
     collection, 
     addDoc, 
+    getDocs,
+    query,
+    orderBy,
     serverTimestamp 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
@@ -40,7 +43,20 @@ try {
 // Initialize Auth and Firestore
 export const auth = getAuth(app);
 export const db = getFirestore(app);
-export { collection, addDoc, serverTimestamp };
+export { collection, addDoc, getDocs, query, orderBy, serverTimestamp };
+
+/**
+ * Utility function to escape HTML string
+ */
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
 
 /**
  * Identify user role strictly based on string matching logic
@@ -205,14 +221,12 @@ export async function saveStudentApplication(event) {
 
     const originalBtnText = submitBtn ? submitBtn.innerHTML : '<i class="bi bi-save me-2"></i> Save Student Application Data';
 
-    // 1. UI Loading state
     if (submitBtn) {
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Saving...';
     }
 
     try {
-        // 2. Gather full student application record
         const studentData = {
             entryDate: document.getElementById('entryDate')?.value || '',
             personalInfo: {
@@ -276,11 +290,9 @@ export async function saveStudentApplication(event) {
             createdAt: serverTimestamp()
         };
 
-        // 3. Write document to 'students' collection in Firestore
         const docRef = await addDoc(collection(db, "students"), studentData);
         console.log("Student Application Record Saved in Firestore with ID:", docRef.id);
 
-        // 4. UI Success Feedback
         if (alertContainer) {
             alertContainer.innerHTML = `
                 <div class="alert alert-success alert-dismissible fade show shadow-sm py-3 mb-4" role="alert">
@@ -290,14 +302,12 @@ export async function saveStudentApplication(event) {
                 </div>`;
         }
 
-        // Trigger Bootstrap Toast if active
         const toastEl = document.getElementById('saveToast');
         if (toastEl && window.bootstrap) {
             const toast = new bootstrap.Toast(toastEl);
             toast.show();
         }
 
-        // Reset form fields while preserving current date
         const savedDate = document.getElementById('entryDate')?.value;
         if (form) form.reset();
         if (savedDate && document.getElementById('entryDate')) {
@@ -325,11 +335,183 @@ export async function saveStudentApplication(event) {
 }
 
 /**
- * Expose helper functions globally for inline HTML event handlers
+ * Fetches all student records from Firestore 'students' collection and renders them dynamically
+ */
+export async function fetchStudents() {
+    const tableBody = document.getElementById('studentsTableBody');
+    const studentCountBadge = document.getElementById('studentCountBadge');
+
+    if (!tableBody) return;
+
+    // Show Loading state
+    tableBody.innerHTML = `
+        <tr>
+            <td colspan="5" class="text-center py-4 text-muted">
+                <span class="spinner-border spinner-border-sm text-danger me-2" role="status" aria-hidden="true"></span>
+                Loading student records from Firestore...
+            </td>
+        </tr>`;
+
+    try {
+        let snapshot;
+        try {
+            const q = query(collection(db, "students"), orderBy("createdAt", "desc"));
+            snapshot = await getDocs(q);
+        } catch (e) {
+            console.warn("Falling back to unordered query for students collection:", e);
+            snapshot = await getDocs(collection(db, "students"));
+        }
+
+        if (snapshot.empty) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-center py-4 text-muted">
+                        <i class="bi bi-folder-x fs-4 d-block mb-1 text-secondary"></i>
+                        No student records found in database.
+                    </td>
+                </tr>`;
+            if (studentCountBadge) studentCountBadge.innerText = '0 Records';
+            return;
+        }
+
+        if (studentCountBadge) studentCountBadge.innerText = `${snapshot.size} Records`;
+
+        let html = '';
+        window.loadedStudentsMap = {};
+
+        snapshot.forEach((doc) => {
+            const data = doc.data();
+            window.loadedStudentsMap[doc.id] = data;
+
+            const fullName = data.personalInfo?.fullName || 'N/A';
+            const email = data.personalInfo?.email || 'N/A';
+            const primaryCountry = (data.preferences?.countryChoices && data.preferences.countryChoices.length > 0) 
+                ? data.preferences.countryChoices[0] 
+                : 'N/A';
+            const primaryCourse = (data.preferences?.courseChoices && data.preferences.courseChoices.length > 0) 
+                ? data.preferences.courseChoices[0] 
+                : 'N/A';
+
+            html += `
+                <tr>
+                    <td>
+                        <div class="fw-bold text-dark">${escapeHtml(fullName)}</div>
+                        <small class="text-muted" style="font-size: 0.725rem;">Ref: ${doc.id.substring(0, 8)}</small>
+                    </td>
+                    <td class="text-muted small">${escapeHtml(email)}</td>
+                    <td>
+                        <span class="badge bg-danger px-2 py-1">${escapeHtml(primaryCountry)}</span>
+                    </td>
+                    <td class="small fw-semibold text-secondary">${escapeHtml(primaryCourse)}</td>
+                    <td>
+                        <button class="btn btn-sm btn-dark shadow-sm" onclick="viewStudentDetails('${doc.id}')">
+                            <i class="bi bi-eye me-1"></i> View Details
+                        </button>
+                    </td>
+                </tr>`;
+        });
+
+        tableBody.innerHTML = html;
+
+    } catch (error) {
+        console.error("Error fetching students from Firestore:", error);
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="5" class="text-center py-4 text-danger">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                    Failed to fetch students: ${escapeHtml(error.message || 'Database error')}
+                </td>
+            </tr>`;
+    }
+}
+
+/**
+ * Opens a modal displaying full details for a selected student
+ * @param {string} studentId 
+ */
+export function viewStudentDetails(studentId) {
+    const student = window.loadedStudentsMap ? window.loadedStudentsMap[studentId] : null;
+    if (!student) {
+        alert("Student record details unavailable.");
+        return;
+    }
+
+    const modalTitle = document.getElementById('studentDetailModalTitle');
+    const modalBody = document.getElementById('studentDetailModalBody');
+
+    if (modalTitle) modalTitle.innerText = `Record: ${student.personalInfo?.fullName || 'Student Details'}`;
+    
+    if (modalBody) {
+        modalBody.innerHTML = `
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <h6 class="fw-bold text-danger border-bottom pb-2 mb-2"><i class="bi bi-person-lines-fill me-1"></i> Personal Information</h6>
+                    <ul class="list-group list-group-flush small">
+                        <li class="list-group-item d-flex justify-content-between px-0">
+                            <span class="text-muted">Full Name:</span>
+                            <span class="fw-bold">${escapeHtml(student.personalInfo?.fullName || 'N/A')}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between px-0">
+                            <span class="text-muted">Email:</span>
+                            <span>${escapeHtml(student.personalInfo?.email || 'N/A')}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between px-0">
+                            <span class="text-muted">Contact No:</span>
+                            <span>${escapeHtml(student.personalInfo?.contactNo || 'N/A')}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between px-0">
+                            <span class="text-muted">Date of Birth:</span>
+                            <span>${escapeHtml(student.personalInfo?.dob || 'N/A')}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between px-0">
+                            <span class="text-muted">Gender:</span>
+                            <span>${escapeHtml(student.personalInfo?.gender || 'N/A')}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between px-0">
+                            <span class="text-muted">Address:</span>
+                            <span>${escapeHtml(student.personalInfo?.address || 'N/A')}</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="fw-bold text-danger border-bottom pb-2 mb-2"><i class="bi bi-compass-fill me-1"></i> Preferences & English Test</h6>
+                    <ul class="list-group list-group-flush small">
+                        <li class="list-group-item d-flex justify-content-between px-0">
+                            <span class="text-muted">Target Countries:</span>
+                            <span class="fw-bold text-danger">${escapeHtml((student.preferences?.countryChoices || []).join(', ') || 'N/A')}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between px-0">
+                            <span class="text-muted">Applied Courses:</span>
+                            <span>${escapeHtml((student.preferences?.courseChoices || []).join(', ') || 'N/A')}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between px-0">
+                            <span class="text-muted">Target Universities:</span>
+                            <span>${escapeHtml((student.preferences?.universityChoices || []).join(', ') || 'N/A')}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between px-0">
+                            <span class="text-muted">English Test:</span>
+                            <span class="badge bg-dark">${escapeHtml(student.englishProficiency?.testName || 'N/A')} (Overall: ${escapeHtml(student.englishProficiency?.overallScore || 'N/A')})</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>`;
+    }
+
+    const modalEl = document.getElementById('studentDetailModal');
+    if (modalEl && window.bootstrap) {
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+    }
+}
+
+/**
+ * Expose functions globally for inline HTML event handlers
  */
 window.handleFirebaseLogin = handleFirebaseLogin;
 window.handleFirebaseSignUp = handleFirebaseSignUp;
 window.saveStudentApplication = saveStudentApplication;
+window.fetchStudents = fetchStudents;
+window.viewStudentDetails = viewStudentDetails;
 window.updateDetectedRoleUI = updateDetectedRoleUI;
 window.setDemoCredentials = function(email) {
     const emailInput = document.getElementById('emailInput');
@@ -338,3 +520,12 @@ window.setDemoCredentials = function(email) {
         updateDetectedRoleUI();
     }
 };
+
+// Automatically fetch students if on Employee Dashboard on load
+if (typeof window !== 'undefined') {
+    window.addEventListener('DOMContentLoaded', () => {
+        if (document.getElementById('studentsTableBody')) {
+            fetchStudents();
+        }
+    });
+}
