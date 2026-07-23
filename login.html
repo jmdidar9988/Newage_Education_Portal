@@ -525,11 +525,13 @@
                 <div class="tab-content" id="authTabContent">
                     <!-- SIGN IN PANE -->
                     <div class="tab-pane fade show active" id="signin-pane" role="tabpanel" aria-labelledby="signin-tab">
-                        <form id="loginForm" onsubmit="handleLogin(event)">
+                        <form id="loginForm" onsubmit="handleFirebaseLogin(event)">
                             <div class="modal-body py-4">
                                 <h6 class="fw-bold mb-1 text-white">Welcome to Newage Portal</h6>
                                 <p class="text-white-50 small mb-3">Role is automatically identified based on your email credentials.</p>
                                 
+                                <div id="signinAlert"></div>
+
                                 <!-- Quick Demo Selector Pills -->
                                 <div class="mb-3">
                                     <label class="form-label text-white-50 small d-block mb-1">Quick Demo Accounts:</label>
@@ -571,7 +573,7 @@
                                 </div>
 
                                 <!-- Sign In Action -->
-                                <button type="submit" class="btn btn-newage-red w-100 py-2">
+                                <button type="submit" id="signinSubmitBtn" class="btn btn-newage-red w-100 py-2">
                                     Sign In & Access Portal <i class="bi bi-arrow-right-short ms-1"></i>
                                 </button>
                             </div>
@@ -580,10 +582,12 @@
 
                     <!-- SIGN UP PANE -->
                     <div class="tab-pane fade" id="signup-pane" role="tabpanel" aria-labelledby="signup-tab">
-                        <form id="signupForm" onsubmit="handleSignUp(event)">
+                        <form id="signupForm" onsubmit="handleFirebaseSignUp(event)">
                             <div class="modal-body py-4">
                                 <h6 class="fw-bold mb-1 text-white">Create Student Account</h6>
-                                <p class="text-white-50 small mb-4">Start your global education journey with Newage Education.</p>
+                                <p class="text-white-50 small mb-3">Start your global education journey with Newage Education.</p>
+
+                                <div id="signupAlert"></div>
 
                                 <div class="mb-3">
                                     <label for="signupName" class="form-label">Full Name</label>
@@ -636,7 +640,7 @@
                                     </div>
                                 </div>
 
-                                <button type="submit" class="btn btn-apply-now pulse-glow-button w-100 py-2 fw-bold">
+                                <button type="submit" id="signupSubmitBtn" class="btn btn-apply-now pulse-glow-button w-100 py-2 fw-bold">
                                     Create Free Account <i class="bi bi-check-circle-fill ms-1"></i>
                                 </button>
                             </div>
@@ -729,6 +733,9 @@
 
     <!-- Bootstrap 5.3 JS Bundle CDN -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Firebase Auth Module -->
+    <script type="module" src="auth.js"></script>
 
     <!-- JS Logic -->
     <script>
