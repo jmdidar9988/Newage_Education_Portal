@@ -528,14 +528,30 @@
                         <form id="loginForm" onsubmit="handleLogin(event)">
                             <div class="modal-body py-4">
                                 <h6 class="fw-bold mb-1 text-white">Welcome to Newage Portal</h6>
-                                <p class="text-white-50 small mb-4">Please select your administrative or student role to sign into the cloud database.</p>
+                                <p class="text-white-50 small mb-3">Role is automatically identified based on your email credentials.</p>
                                 
+                                <!-- Quick Demo Selector Pills -->
+                                <div class="mb-3">
+                                    <label class="form-label text-white-50 small d-block mb-1">Quick Demo Accounts:</label>
+                                    <div class="d-flex gap-1 flex-wrap">
+                                        <button type="button" class="btn btn-sm btn-outline-danger py-1 px-2" onclick="setDemoCredentials('ceo@newage.com')">
+                                            <i class="bi bi-shield-lock me-1"></i> CEO
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-warning py-1 px-2 text-warning" onclick="setDemoCredentials('employee@newage.com')">
+                                            <i class="bi bi-briefcase me-1"></i> Employee
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-info py-1 px-2 text-info" onclick="setDemoCredentials('student@newage.com')">
+                                            <i class="bi bi-mortarboard me-1"></i> Student
+                                        </button>
+                                    </div>
+                                </div>
+
                                 <!-- Email -->
                                 <div class="mb-3">
                                     <label for="emailInput" class="form-label">Email Address</label>
                                     <div class="input-group">
                                         <span class="input-group-text bg-dark border-secondary text-secondary"><i class="bi bi-envelope"></i></span>
-                                        <input type="email" class="form-control" id="emailInput" placeholder="name@newage.com" required value="demo@newage.com">
+                                        <input type="email" class="form-control" id="emailInput" placeholder="name@newage.com" required value="ceo@newage.com" oninput="updateDetectedRoleUI()">
                                     </div>
                                 </div>
 
@@ -548,23 +564,15 @@
                                     </div>
                                 </div>
 
-                                <!-- Role Select -->
-                                <div class="mb-4">
-                                    <label for="roleSelect" class="form-label">Sign In As</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-dark border-secondary text-secondary"><i class="bi bi-person-badge"></i></span>
-                                        <select class="form-select" id="roleSelect" required>
-                                            <option value="" disabled>Choose role...</option>
-                                            <option value="CEO" selected>CEO</option>
-                                            <option value="Employee">Employee / Counselor</option>
-                                            <option value="Student">Student</option>
-                                        </select>
-                                    </div>
+                                <!-- Auto-Identified Role Indicator -->
+                                <div class="mb-4 p-2 rounded bg-dark border border-secondary d-flex align-items-center justify-content-between">
+                                    <span class="small text-white-50">Identified Portal Role:</span>
+                                    <span id="detectedRoleBadge" class="badge bg-danger fs-6 px-3 py-1">👑 CEO Portal</span>
                                 </div>
 
                                 <!-- Sign In Action -->
                                 <button type="submit" class="btn btn-newage-red w-100 py-2">
-                                    Access Portal <i class="bi bi-arrow-right-short ms-1"></i>
+                                    Sign In & Access Portal <i class="bi bi-arrow-right-short ms-1"></i>
                                 </button>
                             </div>
                         </form>
@@ -743,15 +751,55 @@
             window.location.href = 'student.html';
         }
 
+        function getRoleFromEmail(email) {
+            if (!email) return 'Student';
+            const lower = email.toLowerCase().trim();
+            if (lower.includes('ceo') || lower.includes('admin') || lower.includes('chief') || lower.includes('boss')) {
+                return 'CEO';
+            } else if (lower.includes('employee') || lower.includes('emp') || lower.includes('counselor') || lower.includes('counsellor') || lower.includes('staff') || lower.includes('agent')) {
+                return 'Employee';
+            } else {
+                return 'Student';
+            }
+        }
+
+        function updateDetectedRoleUI() {
+            const email = document.getElementById('emailInput')?.value || '';
+            const role = getRoleFromEmail(email);
+            const badge = document.getElementById('detectedRoleBadge');
+            
+            if (badge) {
+                if (role === 'CEO') {
+                    badge.className = 'badge bg-danger fs-6 px-3 py-1';
+                    badge.innerHTML = '👑 CEO Portal';
+                } else if (role === 'Employee') {
+                    badge.className = 'badge bg-warning text-dark fs-6 px-3 py-1';
+                    badge.innerHTML = '💼 Counselor / Employee Portal';
+                } else {
+                    badge.className = 'badge bg-info text-dark fs-6 px-3 py-1';
+                    badge.innerHTML = '🎓 Student Portal';
+                }
+            }
+        }
+
+        function setDemoCredentials(email) {
+            const emailInput = document.getElementById('emailInput');
+            if (emailInput) {
+                emailInput.value = email;
+                updateDetectedRoleUI();
+            }
+        }
+
         function handleLogin(event) {
             event.preventDefault();
-            const role = document.getElementById('roleSelect').value;
+            const email = document.getElementById('emailInput').value;
+            const role = getRoleFromEmail(email);
             
             if (role === 'CEO') {
                 window.location.href = 'index.html';
             } else if (role === 'Employee') {
                 window.location.href = 'employee.html';
-            } else if (role === 'Student') {
+            } else {
                 window.location.href = 'student.html';
             }
         }
