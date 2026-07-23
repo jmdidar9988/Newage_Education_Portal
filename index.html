@@ -77,8 +77,8 @@
                 <div class="card-newage p-3">
                     <div class="d-flex align-items-center justify-content-between">
                         <div>
-                            <p class="text-muted small mb-1">Total Student Enrollments</p>
-                            <h3 class="mb-0">1,482</h3>
+                            <p class="text-muted small mb-1">Active Student Applications</p>
+                            <h3 class="mb-0 text-danger fw-bold" id="totalStudentsKpi"><span class="spinner-border spinner-border-sm" role="status"></span></h3>
                         </div>
                         <div class="fs-1 text-danger opacity-75"><i class="bi bi-people"></i></div>
                     </div>
@@ -202,6 +202,41 @@
                     </div>
                 </div>
             </div>
+        <!-- Recent Student Applications Section (Firestore Live) -->
+        <div class="card-newage mt-4 mb-4">
+            <div class="card-header-newage bg-dark text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 text-white"><i class="bi bi-people-fill me-2"></i>Recent Student Applications (Firestore Live)</h5>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-danger" id="ceoStudentCountBadge">0 Records</span>
+                    <button class="btn btn-sm btn-outline-light py-1 px-2" onclick="loadCEODashboardData()" title="Sync Firestore Database">
+                        <i class="bi bi-arrow-clockwise me-1"></i> Sync Data
+                    </button>
+                </div>
+            </div>
+            <div class="p-3">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle small">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Preferred Country</th>
+                                <th>Applied Course</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recentApplicationsTableBody">
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted">
+                                    <span class="spinner-border spinner-border-sm text-danger me-2" role="status" aria-hidden="true"></span>
+                                    Fetching recent student records from Firestore...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
     </main>
@@ -212,6 +247,30 @@
             <p class="mb-0">&copy; 2026 Newage Education. All rights reserved. | Corporate Administration Portal</p>
         </div>
     </footer>
+
+    <!-- MODAL: View Student Details -->
+    <div class="modal fade" id="studentDetailModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content text-dark border-secondary">
+                <div class="modal-header bg-dark text-white border-bottom border-danger">
+                    <h5 class="modal-title text-white" id="studentDetailModalTitle"><i class="bi bi-person-vcard me-2"></i>Student Record File</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4" id="studentDetailModalBody">
+                    <!-- Populated dynamically by viewStudentDetails() -->
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm px-4" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5.3 JS Bundle CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Firebase Auth & Firestore Module -->
+    <script type="module" src="auth.js"></script>
 
     <!-- MODAL 1: Assign Task -->
     <div class="modal fade" id="assignTaskModal" tabindex="-1" aria-labelledby="assignTaskModalLabel" aria-hidden="true">

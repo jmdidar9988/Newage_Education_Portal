@@ -335,7 +335,7 @@ export async function saveStudentApplication(event) {
 }
 
 /**
- * Fetches all student records from Firestore 'students' collection and renders them dynamically
+ * Fetches all student records from Firestore 'students' collection and renders them dynamically for Employee Portal
  */
 export async function fetchStudents() {
     const tableBody = document.getElementById('studentsTableBody');
@@ -343,7 +343,6 @@ export async function fetchStudents() {
 
     if (!tableBody) return;
 
-    // Show Loading state
     tableBody.innerHTML = `
         <tr>
             <td colspan="5" class="text-center py-4 text-muted">
@@ -377,7 +376,7 @@ export async function fetchStudents() {
         if (studentCountBadge) studentCountBadge.innerText = `${snapshot.size} Records`;
 
         let html = '';
-        window.loadedStudentsMap = {};
+        window.loadedStudentsMap = window.loadedStudentsMap || {};
 
         snapshot.forEach((doc) => {
             const data = doc.data();
@@ -422,6 +421,106 @@ export async function fetchStudents() {
                     Failed to fetch students: ${escapeHtml(error.message || 'Database error')}
                 </td>
             </tr>`;
+    }
+}
+
+/**
+ * Loads Firestore data and updates KPIs + Recent Student Applications table on CEO Dashboard
+ */
+export async function loadCEODashboardData() {
+    const kpiEl = document.getElementById('totalStudentsKpi');
+    const tableBody = document.getElementById('recentApplicationsTableBody');
+    const badgeEl = document.getElementById('ceoStudentCountBadge');
+
+    if (tableBody) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center py-4 text-muted">
+                    <span class="spinner-border spinner-border-sm text-danger me-2" role="status" aria-hidden="true"></span>
+                    Fetching recent student records from Firestore...
+                </td>
+            </tr>`;
+    }
+
+    try {
+        let snapshot;
+        try {
+            const q = query(collection(db, "students"), orderBy("createdAt", "desc"));
+            snapshot = await getDocs(q);
+        } catch (e) {
+            console.warn("Falling back to unordered query for CEO Dashboard:", e);
+            snapshot = await getDocs(collection(db, "students"));
+        }
+
+        const count = snapshot.size;
+
+        if (kpiEl) kpiEl.innerText = count.toLocaleString();
+        if (badgeEl) badgeEl.innerText = `${count} Records`;
+
+        if (!tableBody) return;
+
+        if (snapshot.empty) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center py-4 text-muted">
+                        <i class="bi bi-inbox fs-4 d-block mb-1 text-secondary"></i>
+                        No student application records found in database.
+                    </td>
+                </tr>`;
+            return;
+        }
+
+        let html = '';
+        window.loadedStudentsMap = window.loadedStudentsMap || {};
+
+        snapshot.forEach((doc) => {
+            const data = doc.data();
+            window.loadedStudentsMap[doc.id] = data;
+
+            const fullName = data.personalInfo?.fullName || 'N/A';
+            const email = data.personalInfo?.email || 'N/A';
+            const phone = data.personalInfo?.contactNo || 'N/A';
+            const primaryCountry = (data.preferences?.countryChoices && data.preferences.countryChoices.length > 0)
+                ? data.preferences.countryChoices[0]
+                : 'N/A';
+            const primaryCourse = (data.preferences?.courseChoices && data.preferences.courseChoices.length > 0)
+                ? data.preferences.courseChoices[0]
+                : 'N/A';
+
+            html += `
+                <tr>
+                    <td>
+                        <div class="fw-bold text-dark">${escapeHtml(fullName)}</div>
+                        <small class="text-muted" style="font-size: 0.725rem;">ID: ${doc.id.substring(0, 8)}</small>
+                    </td>
+                    <td class="text-muted small">${escapeHtml(email)}</td>
+                    <td class="small">${escapeHtml(phone)}</td>
+                    <td>
+                        <span class="badge bg-danger px-2 py-1">${escapeHtml(primaryCountry)}</span>
+                    </td>
+                    <td class="small fw-semibold text-secondary">${escapeHtml(primaryCourse)}</td>
+                    <td>
+                        <button class="btn btn-sm btn-dark shadow-sm" onclick="viewStudentDetails('${doc.id}')">
+                            <i class="bi bi-person-lines-fill me-1"></i> View Profile
+                        </button>
+                    </td>
+                </tr>`;
+        });
+
+        tableBody.innerHTML = html;
+
+    } catch (error) {
+        console.error("Error loading CEO Dashboard data:", error);
+        if (kpiEl) kpiEl.innerText = '0';
+        if (tableBody) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center py-4 text-danger">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                        Failed to load applications: ${escapeHtml(error.message || 'Database error')}
+                    </td>
+                </tr>`;
+        }
     }
 }
 
@@ -511,6 +610,7 @@ window.handleFirebaseLogin = handleFirebaseLogin;
 window.handleFirebaseSignUp = handleFirebaseSignUp;
 window.saveStudentApplication = saveStudentApplication;
 window.fetchStudents = fetchStudents;
+window.loadCEODashboardData = loadCEODashboardData;
 window.viewStudentDetails = viewStudentDetails;
 window.updateDetectedRoleUI = updateDetectedRoleUI;
 window.setDemoCredentials = function(email) {
@@ -521,11 +621,14 @@ window.setDemoCredentials = function(email) {
     }
 };
 
-// Automatically fetch students if on Employee Dashboard on load
+// Automatically fetch data depending on active dashboard
 if (typeof window !== 'undefined') {
     window.addEventListener('DOMContentLoaded', () => {
         if (document.getElementById('studentsTableBody')) {
             fetchStudents();
+        }
+        if (document.getElementById('recentApplicationsTableBody') || document.getElementById('totalStudentsKpi')) {
+            loadCEODashboardData();
         }
     });
 }
