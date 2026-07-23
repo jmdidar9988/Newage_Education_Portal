@@ -404,3 +404,265 @@ h1, h2, h3, h4, h5, h6 {
     font-size: 0.85rem;
     margin-top: auto;
 }
+
+/* Landing Page Hero and Custom Styling */
+.navbar-landing {
+    background: #ffffff;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    padding: 0.9rem 2rem;
+    transition: var(--ne-transition);
+}
+
+.navbar-landing .nav-link {
+    color: #475569;
+    font-weight: 500;
+    font-size: 0.95rem;
+    margin: 0 0.6rem;
+    transition: var(--ne-transition);
+}
+
+.navbar-landing .nav-link:hover,
+.navbar-landing .nav-link.active {
+    color: var(--ne-accent-red);
+}
+
+/* Custom logo box matching NWC style exactly */
+.logo-box-nwc {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: 'Outfit', 'Arial Black', 'Impact', sans-serif;
+    line-height: 1;
+    border: 1px solid rgba(0,0,0,0.1);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.logo-top-red {
+    background: #dc2626;
+    color: #ffffff;
+    font-size: 1.5rem;
+    font-weight: 800;
+    padding: 5px 12px;
+    letter-spacing: 1px;
+    text-align: center;
+    width: 100%;
+}
+
+.logo-bottom-black {
+    background: #111827;
+    color: #ffffff;
+    font-size: 0.55rem;
+    font-weight: 700;
+    padding: 3px 6px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    text-align: center;
+    width: 100%;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.hero-section {
+    position: relative;
+    background-image: url('https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=1920&q=80');
+    background-size: cover;
+    background-position: center;
+    min-height: 75vh;
+    display: flex;
+    align-items: center;
+    padding: 5rem 0;
+}
+
+.hero-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(180deg, rgba(15, 15, 18, 0.6) 0%, rgba(15, 15, 18, 0.8) 100%);
+    z-index: 1;
+}
+
+.hero-container {
+    position: relative;
+    z-index: 2;
+}
+
+.hero-subtitle {
+    font-family: 'Outfit', sans-serif;
+    color: #ffffff;
+    font-size: 1.25rem;
+    font-weight: 500;
+    margin-bottom: 1.5rem;
+}
+
+.hero-title {
+    font-size: 5rem;
+    font-weight: 800;
+    color: #ffffff;
+    line-height: 1.05;
+    margin-bottom: 1.8rem;
+    letter-spacing: -1px;
+}
+
+.hero-description {
+    color: #f1f5f9;
+    font-size: 1.15rem;
+    line-height: 1.6;
+    margin-bottom: 2.5rem;
+    max-width: 680px;
+}
+
+.hero-btn-group .btn {
+    padding: 0.9rem 2.2rem;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: var(--ne-transition);
+}
+
+.hero-btn-white {
+    background: #ffffff;
+    color: #1e293b;
+    border: none;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+}
+
+.hero-btn-white:hover {
+    background: #f8fafc;
+    color: #0f172a;
+    transform: translateY(-2px);
+}
+
+.hero-btn-outline {
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+.hero-btn-outline:hover {
+    background: rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+    border-color: #ffffff;
+    transform: translateY(-2px);
+}
+
+/* Floating WhatsApp Widget (Pill shape to match screenshot) */
+.floating-whatsapp-pill {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    background-color: #25d366;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: 30px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    cursor: pointer;
+    z-index: 1000;
+    transition: var(--ne-transition);
+}
+
+.floating-whatsapp-pill:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4);
+}
+
+/* WhatsApp Chat Box popup */
+.whatsapp-chat-box {
+    position: fixed;
+    bottom: 85px;
+    right: 25px;
+    width: 320px;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    overflow: hidden;
+    display: none;
+    z-index: 1000;
+    animation: slideInUp 0.3s ease forwards;
+}
+
+.whatsapp-chat-header {
+    background-color: #075e54;
+    color: white;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+}
+
+.whatsapp-chat-body {
+    background-color: #ece5dd;
+    padding: 1rem;
+    height: 200px;
+    overflow-y: auto;
+    font-size: 0.85rem;
+}
+
+.whatsapp-chat-input {
+    display: flex;
+    padding: 0.5rem;
+    background: #f0f0f0;
+    border-top: 1px solid #e0e0e0;
+}
+
+.whatsapp-chat-input input {
+    flex: 1;
+    border: none;
+    border-radius: 20px;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+}
+
+.whatsapp-chat-input input:focus {
+    outline: none;
+}
+
+.whatsapp-chat-input button {
+    background: none;
+    border: none;
+    color: #075e54;
+    margin-left: 0.5rem;
+    font-size: 1.2rem;
+}
+
+/* Modal Login Override */
+.modal-login-card {
+    background: var(--ne-gradient-dark);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 1.5rem;
+}
+
+.modal-login-card .form-control,
+.modal-login-card .form-select {
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    border-radius: 8px;
+    transition: var(--ne-transition);
+}
+
+.modal-login-card .form-control:focus,
+.modal-login-card .form-select:focus {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-color: var(--ne-accent-red);
+    box-shadow: var(--ne-glow-red);
+    color: #ffffff;
+}
+
+.modal-login-card label {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.85rem;
+}
+
+.modal-login-card select option {
+    background-color: var(--ne-card-dark);
+    color: white;
+}
