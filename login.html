@@ -176,10 +176,15 @@
                     </li>
                 </ul>
 
-                <!-- Apply Now (Sign In Button) -->
-                <button class="btn btn-apply-now pulse-glow-button" data-bs-toggle="modal" data-bs-target="#loginModal">
-                    Apply Now
-                </button>
+                <!-- Sign Up / Sign In Options -->
+                <div class="d-flex align-items-center gap-2 ms-lg-3 mt-2 mt-lg-0">
+                    <button class="btn btn-outline-light px-3 py-2 fw-semibold rounded-pill" data-bs-toggle="modal" data-bs-target="#loginModal" onclick="openAuthModal('signin')">
+                        <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
+                    </button>
+                    <button class="btn btn-apply-now pulse-glow-button px-3 py-2 fw-semibold rounded-pill" data-bs-toggle="modal" data-bs-target="#loginModal" onclick="openAuthModal('signup')">
+                        <i class="bi bi-person-plus-fill me-1"></i> Sign Up
+                    </button>
+                </div>
             </div>
         </div>
     </nav>
@@ -497,59 +502,139 @@
         </div>
     </footer>
 
-    <!-- MODAL 1: Login Modal (Role-Based Login) -->
+    <!-- MODAL 1: Login & Sign Up Modal -->
     <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content modal-login-card text-white border-secondary">
-                <div class="modal-header border-bottom-0 pb-0">
-                    <h5 class="modal-title fw-bold" id="loginModalLabel">
-                        <span>🎓</span> Newage Education Portal
-                    </h5>
+                <div class="modal-header border-bottom border-secondary pb-3 d-flex align-items-center justify-content-between">
+                    <ul class="nav nav-pills w-100 me-2" id="authTab" role="tablist">
+                        <li class="nav-item flex-fill me-1" role="presentation">
+                            <button class="nav-link active text-white fw-bold w-100 py-2 rounded-pill" id="signin-tab" data-bs-toggle="tab" data-bs-target="#signin-pane" type="button" role="tab" aria-controls="signin-pane" aria-selected="true">
+                                <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
+                            </button>
+                        </li>
+                        <li class="nav-item flex-fill ms-1" role="presentation">
+                            <button class="nav-link text-white fw-bold w-100 py-2 rounded-pill" id="signup-tab" data-bs-toggle="tab" data-bs-target="#signup-pane" type="button" role="tab" aria-controls="signup-pane" aria-selected="false">
+                                <i class="bi bi-person-plus-fill me-1"></i> Sign Up
+                            </button>
+                        </li>
+                    </ul>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                
-                <form id="loginForm" onsubmit="handleLogin(event)">
-                    <div class="modal-body py-4">
-                        <p class="text-white-50 small mb-4">Please select your administrative or student role to sign into the cloud database.</p>
-                        
-                        <!-- Email -->
-                        <div class="mb-3">
-                            <label for="emailInput" class="form-label">Email Address</label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-dark border-secondary text-secondary"><i class="bi bi-envelope"></i></span>
-                                <input type="email" class="form-control" id="emailInput" placeholder="name@newage.com" required value="demo@newage.com">
-                            </div>
-                        </div>
 
-                        <!-- Password -->
-                        <div class="mb-3">
-                            <label for="passwordInput" class="form-label">Password</label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-dark border-secondary text-secondary"><i class="bi bi-lock"></i></span>
-                                <input type="password" class="form-control" id="passwordInput" placeholder="••••••••" required value="password123">
-                            </div>
-                        </div>
+                <div class="tab-content" id="authTabContent">
+                    <!-- SIGN IN PANE -->
+                    <div class="tab-pane fade show active" id="signin-pane" role="tabpanel" aria-labelledby="signin-tab">
+                        <form id="loginForm" onsubmit="handleLogin(event)">
+                            <div class="modal-body py-4">
+                                <h6 class="fw-bold mb-1 text-white">Welcome to Newage Portal</h6>
+                                <p class="text-white-50 small mb-4">Please select your administrative or student role to sign into the cloud database.</p>
+                                
+                                <!-- Email -->
+                                <div class="mb-3">
+                                    <label for="emailInput" class="form-label">Email Address</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-dark border-secondary text-secondary"><i class="bi bi-envelope"></i></span>
+                                        <input type="email" class="form-control" id="emailInput" placeholder="name@newage.com" required value="demo@newage.com">
+                                    </div>
+                                </div>
 
-                        <!-- Role Select -->
-                        <div class="mb-4">
-                            <label for="roleSelect" class="form-label">Sign In As</label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-dark border-secondary text-secondary"><i class="bi bi-person-badge"></i></span>
-                                <select class="form-select" id="roleSelect" required>
-                                    <option value="" disabled>Choose role...</option>
-                                    <option value="CEO" selected>CEO</option>
-                                    <option value="Employee">Employee / Counselor</option>
-                                    <option value="Student">Student</option>
-                                </select>
-                            </div>
-                        </div>
+                                <!-- Password -->
+                                <div class="mb-3">
+                                    <label for="passwordInput" class="form-label">Password</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-dark border-secondary text-secondary"><i class="bi bi-lock"></i></span>
+                                        <input type="password" class="form-control" id="passwordInput" placeholder="••••••••" required value="password123">
+                                    </div>
+                                </div>
 
-                        <!-- Sign In Action -->
-                        <button type="submit" class="btn btn-newage-red w-100 py-2">
-                            Access Portal <i class="bi bi-arrow-right-short ms-1"></i>
-                        </button>
+                                <!-- Role Select -->
+                                <div class="mb-4">
+                                    <label for="roleSelect" class="form-label">Sign In As</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-dark border-secondary text-secondary"><i class="bi bi-person-badge"></i></span>
+                                        <select class="form-select" id="roleSelect" required>
+                                            <option value="" disabled>Choose role...</option>
+                                            <option value="CEO" selected>CEO</option>
+                                            <option value="Employee">Employee / Counselor</option>
+                                            <option value="Student">Student</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Sign In Action -->
+                                <button type="submit" class="btn btn-newage-red w-100 py-2">
+                                    Access Portal <i class="bi bi-arrow-right-short ms-1"></i>
+                                </button>
+                            </div>
+                        </form>
                     </div>
-                </form>
+
+                    <!-- SIGN UP PANE -->
+                    <div class="tab-pane fade" id="signup-pane" role="tabpanel" aria-labelledby="signup-tab">
+                        <form id="signupForm" onsubmit="handleSignUp(event)">
+                            <div class="modal-body py-4">
+                                <h6 class="fw-bold mb-1 text-white">Create Student Account</h6>
+                                <p class="text-white-50 small mb-4">Start your global education journey with Newage Education.</p>
+
+                                <div class="mb-3">
+                                    <label for="signupName" class="form-label">Full Name</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-dark border-secondary text-secondary"><i class="bi bi-person"></i></span>
+                                        <input type="text" class="form-control" id="signupName" placeholder="e.g. Ayesha Rahman" required>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="signupEmail" class="form-label">Email Address</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-dark border-secondary text-secondary"><i class="bi bi-envelope"></i></span>
+                                        <input type="email" class="form-control" id="signupEmail" placeholder="ayesha@example.com" required>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="signupPhone" class="form-label">Phone / WhatsApp Number</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-dark border-secondary text-secondary"><i class="bi bi-telephone"></i></span>
+                                        <input type="tel" class="form-control" id="signupPhone" placeholder="+880 1712 345678" required>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="signupCountry" class="form-label">Preferred Study Destination</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-dark border-secondary text-secondary"><i class="bi bi-globe"></i></span>
+                                        <select class="form-select" id="signupCountry" required>
+                                            <option value="" disabled selected>Select country...</option>
+                                            <option value="Canada">Canada</option>
+                                            <option value="United Kingdom">United Kingdom</option>
+                                            <option value="Australia">Australia</option>
+                                            <option value="United States">United States</option>
+                                            <option value="New Zealand">New Zealand</option>
+                                            <option value="Hungary">Hungary</option>
+                                            <option value="Malta">Malta</option>
+                                            <option value="Cyprus">Cyprus</option>
+                                            <option value="Malaysia">Malaysia</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label for="signupPassword" class="form-label">Create Password</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-dark border-secondary text-secondary"><i class="bi bi-lock"></i></span>
+                                        <input type="password" class="form-control" id="signupPassword" placeholder="Minimum 6 characters" required minlength="6">
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn btn-apply-now pulse-glow-button w-100 py-2 fw-bold">
+                                    Create Free Account <i class="bi bi-check-circle-fill ms-1"></i>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -639,6 +724,25 @@
 
     <!-- JS Logic -->
     <script>
+        function openAuthModal(mode) {
+            const signinTabBtn = document.getElementById('signin-tab');
+            const signupTabBtn = document.getElementById('signup-tab');
+            if (mode === 'signup' && signupTabBtn) {
+                const tab = new bootstrap.Tab(signupTabBtn);
+                tab.show();
+            } else if (signinTabBtn) {
+                const tab = new bootstrap.Tab(signinTabBtn);
+                tab.show();
+            }
+        }
+
+        function handleSignUp(event) {
+            event.preventDefault();
+            const name = document.getElementById('signupName').value || 'Student';
+            alert(`Account created successfully for ${name}! Redirecting to Student Dashboard...`);
+            window.location.href = 'student.html';
+        }
+
         function handleLogin(event) {
             event.preventDefault();
             const role = document.getElementById('roleSelect').value;
