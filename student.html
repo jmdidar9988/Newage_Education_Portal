@@ -467,33 +467,12 @@
             return email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
         }
 
-        // ── Helper: resolve applications array for logged-in student ────────
+        // ── Helper: resolve applications array strictly from studentData.applications ──
         function getStudentApplications(student) {
-            if (!student) return [];
-            if (Array.isArray(student.applications) && student.applications.length > 0) {
-                return student.applications;
+            if (!student || !Array.isArray(student.applications)) {
+                return [];
             }
-            const apps = [];
-            const courses = student.preferences?.courseChoices || [];
-            const countries = student.preferences?.countryChoices || [];
-            const unis = student.preferences?.universityChoices || [];
-            const defaultStatus = student.status || 'Pending';
-
-            const count = Math.max(courses.length, countries.length, unis.length);
-            if (count > 0) {
-                for (let i = 0; i < count; i++) {
-                    apps.push({
-                        id: `app_legacy_${i + 1}`,
-                        country: countries[i] || countries[0] || 'N/A',
-                        university: unis[i] || unis[0] || 'Target University',
-                        course: courses[i] || courses[0] || 'General Program',
-                        intake: 'September 2026',
-                        course_link: '',
-                        status: defaultStatus
-                    });
-                }
-            }
-            return apps;
+            return student.applications;
         }
 
         // ── Populate DOM with student record ───────────────────────────────
@@ -528,8 +507,13 @@
             const apps = getStudentApplications(data);
             const statusBadgeEl = document.getElementById('profileStatusBadge');
             if (statusBadgeEl) {
-                statusBadgeEl.className = 'badge bg-dark px-2 py-1';
-                statusBadgeEl.innerHTML = `<i class="bi bi-mortarboard me-1"></i>${apps.length} Active`;
+                if (apps.length > 0) {
+                    statusBadgeEl.className = 'badge bg-success px-2 py-1';
+                    statusBadgeEl.innerHTML = `<i class="bi bi-mortarboard me-1"></i>${apps.length} Active`;
+                } else {
+                    statusBadgeEl.className = 'badge bg-secondary px-2 py-1';
+                    statusBadgeEl.innerHTML = `<i class="bi bi-clock-history me-1"></i>Awaiting Updates`;
+                }
             }
 
             // Top Banner: Render "My University Applications" Tracker Card
@@ -539,8 +523,12 @@
                 if (apps.length === 0) {
                     rowsHTML = `
                         <tr>
-                            <td colspan="6" class="text-center text-muted py-3">
-                                No university applications registered yet.
+                            <td colspan="6" class="text-center py-4 text-muted">
+                                <div class="py-3">
+                                    <i class="bi bi-hourglass-split text-warning fs-2 d-block mb-2"></i>
+                                    <h6 class="fw-bold text-dark mb-1">No applications have been processed yet.</h6>
+                                    <span class="small text-muted">Please wait for your consultant to update your profile with university applications.</span>
+                                </div>
                             </td>
                         </tr>`;
                 } else {
