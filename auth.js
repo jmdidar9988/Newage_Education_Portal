@@ -713,7 +713,6 @@ export async function loadCEODashboardData() {
         }
     }
 }
-}
 
 /**
  * Safely extracts a document URL from studentData by checking multiple possible field locations.
