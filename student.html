@@ -486,8 +486,9 @@
             const edu = data.educationalProfile || {};
             const eng = data.englishProficiency || {};
 
-            const fullName = p.fullName || nameFromEmail(p.email);
-            const initials = getInitials(fullName);
+            // 🎯 Target actual student full name from Firestore document (data.fullName or data.personalInfo.fullName)
+            const actualName = data.fullName || p.fullName || data.name || data.studentName || nameFromEmail(p.email || data.email || auth.currentUser?.email);
+            const initials = getInitials(actualName);
 
             // Navbar
             const shortId = docId ? docId.substring(0, 6).toUpperCase() : '——';
@@ -497,8 +498,8 @@
             // Profile card
             const avatar = document.getElementById('profileAvatar');
             if (avatar) avatar.textContent = initials;
-            setText('profileName', fullName);
-            setText('profileEmail', p.email || auth.currentUser?.email || '');
+            setText('profileName', actualName);
+            setText('profileEmail', p.email || data.email || auth.currentUser?.email || '');
 
             // 🚫 Hide Application Form navigation link & prompts since application data exists
             const navAppFormLink = document.getElementById('nav-application-form');
@@ -616,9 +617,9 @@
             }
 
             // View Info Modal
-            setText('info-fullName', p.fullName);
+            setText('info-fullName', actualName);
             setText('info-dob', p.dob);
-            setText('info-email', p.email);
+            setText('info-email', p.email || data.email || auth.currentUser?.email || '');
             setText('info-contact', p.contactNo);
             setText('info-gender', p.gender);
             setText('info-postCode', p.postCode);
@@ -730,18 +731,25 @@
 
             // Try to find matching Firestore student record by email
             try {
-                const q = query(
+                let snap = await getDocs(query(
                     collection(db, 'students'),
                     where('personalInfo.email', '==', user.email)
-                );
-                const snap = await getDocs(q);
+                ));
+
+                if (snap.empty) {
+                    snap = await getDocs(query(
+                        collection(db, 'students'),
+                        where('email', '==', user.email)
+                    ));
+                }
 
                 if (!snap.empty) {
-                    // ✅ Record found — populate everything
-                    studentDocId = snap.docs[0].id;
-                    populateProfile(snap.docs[0].data(), studentDocId);
+                    // ✅ Record found — populate everything with Firestore data
+                    const docSnap = snap.docs[0];
+                    studentDocId = docSnap.id;
+                    populateProfile(docSnap.data(), studentDocId);
                 } else {
-                    // 🆕 New student — no application yet
+                    // 🆕 New student — no application in Firestore yet
                     showNewStudentState(user.email);
                 }
             } catch (e) {
