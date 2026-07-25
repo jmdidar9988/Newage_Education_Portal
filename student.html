@@ -757,17 +757,20 @@
 
                 if (!querySnapshot.empty) {
                     // ✅ Student data found — extract document data and populate DOM
-                    const docSnap = querySnapshot.docs[0];
-                    studentDocId = docSnap.id;
-                    const studentData = docSnap.data();
+                    const studentDoc = querySnapshot.docs[0];
+                    studentDocId = studentDoc.id;
+                    const studentData = studentDoc.data();
+
+                    console.log("Successfully fetched student data: ", studentData);
 
                     populateProfile(studentData, studentDocId);
                 } else {
                     // 🆕 Query is empty — fallback to email-parsed name & show Submit Application Form UI
+                    console.log("No student data found for email: ", user.email);
                     showNewStudentState(user.email);
                 }
-            } catch (e) {
-                console.warn('Could not resolve student Firestore doc by email:', e);
+            } catch (error) {
+                console.error("Error fetching data by email:", error);
                 showNewStudentState(user.email);
             }
         });
