@@ -56,30 +56,31 @@
         <!-- Top Alert / Success Banner -->
         <div id="topBannerArea" class="mb-4"></div>
 
-        <div class="row g-4">
-            
-            <!-- LEFT COLUMN: Profile, Actions & Recommendations -->
-            <div class="col-lg-4">
-                
-                <!-- My Profile Card -->
-                <div class="card-newage mb-4">
-                    <div class="card-header-newage bg-dark text-white text-center py-4">
-                        <div class="position-relative d-inline-block mb-2">
-                            <div class="bg-danger text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 70px; height: 70px; font-size: 2rem;" id="profileAvatar">
-                                <span class="spinner-border spinner-border-sm"></span>
-                            </div>
+        <!-- 1st SECTION: "My Information" / Profile Details Section -->
+        <section id="section-my-information" class="card-newage border-dark shadow-sm mb-4">
+            <div class="card-header-newage bg-dark text-white d-flex align-items-center justify-content-between py-3">
+                <h5 class="mb-0 text-white fw-bold">
+                    <i class="bi bi-person-badge-fill text-danger me-2"></i>My Information &amp; Profile Details
+                </h5>
+                <span class="badge bg-danger px-2 py-1">Candidate Profile</span>
+            </div>
+            <div class="p-4">
+                <div class="row align-items-center g-4">
+                    <div class="col-md-3 text-center border-end">
+                        <div class="bg-danger text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2 shadow-sm" style="width: 80px; height: 80px; font-size: 2.2rem;" id="profileAvatar">
+                            <span class="spinner-border spinner-border-sm"></span>
                         </div>
-                        <h5 class="mb-1 text-white fw-bold" id="profileName">Loading...</h5>
-                        <p class="text-white-50 small mb-0"><i class="bi bi-envelope me-1"></i> <span id="profileEmail">...</span></p>
+                        <h5 class="mb-1 fw-bold text-dark" id="profileName">Loading...</h5>
+                        <p class="text-muted small mb-0"><i class="bi bi-envelope me-1"></i> <span id="profileEmail">...</span></p>
                     </div>
-                    <div class="p-3">
-                        <ul class="list-group list-group-flush small mb-3">
+                    <div class="col-md-5">
+                        <ul class="list-group list-group-flush small">
                             <li class="list-group-item d-flex justify-content-between px-0">
                                 <span class="text-muted">Application Status:</span>
                                 <span id="profileStatusBadge" class="badge bg-warning text-dark px-2 py-1"><i class="bi bi-clock-history me-1"></i>Pending</span>
                             </li>
                             <li class="list-group-item d-flex justify-content-between px-0">
-                                <span class="text-muted">Qualifications:</span>
+                                <span class="text-muted">Highest Qualifications:</span>
                                 <strong id="profileQualification">—</strong>
                             </li>
                             <li class="list-group-item d-flex justify-content-between px-0">
@@ -87,213 +88,199 @@
                                 <strong class="text-danger" id="profileCounselor">—</strong>
                             </li>
                         </ul>
-                        <div class="d-grid gap-2">
-                            <button class="btn btn-newage-dark btn-sm" data-bs-toggle="modal" data-bs-target="#viewInfoModal">
-                                <i class="bi bi-file-person me-1"></i> View My Information
-                            </button>
-                            <button class="btn btn-newage-outline btn-sm position-relative" id="studentChatBtn" data-bs-toggle="modal" data-bs-target="#messageCounselorModal" onclick="markStudentMessagesAsRead()">
-                                <i class="bi bi-chat-left-text-fill me-1 text-danger"></i> Chat
-                                <span id="studentChatUnreadBadge" class="badge bg-danger rounded-pill d-none ms-1">New</span>
-                            </button>
-                        </div>
                     </div>
-                </div>
-
-                <!-- Info Correction Trigger -->
-                <div class="card-newage p-3 mb-4 text-center">
-                    <h6 class="fw-bold mb-2">Found details mismatch?</h6>
-                    <p class="text-muted small mb-3">Submit correction request for locked information directly to admin staff.</p>
-                    <button class="btn btn-warning btn-sm w-100 fw-semibold" data-bs-toggle="modal" data-bs-target="#requestUpdateModal">
-                        <i class="bi bi-pencil-square me-1"></i> Request Info Update
-                    </button>
-                </div>
-
-                <!-- Navigation Switcher Button (Upload Documents Trigger) -->
-                <div class="card-newage p-3 mb-4 border-danger" id="uploadDocsToggleCard">
-                    <button class="btn btn-newage-red w-100 py-3 pulse-glow-button" id="uploadDocsToggleBtn" onclick="toggleRightWorkspace(true)">
-                        <i class="bi bi-folder-symlink fs-5 me-2"></i> 📂 Upload Documents
-                    </button>
-                </div>
-
-
-            </div>
-
-            <!-- RIGHT COLUMN: Dynamic Workspace -->
-            <div class="col-lg-8">
-                
-                <!-- STATE A: Welcome Message (Default) -->
-                <div class="card-newage h-100 p-5 text-center d-flex flex-column justify-content-center align-items-center" id="welcomeWorkspace">
-                    <div class="fs-1 text-danger opacity-50 mb-4 animate-bounce">
-                        <i class="bi bi-cloud-arrow-up-fill" style="font-size: 4.5rem;"></i>
-                    </div>
-                    <h3 class="fw-bold mb-2">Student Digital Document Cabinet</h3>
-                    <p class="text-muted text-center max-width-500 mb-4">
-                        Submit and manage all your certificates, transcripts, recommendation letters, and financial credentials required for visa and university applications.
-                    </p>
-                    <div class="bg-light p-3 rounded mb-4 text-start border" style="max-width: 480px;">
-                        <h6 class="fw-bold mb-2"><i class="bi bi-info-circle-fill text-danger me-2"></i>Getting Started Instructions:</h6>
-                        <ol class="small text-muted mb-0 ps-3">
-                            <li class="mb-1">Click the <strong class="text-danger">"📂 Upload Documents"</strong> button in the left sidebar.</li>
-                            <li class="mb-1">Select the correct files corresponding to each requirement.</li>
-                            <li class="mb-1">Confirm that file statuses turn to green checkboxes <i class="bi bi-check-circle-fill text-success"></i>.</li>
-                            <li>Click "Submit All Documents" at the bottom to notify your counselor.</li>
-                        </ol>
-                    </div>
-                    <button class="btn btn-newage-red px-4 py-2" onclick="toggleRightWorkspace(true)">
-                        <i class="bi bi-folder-open me-2"></i> Open Document Cabinet
-                    </button>
-                </div>
-
-                <!-- STATE B: Document Upload Checklist (Toggle active) -->
-                <div class="card-newage h-100 d-none" id="uploadWorkspace">
-                    <div class="card-header-newage bg-dark text-white d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0 text-white"><i class="bi bi-folder2-open me-2"></i>Document Verification Checklist</h5>
-                        <button class="btn btn-sm btn-outline-light border-0" onclick="toggleRightWorkspace(false)">
-                            <i class="bi bi-x-lg"></i> Close Cabinet
+                    <div class="col-md-4 d-flex flex-column gap-2 border-start ps-md-4">
+                        <button class="btn btn-newage-dark btn-sm py-2" data-bs-toggle="modal" data-bs-target="#viewInfoModal">
+                            <i class="bi bi-file-person me-1"></i> View Full Information Record
+                        </button>
+                        <button class="btn btn-newage-outline btn-sm py-2 position-relative" id="studentChatBtn" data-bs-toggle="modal" data-bs-target="#messageCounselorModal" onclick="markStudentMessagesAsRead()">
+                            <i class="bi bi-chat-left-text-fill me-1 text-danger"></i> Chat Support
+                            <span id="studentChatUnreadBadge" class="badge bg-danger rounded-pill d-none ms-1">New</span>
+                        </button>
+                        <button class="btn btn-outline-warning btn-sm py-2 fw-semibold" data-bs-toggle="modal" data-bs-target="#requestUpdateModal">
+                            <i class="bi bi-pencil-square me-1"></i> Request Info Update
                         </button>
                     </div>
-                    <div class="p-4">
-                        <p class="text-muted small mb-3">Upload clear PDF scans or image files of the required documents below.</p>
-                        
-                        <div class="table-responsive" style="max-height: 480px; overflow-y: auto;">
-                            <table class="table table-sm align-middle">
-                                <thead class="table-light sticky-top">
-                                    <tr>
-                                        <th>Document Type</th>
-                                        <th style="width: 50%;">Select File</th>
-                                        <th class="text-center" style="width: 15%;">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Row 1 -->
-                                    <tr class="doc-upload-row" data-doc-type="ssc_certificate">
-                                        <td class="small fw-semibold">SSC Certificate</td>
-                                        <td>
-                                            <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
-                                        </td>
-                                        <td class="text-center status-col">
-                                            <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
-                                        </td>
-                                    </tr>
-                                    <!-- Row 2 -->
-                                    <tr class="doc-upload-row" data-doc-type="ssc_marksheet">
-                                        <td class="small fw-semibold">SSC Marksheet</td>
-                                        <td>
-                                            <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
-                                        </td>
-                                        <td class="text-center status-col">
-                                            <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
-                                        </td>
-                                    </tr>
-                                    <!-- Row 3 -->
-                                    <tr class="doc-upload-row" data-doc-type="hsc_certificate">
-                                        <td class="small fw-semibold">HSC Certificate</td>
-                                        <td>
-                                            <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
-                                        </td>
-                                        <td class="text-center status-col">
-                                            <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
-                                        </td>
-                                    </tr>
-                                    <!-- Row 4 -->
-                                    <tr class="doc-upload-row" data-doc-type="hsc_marksheet">
-                                        <td class="small fw-semibold">HSC Marksheet</td>
-                                        <td>
-                                            <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
-                                        </td>
-                                        <td class="text-center status-col">
-                                            <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
-                                        </td>
-                                    </tr>
-                                    <!-- Row 5 -->
-                                    <tr class="doc-upload-row" data-doc-type="recommendation_letter">
-                                        <td class="small fw-semibold">Recommendation Letter (2 Copies)</td>
-                                        <td>
-                                            <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
-                                        </td>
-                                        <td class="text-center status-col">
-                                            <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
-                                        </td>
-                                    </tr>
-                                    <!-- Row 6 -->
-                                    <tr class="doc-upload-row" data-doc-type="passport">
-                                        <td class="small fw-semibold">Passport</td>
-                                        <td>
-                                            <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
-                                        </td>
-                                        <td class="text-center status-col">
-                                            <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
-                                        </td>
-                                    </tr>
-                                    <!-- Row 7 -->
-                                    <tr class="doc-upload-row" data-doc-type="student_nid">
-                                        <td class="small fw-semibold">Student NID</td>
-                                        <td>
-                                            <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
-                                        </td>
-                                        <td class="text-center status-col">
-                                            <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
-                                        </td>
-                                    </tr>
-                                    <!-- Row 8 -->
-                                    <tr class="doc-upload-row" data-doc-type="cv">
-                                        <td class="small fw-semibold">CV</td>
-                                        <td>
-                                            <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
-                                        </td>
-                                        <td class="text-center status-col">
-                                            <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
-                                        </td>
-                                    </tr>
-                                    <!-- Row 9 -->
-                                    <tr class="doc-upload-row" data-doc-type="sop">
-                                        <td class="small fw-semibold">SOP</td>
-                                        <td>
-                                            <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
-                                        </td>
-                                        <td class="text-center status-col">
-                                            <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
-                                        </td>
-                                    </tr>
-                                    <!-- Row 10 -->
-                                    <tr class="doc-upload-row" data-doc-type="bank_statement">
-                                        <td class="small fw-semibold">Bank Statement</td>
-                                        <td>
-                                            <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
-                                        </td>
-                                        <td class="text-center status-col">
-                                            <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
-                                        </td>
-                                    </tr>
-                                    <!-- Row 11 -->
-                                    <tr class="doc-upload-row" data-doc-type="other_documents">
-                                        <td class="small fw-semibold">Other Documents</td>
-                                        <td>
-                                            <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
-                                        </td>
-                                        <td class="text-center status-col">
-                                            <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
+                </div>
+            </div>
+        </section>
 
-                        <!-- Table Footer Buttons -->
-                        <div class="d-flex justify-content-between align-items-center mt-3 border-top pt-3">
-                            <button class="btn btn-secondary btn-sm" onclick="toggleRightWorkspace(false)">
-                                <i class="bi bi-arrow-left-short"></i> Back to Home
-                            </button>
-                            <button class="btn btn-newage-red btn-sm" onclick="submitAllDocs()">
-                                <i class="bi bi-cloud-arrow-up me-1"></i> Submit All Documents
-                            </button>
-                        </div>
-                    </div>
+        <!-- 2nd SECTION: "Application Form" Action Button / Prompt Section (Immediately below Information section) -->
+        <section id="section-application-form-prompt" class="card-newage border-danger shadow-sm mb-4 d-none">
+            <div class="card-body p-4 text-center">
+                <div class="fs-1 text-danger opacity-75 mb-2">
+                    <i class="bi bi-file-earmark-text-fill" style="font-size: 3.5rem;"></i>
+                </div>
+                <h4 class="fw-bold mb-2 text-dark">Application Form Submission Required</h4>
+                <p class="text-muted text-center max-width-600 mx-auto mb-3 fs-6">
+                    You have not submitted an Application Form yet. Please fill out your official profile details below to register your academic record.
+                </p>
+                <div class="alert alert-warning p-3 mb-4 text-start border border-warning max-width-600 mx-auto">
+                    <i class="bi bi-info-circle-fill me-2 text-warning"></i> <strong>Note:</strong> Once your application form is submitted, this action button will permanently disappear and your document uploads will be unlocked.
+                </div>
+                <a id="appFormPromptBtn" href="application_form.html" class="btn btn-danger btn-lg px-5 py-3 fw-bold shadow">
+                    <i class="bi bi-file-earmark-plus-fill me-2"></i> Fill Out Application Form Now
+                </a>
+            </div>
+        </section>
+
+        <!-- 3rd SECTION: Document Uploads / Document Vault Section -->
+        <section id="section-document-uploads" class="card-newage border-dark shadow-sm mb-4">
+            <div class="card-header-newage bg-dark text-white d-flex justify-content-between align-items-center py-3">
+                <h5 class="mb-0 text-white fw-bold"><i class="bi bi-folder2-open me-2 text-danger"></i>Document Vault &amp; Verification Checklist</h5>
+                <span class="badge bg-danger px-2 py-1">Document Storage</span>
+            </div>
+            <div class="p-4" id="uploadWorkspaceContent">
+                <p class="text-muted small mb-3">Upload clear PDF scans or image files of the required documents below. Uploaded documents automatically enter Pending review status.</p>
+                
+                <div class="table-responsive rounded border bg-white" style="max-height: 480px; overflow-y: auto;">
+                    <table class="table table-hover align-middle mb-0 small">
+                        <thead class="table-light sticky-top">
+                            <tr>
+                                <th>Document Type</th>
+                                <th style="width: 50%;">Select File</th>
+                                <th class="text-center" style="width: 25%;">Status &amp; Verification</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Row 1 -->
+                            <tr class="doc-upload-row" data-doc-type="ssc_certificate">
+                                <td class="small fw-semibold">SSC Certificate</td>
+                                <td>
+                                    <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
+                                </td>
+                                <td class="text-center status-col">
+                                    <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
+                                </td>
+                            </tr>
+                            <!-- Row 2 -->
+                            <tr class="doc-upload-row" data-doc-type="ssc_marksheet">
+                                <td class="small fw-semibold">SSC Marksheet</td>
+                                <td>
+                                    <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
+                                </td>
+                                <td class="text-center status-col">
+                                    <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
+                                </td>
+                            </tr>
+                            <!-- Row 3 -->
+                            <tr class="doc-upload-row" data-doc-type="hsc_certificate">
+                                <td class="small fw-semibold">HSC Certificate</td>
+                                <td>
+                                    <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
+                                </td>
+                                <td class="text-center status-col">
+                                    <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
+                                </td>
+                            </tr>
+                            <!-- Row 4 -->
+                            <tr class="doc-upload-row" data-doc-type="hsc_marksheet">
+                                <td class="small fw-semibold">HSC Marksheet</td>
+                                <td>
+                                    <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
+                                </td>
+                                <td class="text-center status-col">
+                                    <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
+                                </td>
+                            </tr>
+                            <!-- Row 5 -->
+                            <tr class="doc-upload-row" data-doc-type="recommendation_letter">
+                                <td class="small fw-semibold">Recommendation Letter (2 Copies)</td>
+                                <td>
+                                    <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
+                                </td>
+                                <td class="text-center status-col">
+                                    <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
+                                </td>
+                            </tr>
+                            <!-- Row 6 -->
+                            <tr class="doc-upload-row" data-doc-type="passport">
+                                <td class="small fw-semibold">Passport</td>
+                                <td>
+                                    <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
+                                </td>
+                                <td class="text-center status-col">
+                                    <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
+                                </td>
+                            </tr>
+                            <!-- Row 7 -->
+                            <tr class="doc-upload-row" data-doc-type="student_nid">
+                                <td class="small fw-semibold">Student NID</td>
+                                <td>
+                                    <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
+                                </td>
+                                <td class="text-center status-col">
+                                    <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
+                                </td>
+                            </tr>
+                            <!-- Row 8 -->
+                            <tr class="doc-upload-row" data-doc-type="cv">
+                                <td class="small fw-semibold">CV</td>
+                                <td>
+                                    <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
+                                </td>
+                                <td class="text-center status-col">
+                                    <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
+                                </td>
+                            </tr>
+                            <!-- Row 9 -->
+                            <tr class="doc-upload-row" data-doc-type="sop">
+                                <td class="small fw-semibold">SOP</td>
+                                <td>
+                                    <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
+                                </td>
+                                <td class="text-center status-col">
+                                    <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
+                                </td>
+                            </tr>
+                            <!-- Row 10 -->
+                            <tr class="doc-upload-row" data-doc-type="bank_statement">
+                                <td class="small fw-semibold">Bank Statement</td>
+                                <td>
+                                    <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
+                                </td>
+                                <td class="text-center status-col">
+                                    <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
+                                </td>
+                            </tr>
+                            <!-- Row 11 -->
+                            <tr class="doc-upload-row" data-doc-type="other_documents">
+                                <td class="small fw-semibold">Other Documents</td>
+                                <td>
+                                    <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
+                                </td>
+                                <td class="text-center status-col">
+                                    <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
 
+                <!-- Footer Action Buttons -->
+                <div class="d-flex justify-content-end align-items-center mt-3 border-top pt-3">
+                    <button class="btn btn-newage-red btn-sm px-4 py-2 fw-semibold" onclick="submitAllDocs()">
+                        <i class="bi bi-cloud-arrow-up me-1"></i> Submit All Uploaded Documents
+                    </button>
+                </div>
             </div>
-
         </div>
+
+        <!-- 4th SECTION: "Added Applications" / Courses Section -->
+        <section id="section-added-applications" class="card-newage border-danger shadow-sm mb-4">
+            <div class="card-header-newage bg-dark text-white d-flex align-items-center justify-content-between py-3">
+                <h5 class="mb-0 text-white fw-bold">
+                    <i class="bi bi-mortarboard-fill text-danger me-2"></i>Added Applications &amp; Course Trackers
+                </h5>
+                <span class="badge bg-danger px-2 py-1">Real-time Application Tracker</span>
+            </div>
+            <div class="p-4" id="addedApplicationsContent">
+                <div class="text-center py-4 text-muted">
+                    <span class="spinner-border spinner-border-sm text-danger me-2" role="status" aria-hidden="true"></span>
+                    Loading application records...
+                </div>
+            </div>
+        </section>
 
     </main>
 
@@ -649,12 +636,22 @@
             setText('profileName', actualName);
             setText('profileEmail', p.email || data?.email || auth.currentUser?.email || '');
 
-            // 🚫 Hide Application Form navigation link & prompts since application data exists
+            // 🚫 STRICT ONCE-ONLY FORM LOGIC: Hide Application Form links & prompt section permanently because student data exists
+            const appFormPromptSection = document.getElementById('section-application-form-prompt');
+            if (appFormPromptSection) appFormPromptSection.style.display = 'none';
+
             const navAppFormLink = document.getElementById('nav-application-form');
             if (navAppFormLink) navAppFormLink.style.display = 'none';
 
             const navAppFormContainer = document.getElementById('nav-application-form-container');
             if (navAppFormContainer) navAppFormContainer.classList.add('d-none');
+
+            // 🟢 Show Document Uploads and Added Applications sections
+            const docUploadsSection = document.getElementById('section-document-uploads');
+            if (docUploadsSection) docUploadsSection.style.display = 'block';
+
+            const addedAppsSection = document.getElementById('section-added-applications');
+            if (addedAppsSection) addedAppsSection.style.display = 'block';
 
             // Qualification: show highest degree
             let qual = '—';
@@ -677,23 +674,33 @@
                 }
             }
 
-            // Top Banner: Render Welcome Greeting & "My University Applications" Tracker Card
+            // Top Banner: Render Welcome Greeting
             const bannerArea = document.getElementById('topBannerArea');
             if (bannerArea) {
-                let rowsHTML = '';
+                bannerArea.innerHTML = `
+                    <div class="alert alert-light border shadow-sm p-3 mb-0 d-flex align-items-center justify-content-between" role="alert">
+                        <div class="d-flex align-items-center">
+                            <span class="fs-3 me-3">👋</span>
+                            <div>
+                                <h6 class="fw-bold text-dark mb-0">Welcome back, ${escapeHtml(actualName)}!</h6>
+                                <span class="small text-muted">Manage your candidate profile, document vault, and university application trackers below.</span>
+                            </div>
+                        </div>
+                    </div>`;
+            }
+
+            // Populate Section 4: Added Applications & Course Trackers
+            const appsContent = document.getElementById('addedApplicationsContent');
+            if (appsContent) {
                 if (apps.length === 0) {
-                    rowsHTML = `
-                        <tr>
-                            <td colspan="6" class="text-center py-4 text-muted">
-                                <div class="py-3">
-                                    <i class="bi bi-hourglass-split text-warning fs-2 d-block mb-2"></i>
-                                    <h6 class="fw-bold text-dark mb-1">No applications have been processed yet.</h6>
-                                    <span class="small text-muted">Please wait for your consultant to update your profile with university applications.</span>
-                                </div>
-                            </td>
-                        </tr>`;
+                    appsContent.innerHTML = `
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-hourglass-split text-warning fs-2 d-block mb-2"></i>
+                            <h6 class="fw-bold text-dark mb-1">No applications have been processed yet.</h6>
+                            <span class="small text-muted">Please wait for your consultant to update your profile with university applications.</span>
+                        </div>`;
                 } else {
-                    rowsHTML = apps.map((app) => {
+                    const rowsHTML = apps.map((app) => {
                         const status = app.status || 'Pending';
                         let badgeHTML = '';
                         const s = status.toLowerCase().trim();
@@ -708,9 +715,7 @@
                         }
 
                         const linkHTML = app.course_link
-                            ? `<a href="${escapeHtml(app.course_link)}" target="_blank" rel="noopener noreferrer" class="btn btn-xs btn-outline-primary py-0 px-2 small">
-                                  <i class="bi bi-box-arrow-up-right me-1"></i>View Course
-                               </a>`
+                            ? `<a href="${escapeHtml(app.course_link)}" target="_blank" rel="noopener noreferrer" class="btn btn-xs btn-outline-primary py-0 px-2 small"><i class="bi bi-box-arrow-up-right me-1"></i>View Course</a>`
                             : `<span class="text-muted small fst-italic">—</span>`;
 
                         return `
@@ -723,48 +728,25 @@
                                 <td>${badgeHTML}</td>
                             </tr>`;
                     }).join('');
+
+                    appsContent.innerHTML = `
+                        <div class="table-responsive rounded border bg-white">
+                            <table class="table table-hover align-middle mb-0 small">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Country</th>
+                                        <th>University</th>
+                                        <th>Course Name</th>
+                                        <th>Intake</th>
+                                        <th class="text-center">Course Link</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>${rowsHTML}</tbody>
+                            </table>
+                        </div>`;
                 }
-
-                bannerArea.innerHTML = `
-                    <div class="alert alert-light border shadow-sm p-3 mb-4 d-flex align-items-center justify-content-between" role="alert">
-                        <div class="d-flex align-items-center">
-                            <span class="fs-3 me-3">👋</span>
-                            <div>
-                                <h6 class="fw-bold text-dark mb-0">Welcome back, ${escapeHtml(actualName)}!</h6>
-                                <span class="small text-muted">Here is the real-time status of your university applications and document uploads.</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-newage border-danger shadow-sm mb-4">
-                        <div class="card-header-newage bg-dark text-white d-flex align-items-center justify-content-between py-3">
-                            <h6 class="mb-0 text-white fw-bold">
-                                <i class="bi bi-mortarboard-fill text-danger me-2"></i>My University Applications (${apps.length})
-                            </h6>
-                            <span class="badge bg-danger px-2 py-1">Real-time Application Tracker</span>
-                        </div>
-                        <div class="p-3">
-                            <div class="table-responsive rounded border bg-white">
-                                <table class="table table-hover align-middle mb-0 small">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>Country</th>
-                                            <th>University</th>
-                                            <th>Course Name</th>
-                                            <th>Intake</th>
-                                            <th class="text-center">Course Link</th>
-                                            <th>Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>${rowsHTML}</tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>`;
             }
-
-            // Enable Upload section toggle card when application data exists
-            const toggleCard = document.getElementById('uploadDocsToggleCard');
-            if (toggleCard) toggleCard.classList.remove('d-none');
 
             // Re-enable Info Modal button
             const infoBtn = document.querySelector('[data-bs-target="#viewInfoModal"]');
@@ -840,39 +822,21 @@
             setText('profileCounselor', 'Pending Assignment');
 
             // 🟢 Show Application Form navigation link for new self-registered students
+            const appFormPromptSection = document.getElementById('section-application-form-prompt');
+            if (appFormPromptSection) {
+                appFormPromptSection.style.display = 'block';
+                appFormPromptSection.classList.remove('d-none');
+            }
+
             const navAppFormLink = document.getElementById('nav-application-form');
             if (navAppFormLink) navAppFormLink.style.display = '';
 
             const navAppFormContainer = document.getElementById('nav-application-form-container');
             if (navAppFormContainer) navAppFormContainer.classList.remove('d-none');
 
-            // 1. Hide the upload toggle button on the left sidebar
-            const toggleCard = document.getElementById('uploadDocsToggleCard');
-            if (toggleCard) toggleCard.classList.add('d-none');
-
-            // 2. Hide upload checklist workspace
-            const uploadWorkspace = document.getElementById('uploadWorkspace');
-            if (uploadWorkspace) uploadWorkspace.classList.add('d-none');
-
-            // 3. Render prominent message and button in main workspace
-            const welcomeWorkspace = document.getElementById('welcomeWorkspace');
-            if (welcomeWorkspace) {
-                welcomeWorkspace.classList.remove('d-none');
-                welcomeWorkspace.innerHTML = `
-                    <div class="fs-1 text-danger opacity-75 mb-3">
-                        <i class="bi bi-lock-fill" style="font-size: 4.5rem;"></i>
-                    </div>
-                    <h3 class="fw-bold mb-2 text-dark">Document Upload Restricted</h3>
-                    <p class="text-muted text-center max-width-500 mb-4 fs-5">
-                        You must fill up the Application Form first to upload documents.
-                    </p>
-                    <div class="alert alert-warning p-3 mb-4 text-start border border-warning" style="max-width: 480px;">
-                        <i class="bi bi-info-circle-fill me-2"></i> Document uploads will unlock automatically once your official application profile is submitted.
-                    </div>
-                    <a href="application_form.html" class="btn btn-danger btn-lg px-4 py-3 fw-bold shadow">
-                        <i class="bi bi-file-earmark-text-fill me-2"></i> You must fill up the Application Form first to upload documents
-                    </a>`;
-            }
+            // Hide/Lock Document Uploads section until Application Form is submitted
+            const docUploadsSection = document.getElementById('section-document-uploads');
+            if (docUploadsSection) docUploadsSection.style.display = 'none';
 
             const bannerArea = document.getElementById('topBannerArea');
             if (bannerArea) {
@@ -882,12 +846,22 @@
                             <span class="fs-2">📋</span>
                             <div class="flex-grow-1">
                                 <h5 class="fw-bold mb-1">Welcome, ${displayName}! Application Profile Required</h5>
-                                <p class="mb-0 text-muted small">No application record found for <strong>${email}</strong>. Please complete the student application form to unlock document uploads.</p>
+                                <p class="mb-0 text-muted small">No application record found for <strong>${email}</strong>. Please complete the student application form below to unlock document uploads and course tracking.</p>
                             </div>
                             <a href="application_form.html" class="btn btn-dark px-4 py-2 fw-semibold flex-shrink-0">
                                 <i class="bi bi-file-earmark-person me-2"></i>Fill Application Form
                             </a>
                         </div>
+                    </div>`;
+            }
+
+            const appsContent = document.getElementById('addedApplicationsContent');
+            if (appsContent) {
+                appsContent.innerHTML = `
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-lock-fill text-secondary fs-2 d-block mb-2 opacity-50"></i>
+                        <h6 class="fw-bold text-dark mb-1">Application Trackers Locked</h6>
+                        <span class="small text-muted">Please complete the application form above to view your university course applications.</span>
                     </div>`;
             }
 
