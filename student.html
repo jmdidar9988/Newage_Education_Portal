@@ -482,12 +482,12 @@
 
         // ── Populate DOM with student record ───────────────────────────────
         function populateProfile(data, docId) {
-            const p = data.personalInfo || {};
-            const edu = data.educationalProfile || {};
-            const eng = data.englishProficiency || {};
+            const p = data?.personalInfo || {};
+            const edu = data?.educationalProfile || {};
+            const eng = data?.englishProficiency || {};
 
-            // 🎯 Target actual student full name from Firestore document (data.fullName or data.personalInfo.fullName)
-            const actualName = data.fullName || p.fullName || data.name || data.studentName || nameFromEmail(p.email || data.email || auth.currentUser?.email);
+            // 🎯 Target exact nested path with optional chaining: data?.personalInfo?.fullName
+            const actualName = data?.personalInfo?.fullName || data?.fullName || nameFromEmail(p.email || data?.email || auth.currentUser?.email);
             const initials = getInitials(actualName);
 
             // Navbar
@@ -495,11 +495,11 @@
             const navEl = document.getElementById('navStudentId');
             if (navEl) navEl.innerHTML = `<i class="bi bi-mortarboard me-1"></i> ID: #${shortId}`;
 
-            // Profile card
+            // Profile card header & avatar
             const avatar = document.getElementById('profileAvatar');
             if (avatar) avatar.textContent = initials;
             setText('profileName', actualName);
-            setText('profileEmail', p.email || data.email || auth.currentUser?.email || '');
+            setText('profileEmail', p.email || data?.email || auth.currentUser?.email || '');
 
             // 🚫 Hide Application Form navigation link & prompts since application data exists
             const navAppFormLink = document.getElementById('nav-application-form');
@@ -529,7 +529,7 @@
                 }
             }
 
-            // Top Banner: Render "My University Applications" Tracker Card
+            // Top Banner: Render Welcome Greeting & "My University Applications" Tracker Card
             const bannerArea = document.getElementById('topBannerArea');
             if (bannerArea) {
                 let rowsHTML = '';
@@ -578,6 +578,15 @@
                 }
 
                 bannerArea.innerHTML = `
+                    <div class="alert alert-light border shadow-sm p-3 mb-4 d-flex align-items-center justify-content-between" role="alert">
+                        <div class="d-flex align-items-center">
+                            <span class="fs-3 me-3">👋</span>
+                            <div>
+                                <h6 class="fw-bold text-dark mb-0">Welcome back, ${escapeHtml(actualName)}!</h6>
+                                <span class="small text-muted">Here is the real-time status of your university applications and document uploads.</span>
+                            </div>
+                        </div>
+                    </div>
                     <div class="card-newage border-danger shadow-sm mb-4">
                         <div class="card-header-newage bg-dark text-white d-flex align-items-center justify-content-between py-3">
                             <h6 class="mb-0 text-white fw-bold">
