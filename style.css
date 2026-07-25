@@ -518,86 +518,88 @@ h1, h2, h3, h4, h5, h6 {
    GLOBAL TRANSITION & INTERACTIVE MICRO-ANIMATIONS
    ========================================================================== */
 
-/* Universal Smooth Transitions */
-a, button, .btn, .card, .card-newage, .card-newage-dark, .form-control, .form-select, 
+html {
+    scroll-behavior: smooth;
+}
+
+/* Universal Smooth Transitions with Premium Cubic-Bezier */
+a, button, .btn, .card, .card-newage, .card-newage-dark, .dest-card, .form-control, .form-select, 
 .modal-content, .nav-link, .badge, .list-group-item, .table tbody tr {
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
 }
 
-/* Form Control Focus Elevation */
+/* Form Control Focus Elevation & Glowing Border Transition */
 .form-control:focus, .form-select:focus {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(11, 36, 71, 0.1);
+    transform: translateY(-2px) !important;
+    border-color: var(--accent-primary) !important;
+    box-shadow: 0 0 0 4px rgba(230, 57, 70, 0.2), 0 8px 20px rgba(230, 57, 70, 0.15) !important;
 }
 
-/* Card Lift & Shadow Glow Effects */
-.card-newage, .card {
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s ease;
+/* Enhanced Hover Physics (Card Lift & Scaled Diffused Shadow) */
+.card-newage, .card, .dest-card {
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), border-color 0.3s ease !important;
 }
 
-.card-newage:hover, .card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 28px rgba(11, 36, 71, 0.12) !important;
+.card-newage:hover, .card:hover, .dest-card:hover {
+    transform: translateY(-4px) scale(1.01) !important;
+    box-shadow: 0 15px 30px var(--shadow-color) !important;
 }
 
 .card-newage-dark:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 16px 36px rgba(7, 23, 47, 0.4) !important;
+    transform: translateY(-4px) scale(1.01) !important;
+    box-shadow: 0 20px 40px rgba(7, 23, 47, 0.45) !important;
 }
 
-/* Tactile Button Feedback (Elevate + Scale on Hover, Press on Active) */
+/* Tactile Button Feedback (Elevate + Scale on Hover, Press Inward on Active) */
 .btn {
     position: relative;
     overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
 }
 
 .btn:hover {
     transform: translateY(-2px) scale(1.02);
 }
 
-.btn:active {
-    transform: translateY(0) scale(0.98);
+.btn:active, button:active, .btn-accent:active, .btn-navy:active {
+    transform: scale(0.96) translateY(0) !important;
+    transition: transform 0.1s ease !important;
 }
 
-.btn-newage-red:hover {
-    box-shadow: 0 6px 18px rgba(220, 38, 38, 0.35);
+.btn-newage-red:hover, .btn-accent:hover {
+    box-shadow: 0 8px 22px rgba(230, 57, 70, 0.38) !important;
 }
 
 .btn-navy:hover, .btn-dark:hover {
-    box-shadow: 0 6px 18px rgba(11, 36, 71, 0.3);
+    box-shadow: 0 8px 22px rgba(11, 36, 71, 0.35) !important;
 }
 
 /* High-Density Table Row Interactions */
 .table tbody tr {
     cursor: pointer;
-    transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+    transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
 }
 
 .table tbody tr:hover {
-    background-color: rgba(11, 36, 71, 0.05) !important;
-}
-
-.table-hover tbody tr:hover {
-    background-color: rgba(11, 36, 71, 0.06) !important;
-}
-
-.table-striped tbody tr:nth-of-type(odd):hover {
-    background-color: rgba(11, 36, 71, 0.07) !important;
+    transform: scale(1.008) translateY(-1px);
+    box-shadow: 0 6px 16px var(--shadow-color) !important;
+    background-color: var(--table-row-hover) !important;
 }
 
 /* Document Upload Row Hover Effect */
 .doc-upload-row {
-    transition: all 0.2s ease-in-out;
+    transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 .doc-upload-row:hover {
-    background-color: rgba(11, 36, 71, 0.04) !important;
+    transform: translateX(4px);
+    background-color: var(--table-row-hover) !important;
 }
 
 /* Ultra-Fluid Modal Backdrop & Opening Animation */
 .modal.fade .modal-dialog {
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
-    transform: scale(0.94) translateY(-10px);
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.35s ease;
+    transform: scale(0.92) translateY(-15px);
 }
 
 .modal.show .modal-dialog {
@@ -609,27 +611,11 @@ a, button, .btn, .card, .card-newage, .card-newage-dark, .form-control, .form-se
     box-shadow: 0 25px 60px rgba(7, 23, 47, 0.35);
 }
 
-/* Animations */
-@keyframes pulseGlow {
-    0% {
-        box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4);
-    }
-    70% {
-        box-shadow: 0 0 0 10px rgba(220, 38, 38, 0);
-    }
-    100% {
-        box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
-    }
-}
-
-.pulse-glow-button {
-    animation: pulseGlow 2s infinite;
-}
-
-@keyframes slideInUp {
+/* Staggered Entrance Wave Animations */
+@keyframes fadeInUp {
     from {
         opacity: 0;
-        transform: translateY(20px);
+        transform: translateY(24px);
     }
     to {
         opacity: 1;
@@ -638,8 +624,14 @@ a, button, .btn, .card, .card-newage, .card-newage-dark, .form-control, .form-se
 }
 
 .animate-fade-up {
-    animation: slideInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    animation: fadeInUp 0.6s cubic-bezier(0.25, 0.8, 0.25, 1) both;
 }
+
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+.stagger-4 { animation-delay: 0.4s; }
+.stagger-5 { animation-delay: 0.5s; }
 
 /* Custom interactive classes */
 .list-group-item-action:hover {
