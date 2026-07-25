@@ -716,19 +716,17 @@
 
             // 🔍 Query students collection by authenticated user's email address
             try {
-                const q = query(
+                let querySnapshot = await getDocs(query(
                     collection(db, 'students'),
                     where('personalInfo.email', '==', user.email)
-                );
-                let querySnapshot = await getDocs(q);
+                ));
 
                 // Fallback check if email is stored at root level
                 if (querySnapshot.empty) {
-                    const fallbackQuery = query(
+                    querySnapshot = await getDocs(query(
                         collection(db, 'students'),
                         where('email', '==', user.email)
-                    );
-                    querySnapshot = await getDocs(fallbackQuery);
+                    ));
                 }
 
                 if (!querySnapshot.empty) {
@@ -750,6 +748,20 @@
                 showNewStudentState(user.email);
             }
         });
+
+        // ── Helper: Extract URL and Approval Status from documents object ───
+        function getDocInfo(documents, key) {
+            if (!documents) return { url: null, status: null };
+            const entry = documents[key];
+            if (!entry) return { url: null, status: null };
+            if (typeof entry === 'object' && entry.url) {
+                return { url: entry.url, status: entry.status || 'Pending' };
+            }
+            if (typeof entry === 'string' && entry.trim().length > 0) {
+                return { url: entry.trim(), status: 'Pending' };
+            }
+            return { url: null, status: null };
+        }
 
         // ── Toast Helper ───────────────────────────────────────────────────────
         function showToast(message, type = 'danger') {
@@ -778,11 +790,28 @@
             statusCell.innerHTML = `<span class="text-warning small fw-semibold"><span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Uploading...</span>`;
         }
 
-        function setStatusSuccess(statusCell, secureUrl) {
+        function setStatusSuccess(statusCell, secureUrl, docType, docStatus) {
+            const status = docStatus || 'Pending';
+            const isApproved = status === 'Approved';
+            const badgeClass = isApproved ? 'bg-success' : 'bg-warning text-dark';
+            const badgeIcon = isApproved ? 'bi-check-circle-fill' : 'bi-clock-history';
+
+            // Visually appealing Cross (X) button for Pending documents (side-by-side)
+            const crossBtn = !isApproved
+                ? `<button type="button" class="btn-close ms-2" style="font-size: 0.65rem;" 
+                           onclick="deleteStudentDocument('${escapeHtml(docType)}', this)" 
+                           title="Remove document" aria-label="Remove"></button>`
+                : '';
+
             statusCell.innerHTML = `
-                <div class="d-flex flex-column align-items-center gap-1">
-                    <span class="text-success fs-5"><i class="bi bi-check-circle-fill"></i></span>
-                    <a href="${secureUrl}" target="_blank" rel="noopener noreferrer" class="badge bg-success text-decoration-none" style="font-size:0.7rem;">View File</a>
+                <div class="d-inline-flex align-items-center bg-white border rounded-pill px-3 py-1 shadow-sm">
+                    <a href="${secureUrl}" target="_blank" rel="noopener noreferrer" class="badge bg-primary text-decoration-none me-2" style="font-size:0.7rem;">
+                        <i class="bi bi-file-earmark-text me-1"></i>View
+                    </a>
+                    <span class="badge ${badgeClass} px-2 py-1" style="font-size:0.7rem;">
+                        <i class="bi ${badgeIcon} me-1"></i>${status}
+                    </span>
+                    ${crossBtn}
                 </div>`;
         }
 
@@ -814,24 +843,27 @@
                 const data = await response.json();
                 const secureUrl = data.secure_url;
 
-                // ✅ Update UI
-                setStatusSuccess(statusCell, secureUrl);
+                // ✅ Update UI with Pending status
+                setStatusSuccess(statusCell, secureUrl, docType, 'Pending');
                 showToast(`✅ "${docType.replace(/_/g, ' ')}" uploaded successfully!`, 'success');
 
-                // ── Save to Firestore ──────────────────────────────────────────
+                // ── Save to Firestore as {url, status} object ────────────────────
                 if (studentDocId) {
                     try {
                         const studentRef = doc(db, 'students', studentDocId);
                         await updateDoc(studentRef, {
-                            [`documents.${docType}`]: secureUrl,
+                            [`documents.${docType}`]: {
+                                url: secureUrl,
+                                status: 'Pending'
+                            },
                             [`documents.${docType}_uploadedAt`]: new Date().toISOString()
                         });
-                        console.log(`Saved ${docType} URL to Firestore for student: ${studentDocId}`);
+                        console.log(`Saved ${docType} (Pending) to Firestore for student: ${studentDocId}`);
                     } catch (firestoreErr) {
                         console.warn('Firestore updateDoc failed (upload was still successful):', firestoreErr);
                     }
                 } else {
-                    console.warn('No Firestore student doc found — URL saved locally only. Student may not be logged in or doc does not exist yet.');
+                    console.warn('No Firestore student doc found — URL saved locally only.');
                 }
 
             } catch (error) {
@@ -842,6 +874,38 @@
                 fileInput.disabled = false;
             }
         }
+
+        // ── Delete Student Document (only when Pending) ───────────────────────
+        window.deleteStudentDocument = async function(docType, btnElement) {
+            if (!confirm(`Are you sure you want to delete "${docType.replace(/_/g, ' ')}"?`)) return;
+            if (!studentDocId) { alert('No student document ID found.'); return; }
+
+            try {
+                const studentRef = doc(db, 'students', studentDocId);
+                // Remove the document field entirely using FieldValue delete (set to empty/null)
+                const { deleteField } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+                await updateDoc(studentRef, {
+                    [`documents.${docType}`]: deleteField(),
+                    [`documents.${docType}_uploadedAt`]: deleteField()
+                });
+
+                // Reset the status cell in the UI
+                const row = btnElement.closest('.doc-upload-row');
+                if (row) {
+                    const statusCell = row.querySelector('.status-col');
+                    if (statusCell) {
+                        statusCell.innerHTML = `<span class="text-muted small"><i class="bi bi-dash-circle me-1"></i>Not Uploaded</span>`;
+                    }
+                    const fileInput = row.querySelector('.doc-file-input');
+                    if (fileInput) fileInput.value = '';
+                }
+                showToast(`🗑️ "${docType.replace(/_/g, ' ')}" deleted successfully.`, 'success');
+                console.log(`Deleted document field documents.${docType} for student: ${studentDocId}`);
+            } catch (error) {
+                console.error('Error deleting document:', error);
+                showToast(`Failed to delete: ${error.message}`, 'danger');
+            }
+        };
 
         // ── Attach Change Listeners After DOM Ready ────────────────────────────
         document.addEventListener('DOMContentLoaded', () => {

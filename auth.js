@@ -599,8 +599,8 @@ export async function loadCEODashboardData() {
 }
 
 /**
- * Safely extracts a document URL from studentData by checking multiple possible field locations
- * (e.g. studentData.documents.passport, studentData.passport_url, studentData.transcript_url, etc.)
+ * Safely extracts a document URL from studentData by checking multiple possible field locations.
+ * Handles both legacy plain URL strings and new {url, status} objects.
  * @param {Object} studentData 
  * @param {string} key 
  * @returns {string|null}
@@ -609,8 +609,14 @@ function getDocUrl(studentData, key) {
     if (!studentData) return null;
     const docs = studentData.documents || {};
 
+    // Check the primary location first (supports both object and string)
+    const primary = docs[key];
+    if (primary) {
+        if (typeof primary === 'object' && primary.url) return primary.url;
+        if (typeof primary === 'string' && primary.trim().length > 0) return primary.trim();
+    }
+
     const candidates = [
-        docs[key],
         docs[`${key}_url`],
         docs[`${key}Url`],
         docs[`${key}URL`],
@@ -636,9 +642,30 @@ function getDocUrl(studentData, key) {
     }
 
     for (const cand of candidates) {
-        if (cand && typeof cand === 'string' && cand.trim().length > 0) {
-            return cand.trim();
-        }
+        if (cand && typeof cand === 'object' && cand.url) return cand.url;
+        if (cand && typeof cand === 'string' && cand.trim().length > 0) return cand.trim();
+    }
+    return null;
+}
+
+/**
+ * Resolves the approval status for a document field.
+ * Returns 'Pending', 'Approved', or null if document doesn't exist.
+ * @param {Object} studentData 
+ * @param {string} key 
+ * @returns {string|null}
+ */
+function getDocStatus(studentData, key) {
+    if (!studentData) return null;
+    const docs = studentData.documents || {};
+    const entry = docs[key];
+
+    if (entry && typeof entry === 'object' && entry.status) {
+        return entry.status;
+    }
+    // Legacy plain URL strings are treated as 'Pending' by default
+    if (getDocUrl(studentData, key)) {
+        return 'Pending';
     }
     return null;
 }
@@ -646,10 +673,12 @@ function getDocUrl(studentData, key) {
 /**
  * Builds the HTML for the Uploaded Documents section inside the student detail modal.
  * Reads from studentData.documents or top-level document URL fields.
+ * Supports {url, status} objects for approval workflow.
  * @param {Object|undefined} studentData - Full student document data from Firestore
+ * @param {string} [studentId] - Optional student ID for approve actions
  * @returns {string} HTML string
  */
-function buildDocumentsSection(studentData) {
+function buildDocumentsSection(studentData, studentId) {
     console.log("Building Documents Section for studentData:", studentData);
 
     const DOC_TYPES = [
@@ -677,20 +706,38 @@ function buildDocumentsSection(studentData) {
 
     let rows = DOC_TYPES.map(({ key, label }) => {
         const url = getDocUrl(studentData, key);
+        const docStatus = getDocStatus(studentData, key);
         const uploadedAt = docs[`${key}_uploadedAt`]
             ? new Date(docs[`${key}_uploadedAt`]).toLocaleDateString('en-GB')
             : null;
 
-        const statusBadge = url
-            ? `<span class="badge bg-success"><i class="bi bi-check-circle-fill me-1"></i>Uploaded</span>`
-            : `<span class="badge bg-light text-muted border">Not Uploaded Yet</span>`;
+        // Status badge with approval state
+        let statusBadge;
+        if (!url) {
+            statusBadge = `<span class="badge bg-light text-muted border">Not Uploaded Yet</span>`;
+        } else if (docStatus === 'Approved') {
+            statusBadge = `<span class="badge bg-success"><i class="bi bi-check-circle-fill me-1"></i>Approved</span>`;
+        } else {
+            statusBadge = `<span class="badge bg-warning text-dark"><i class="bi bi-clock-history me-1"></i>Pending</span>`;
+        }
 
-        const actionBtn = url
-            ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer"
+        // Action buttons
+        let actionBtn;
+        if (!url) {
+            actionBtn = `<span class="text-muted small fst-italic">Not Uploaded Yet</span>`;
+        } else {
+            const viewBtn = `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer"
                   class="btn btn-sm btn-outline-primary py-0 px-2 fw-semibold">
-                  <i class="bi bi-file-earmark-text me-1"></i>View Document
-               </a>`
-            : `<span class="text-muted small fst-italic">Not Uploaded Yet</span>`;
+                  <i class="bi bi-file-earmark-text me-1"></i>View
+               </a>`;
+            // Show Approve button only if Pending and studentId is provided (CEO/Employee modal)
+            const approveBtn = (studentId && docStatus !== 'Approved')
+                ? ` <button class="btn btn-sm btn-outline-success py-0 px-2 fw-semibold" onclick="approveDocument('${studentId}', '${key}')">
+                       <i class="bi bi-check-lg me-1"></i>Approve
+                   </button>`
+                : '';
+            actionBtn = viewBtn + approveBtn;
+        }
 
         const dateCell = uploadedAt
             ? `<small class="text-muted">${uploadedAt}</small>`
@@ -728,6 +775,57 @@ function buildDocumentsSection(studentData) {
                 <tbody>${rows}</tbody>
             </table>
         </div>`;
+}
+
+/**
+ * Approves a specific document for a student (CEO/Employee action).
+ * Updates Firestore field documents.<key>.status to 'Approved' using dot notation.
+ * @param {string} studentId 
+ * @param {string} docKey 
+ */
+export async function approveDocument(studentId, docKey) {
+    const student = window.loadedStudentsMap ? window.loadedStudentsMap[studentId] : null;
+    if (!student) { alert('Student data not loaded.'); return; }
+
+    try {
+        const studentRef = doc(db, 'students', studentId);
+        const docEntry = student.documents?.[docKey];
+
+        if (docEntry && typeof docEntry === 'object') {
+            // New format: update status field inside the object
+            await updateDoc(studentRef, {
+                [`documents.${docKey}.status`]: 'Approved'
+            });
+            docEntry.status = 'Approved';
+        } else if (docEntry && typeof docEntry === 'string') {
+            // Legacy plain URL: convert to object format with Approved status
+            await updateDoc(studentRef, {
+                [`documents.${docKey}`]: { url: docEntry, status: 'Approved' }
+            });
+            student.documents[docKey] = { url: docEntry, status: 'Approved' };
+        } else {
+            alert('Document not found.');
+            return;
+        }
+
+        console.log(`Approved document "${docKey}" for student ${studentId}`);
+
+        // Re-render the modal to reflect the update
+        viewStudentDetails(studentId);
+
+        // Show success alert after re-render
+        const alertArea = document.getElementById('profileEditAlert');
+        if (alertArea) {
+            alertArea.innerHTML = `
+                <div class="alert alert-success alert-dismissible fade show py-2 px-3 small mb-3" role="alert">
+                    <i class="bi bi-check-circle-fill me-1"></i> "${docKey.replace(/_/g, ' ')}" has been <strong>Approved</strong>!
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>`;
+        }
+    } catch (error) {
+        console.error('Error approving document:', error);
+        alert('Failed to approve document: ' + error.message);
+    }
 }
 
 /**
@@ -1154,7 +1252,7 @@ export function viewStudentDetails(studentId) {
                     </ul>
                 </div>
             </div>
-            ${buildDocumentsSection(student)}`;
+            ${buildDocumentsSection(student, studentId)}`;
     }
 
     const modalEl = document.getElementById('studentDetailModal');
@@ -1339,6 +1437,7 @@ window.updateApplicationStatus = updateApplicationStatus;
 window.deleteApplication = deleteApplication;
 window.toggleEditMode = toggleEditMode;
 window.saveProfileChanges = saveProfileChanges;
+window.approveDocument = approveDocument;
 window.updateDetectedRoleUI = updateDetectedRoleUI;
 window.setDemoCredentials = function(email) {
     const emailInput = document.getElementById('emailInput');
