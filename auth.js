@@ -1,12 +1,15 @@
 // Firebase Authentication & Firestore Module for Newage Education Web Portal
 // Modular Firebase SDK v10
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { initializeApp, getApp, getApps } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
 import { 
     getAuth, 
     createUserWithEmailAndPassword, 
-    signInWithEmailAndPassword 
+    signInWithEmailAndPassword,
+    onAuthStateChanged,
+    signOut,
+    sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 import { 
@@ -15,7 +18,10 @@ import {
     addDoc, 
     getDocs,
     query,
+    where,
     orderBy,
+    doc,
+    updateDoc,
     serverTimestamp 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
@@ -43,7 +49,19 @@ try {
 // Initialize Auth and Firestore
 export const auth = getAuth(app);
 export const db = getFirestore(app);
-export { collection, addDoc, getDocs, query, orderBy, serverTimestamp };
+export { 
+    onAuthStateChanged, 
+    signOut, 
+    collection, 
+    addDoc, 
+    getDocs, 
+    query, 
+    where, 
+    orderBy, 
+    doc, 
+    updateDoc, 
+    serverTimestamp 
+};
 
 /**
  * Utility function to escape HTML string
@@ -117,7 +135,7 @@ export function updateDetectedRoleUI() {
  * @param {Event} event 
  */
 export async function handleFirebaseLogin(event) {
-    event.preventDefault();
+    if (event) event.preventDefault();
     const emailInput = document.getElementById('emailInput');
     const passwordInput = document.getElementById('passwordInput');
     const submitBtn = document.getElementById('signinSubmitBtn');
@@ -135,7 +153,17 @@ export async function handleFirebaseLogin(event) {
     }
 
     try {
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        let userCredential;
+        try {
+            userCredential = await signInWithEmailAndPassword(auth, email, password);
+        } catch (signInErr) {
+            console.warn("signInWithEmailAndPassword failed, checking for auto-signup fallback:", signInErr.code);
+            if (signInErr.code === 'auth/invalid-credential' || signInErr.code === 'auth/user-not-found') {
+                userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            } else {
+                throw signInErr;
+            }
+        }
         console.log("Firebase Sign In Success:", userCredential.user);
         routeByRole(userCredential.user.email || email);
     } catch (error) {
@@ -293,11 +321,57 @@ export async function saveStudentApplication(event) {
         const docRef = await addDoc(collection(db, "students"), studentData);
         console.log("Student Application Record Saved in Firestore with ID:", docRef.id);
 
+        // ── Auto Student Account Creation (Secondary Auth Instance) ───────────
+        const studentEmail = studentData.personalInfo?.email?.trim();
+        let accountStatusMsg = "Application Saved Successfully!";
+
+        if (studentEmail) {
+            try {
+                let secondaryApp;
+                if (getApps().some(a => a.name === "SecondaryApp")) {
+                    secondaryApp = getApp("SecondaryApp");
+                } else {
+                    secondaryApp = initializeApp(firebaseConfig, "SecondaryApp");
+                }
+                const secondaryAuth = getAuth(secondaryApp);
+
+                try {
+                    await createUserWithEmailAndPassword(secondaryAuth, studentEmail, "Temp@123456");
+                    console.log("Student account created silently on secondaryAuth for:", studentEmail);
+                    accountStatusMsg = "Application Saved & Account Created! A password setup email has been sent to the student.";
+                } catch (createErr) {
+                    console.warn("Secondary auth account creation notice:", createErr.code || createErr.message);
+                    if (createErr.code === 'auth/email-already-in-use') {
+                        accountStatusMsg = "Application Saved! Student account already exists; password reset email dispatched.";
+                    } else {
+                        accountStatusMsg = `Application Saved! (${createErr.message || 'Account registration note'}).`;
+                    }
+                } finally {
+                    // Dispatch password setup / reset email using primary Auth instance
+                    try {
+                        await sendPasswordResetEmail(auth, studentEmail);
+                        console.log("Password reset email sent to student:", studentEmail);
+                    } catch (resetErr) {
+                        console.warn("Password reset email error:", resetErr);
+                    }
+
+                    // Immediately sign out secondary auth instance
+                    try {
+                        await signOut(secondaryAuth);
+                    } catch (soErr) {
+                        console.warn("Secondary auth signout error:", soErr);
+                    }
+                }
+            } catch (secAppErr) {
+                console.warn("Secondary app initialization error:", secAppErr);
+            }
+        }
+
         if (alertContainer) {
             alertContainer.innerHTML = `
                 <div class="alert alert-success alert-dismissible fade show shadow-sm py-3 mb-4" role="alert">
                     <i class="bi bi-check-circle-fill me-2 fs-5 align-middle"></i> 
-                    <strong>Student Application Saved Successfully!</strong> Record registered in Firestore database (Ref ID: <code>${docRef.id}</code>).
+                    <strong>${accountStatusMsg}</strong> Registered in Firestore database (Ref ID: <code>${docRef.id}</code>).
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>`;
         }
@@ -525,15 +599,215 @@ export async function loadCEODashboardData() {
 }
 
 /**
+ * Safely extracts a document URL from studentData by checking multiple possible field locations
+ * (e.g. studentData.documents.passport, studentData.passport_url, studentData.transcript_url, etc.)
+ * @param {Object} studentData 
+ * @param {string} key 
+ * @returns {string|null}
+ */
+function getDocUrl(studentData, key) {
+    if (!studentData) return null;
+    const docs = studentData.documents || {};
+
+    const candidates = [
+        docs[key],
+        docs[`${key}_url`],
+        docs[`${key}Url`],
+        docs[`${key}URL`],
+        studentData[key],
+        studentData[`${key}_url`],
+        studentData[`${key}Url`],
+        studentData[`${key}URL`]
+    ];
+
+    if (key === 'passport') {
+        candidates.push(docs.passport_file, studentData.passport_file, studentData.passportUrl);
+    } else if (key === 'ssc_marksheet' || key === 'hsc_marksheet') {
+        candidates.push(
+            docs.transcript, docs.transcript_url, docs.transcripts,
+            studentData.transcript, studentData.transcript_url, studentData.transcripts,
+            studentData.transcriptUrl
+        );
+    } else if (key === 'ssc_certificate' || key === 'hsc_certificate') {
+        candidates.push(
+            docs.certificate, docs.certificate_url,
+            studentData.certificate, studentData.certificate_url
+        );
+    }
+
+    for (const cand of candidates) {
+        if (cand && typeof cand === 'string' && cand.trim().length > 0) {
+            return cand.trim();
+        }
+    }
+    return null;
+}
+
+/**
+ * Builds the HTML for the Uploaded Documents section inside the student detail modal.
+ * Reads from studentData.documents or top-level document URL fields.
+ * @param {Object|undefined} studentData - Full student document data from Firestore
+ * @returns {string} HTML string
+ */
+function buildDocumentsSection(studentData) {
+    console.log("Building Documents Section for studentData:", studentData);
+
+    const DOC_TYPES = [
+        { key: 'ssc_certificate',       label: 'SSC Certificate' },
+        { key: 'ssc_marksheet',         label: 'SSC Marksheet / Transcript' },
+        { key: 'hsc_certificate',       label: 'HSC Certificate' },
+        { key: 'hsc_marksheet',         label: 'HSC Marksheet / Transcript' },
+        { key: 'recommendation_letter', label: 'Recommendation Letter' },
+        { key: 'passport',              label: 'Passport' },
+        { key: 'student_nid',           label: 'Student NID' },
+        { key: 'cv',                    label: 'CV / Resume' },
+        { key: 'sop',                   label: 'SOP (Statement of Purpose)' },
+        { key: 'bank_statement',        label: 'Bank Statement' },
+        { key: 'other_documents',       label: 'Other Documents' },
+    ];
+
+    const docs = studentData ? (studentData.documents || {}) : {};
+    const uploadedCount = DOC_TYPES.filter(d => getDocUrl(studentData, d.key)).length;
+
+    const badgeClass = uploadedCount === 0
+        ? 'bg-secondary'
+        : uploadedCount === DOC_TYPES.length
+            ? 'bg-success'
+            : 'bg-warning text-dark';
+
+    let rows = DOC_TYPES.map(({ key, label }) => {
+        const url = getDocUrl(studentData, key);
+        const uploadedAt = docs[`${key}_uploadedAt`]
+            ? new Date(docs[`${key}_uploadedAt`]).toLocaleDateString('en-GB')
+            : null;
+
+        const statusBadge = url
+            ? `<span class="badge bg-success"><i class="bi bi-check-circle-fill me-1"></i>Uploaded</span>`
+            : `<span class="badge bg-light text-muted border">Not Uploaded Yet</span>`;
+
+        const actionBtn = url
+            ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer"
+                  class="btn btn-sm btn-outline-primary py-0 px-2 fw-semibold">
+                  <i class="bi bi-file-earmark-text me-1"></i>View Document
+               </a>`
+            : `<span class="text-muted small fst-italic">Not Uploaded Yet</span>`;
+
+        const dateCell = uploadedAt
+            ? `<small class="text-muted">${uploadedAt}</small>`
+            : `<small class="text-muted">—</small>`;
+
+        return `
+            <tr>
+                <td class="small fw-semibold">${escapeHtml(label)}</td>
+                <td>${statusBadge}</td>
+                <td>${dateCell}</td>
+                <td>${actionBtn}</td>
+            </tr>`;
+    }).join('');
+
+    return `
+        <hr class="my-3">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+            <h6 class="fw-bold text-dark mb-0">
+                <i class="bi bi-folder2-open text-danger me-2"></i>Uploaded Documents
+            </h6>
+            <span class="badge ${badgeClass} px-2 py-1">
+                ${uploadedCount} / ${DOC_TYPES.length} Uploaded
+            </span>
+        </div>
+        <div class="table-responsive rounded border">
+            <table class="table table-sm table-hover align-middle mb-0 small">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Document Type</th>
+                        <th>Status</th>
+                        <th>Upload Date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table>
+        </div>`;
+}
+
+/**
+ * Updates a student's application status in Firestore
+ * @param {string} studentId 
+ */
+export async function updateStudentStatus(studentId) {
+    const selectEl = document.getElementById('modalStudentStatusSelect');
+    const updateBtn = document.getElementById('updateStatusBtn');
+    const alertArea = document.getElementById('statusUpdateAlert');
+
+    if (!selectEl) return;
+    const newStatus = selectEl.value;
+
+    if (updateBtn) {
+        updateBtn.disabled = true;
+        updateBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Updating...';
+    }
+
+    try {
+        const studentRef = doc(db, 'students', studentId);
+        await updateDoc(studentRef, {
+            status: newStatus,
+            statusUpdatedAt: serverTimestamp()
+        });
+
+        // Update local memory map
+        if (window.loadedStudentsMap && window.loadedStudentsMap[studentId]) {
+            window.loadedStudentsMap[studentId].status = newStatus;
+        }
+
+        console.log(`Successfully updated status for student ${studentId} to: ${newStatus}`);
+
+        if (alertArea) {
+            alertArea.innerHTML = `
+                <div class="alert alert-success alert-dismissible fade show py-2 px-3 small mb-0" role="alert">
+                    <i class="bi bi-check-circle-fill me-1"></i> Application status updated to <strong>${escapeHtml(newStatus)}</strong>!
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>`;
+        }
+
+        // Refresh tables if present on current view
+        if (document.getElementById('studentsTableBody')) {
+            fetchStudents();
+        }
+        if (document.getElementById('recentApplicationsTableBody') || document.getElementById('totalStudentsKpi')) {
+            loadCEODashboardData();
+        }
+
+    } catch (error) {
+        console.error("Error updating student status:", error);
+        if (alertArea) {
+            alertArea.innerHTML = `
+                <div class="alert alert-danger alert-dismissible fade show py-2 px-3 small mb-0" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i> Failed to update status: ${escapeHtml(error.message)}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>`;
+        }
+    } finally {
+        if (updateBtn) {
+            updateBtn.disabled = false;
+            updateBtn.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i> Update Status';
+        }
+    }
+}
+
+/**
  * Opens a modal displaying full details for a selected student
  * @param {string} studentId 
  */
 export function viewStudentDetails(studentId) {
     const student = window.loadedStudentsMap ? window.loadedStudentsMap[studentId] : null;
+    console.log("viewStudentProfile() / viewStudentDetails() studentData:", student);
+
     if (!student) {
         alert("Student record details unavailable.");
         return;
     }
+
+    const currentStatus = student.status || 'Pending';
 
     const modalTitle = document.getElementById('studentDetailModalTitle');
     const modalBody = document.getElementById('studentDetailModalBody');
@@ -542,6 +816,30 @@ export function viewStudentDetails(studentId) {
     
     if (modalBody) {
         modalBody.innerHTML = `
+            <!-- Application Status Control Bar -->
+            <div class="card bg-light border-secondary-subtle p-3 mb-3">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                    <div>
+                        <h6 class="fw-bold mb-1 text-dark">
+                            <i class="bi bi-flag-fill text-danger me-1"></i> Application Status Management
+                        </h6>
+                        <small class="text-muted">Update candidate application status dynamically across portals.</small>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <select id="modalStudentStatusSelect" class="form-select form-select-sm fw-bold border-secondary" style="min-width: 140px;">
+                            <option value="Pending" ${currentStatus === 'Pending' ? 'selected' : ''}>⏳ Pending</option>
+                            <option value="Processing" ${currentStatus === 'Processing' ? 'selected' : ''}>⚙️ Processing</option>
+                            <option value="Approved" ${currentStatus === 'Approved' ? 'selected' : ''}>✅ Approved</option>
+                            <option value="Rejected" ${currentStatus === 'Rejected' ? 'selected' : ''}>❌ Rejected</option>
+                        </select>
+                        <button class="btn btn-sm btn-newage-red fw-semibold text-nowrap" id="updateStatusBtn" onclick="updateStudentStatus('${studentId}')">
+                            <i class="bi bi-arrow-repeat me-1"></i> Update Status
+                        </button>
+                    </div>
+                </div>
+                <div id="statusUpdateAlert" class="mt-2"></div>
+            </div>
+
             <div class="row g-3">
                 <div class="col-md-6">
                     <h6 class="fw-bold text-danger border-bottom pb-2 mb-2"><i class="bi bi-person-lines-fill me-1"></i> Personal Information</h6>
@@ -573,7 +871,7 @@ export function viewStudentDetails(studentId) {
                     </ul>
                 </div>
                 <div class="col-md-6">
-                    <h6 class="fw-bold text-danger border-bottom pb-2 mb-2"><i class="bi bi-compass-fill me-1"></i> Preferences & English Test</h6>
+                    <h6 class="fw-bold text-danger border-bottom pb-2 mb-2"><i class="bi bi-compass-fill me-1"></i> Preferences &amp; English Test</h6>
                     <ul class="list-group list-group-flush small">
                         <li class="list-group-item d-flex justify-content-between px-0">
                             <span class="text-muted">Target Countries:</span>
@@ -593,7 +891,8 @@ export function viewStudentDetails(studentId) {
                         </li>
                     </ul>
                 </div>
-            </div>`;
+            </div>
+            ${buildDocumentsSection(student)}`;
     }
 
     const modalEl = document.getElementById('studentDetailModal');
@@ -612,6 +911,8 @@ window.saveStudentApplication = saveStudentApplication;
 window.fetchStudents = fetchStudents;
 window.loadCEODashboardData = loadCEODashboardData;
 window.viewStudentDetails = viewStudentDetails;
+window.viewStudentProfile = viewStudentDetails;
+window.updateStudentStatus = updateStudentStatus;
 window.updateDetectedRoleUI = updateDetectedRoleUI;
 window.setDemoCredentials = function(email) {
     const emailInput = document.getElementById('emailInput');

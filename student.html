@@ -10,6 +10,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="style.css">
+    <!-- Firebase App (modular CDN) -->
+    <script type="module" src="auth.js"></script>
 </head>
 <body class="d-flex flex-column min-vh-100">
 
@@ -25,7 +27,7 @@
             <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
                 <ul class="navbar-nav align-items-center">
                     <li class="nav-item me-3">
-                        <span class="text-white-50"><i class="bi bi-mortarboard me-1"></i> Student ID: #8201</span>
+                        <span class="text-white-50" id="navStudentId"><i class="bi bi-mortarboard me-1"></i> <span class="spinner-border spinner-border-sm"></span></span>
                     </li>
                     <li class="nav-item">
                         <a class="btn btn-newage-outline py-1 px-3 btn-sm" href="login.html">
@@ -41,17 +43,7 @@
     <main class="container my-4 flex-grow-1 animate-fade-up">
 
         <!-- Top Alert / Success Banner -->
-        <div class="alert alert-newage-success d-flex align-items-center justify-content-between p-3 mb-4" role="alert">
-            <div class="d-flex align-items-center">
-                <span class="fs-4 me-3"><i class="bi bi-gift-fill text-success animate-bounce"></i></span>
-                <div>
-                    <strong class="d-block text-dark">Latest Portal Update</strong>
-                    <span class="small text-success fw-bold">🎉 Offer Letter Received!</span>
-                    <span class="text-muted small ms-2">from University of Toronto (MSc in Data Science)</span>
-                </div>
-            </div>
-            <span class="badge bg-success py-2 px-3">2 Hours Ago</span>
-        </div>
+        <div id="topBannerArea" class="mb-4"></div>
 
         <div class="row g-4">
             
@@ -62,22 +54,26 @@
                 <div class="card-newage mb-4">
                     <div class="card-header-newage bg-dark text-white text-center py-4">
                         <div class="position-relative d-inline-block mb-2">
-                            <div class="bg-danger text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 70px; height: 70px; font-size: 2rem;">
-                                SR
+                            <div class="bg-danger text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 70px; height: 70px; font-size: 2rem;" id="profileAvatar">
+                                <span class="spinner-border spinner-border-sm"></span>
                             </div>
                         </div>
-                        <h5 class="mb-1 text-white fw-bold">Sakib Rahman</h5>
-                        <p class="text-white-50 small mb-0"><i class="bi bi-envelope me-1"></i> sakib@gmail.com</p>
+                        <h5 class="mb-1 text-white fw-bold" id="profileName">Loading...</h5>
+                        <p class="text-white-50 small mb-0"><i class="bi bi-envelope me-1"></i> <span id="profileEmail">...</span></p>
                     </div>
                     <div class="p-3">
                         <ul class="list-group list-group-flush small mb-3">
                             <li class="list-group-item d-flex justify-content-between px-0">
+                                <span class="text-muted">Application Status:</span>
+                                <span id="profileStatusBadge" class="badge bg-warning text-dark px-2 py-1"><i class="bi bi-clock-history me-1"></i>Pending</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between px-0">
                                 <span class="text-muted">Qualifications:</span>
-                                <strong>B.Sc. in CSE</strong>
+                                <strong id="profileQualification">—</strong>
                             </li>
                             <li class="list-group-item d-flex justify-content-between px-0">
                                 <span class="text-muted">Assigned Counselor:</span>
-                                <strong class="text-danger">Kabir Hossain</strong>
+                                <strong class="text-danger" id="profileCounselor">—</strong>
                             </li>
                         </ul>
                         <div class="d-grid gap-2">
@@ -101,7 +97,7 @@
                 </div>
 
                 <!-- Navigation Switcher Button (Upload Documents Trigger) -->
-                <div class="card-newage p-3 mb-4 border-danger">
+                <div class="card-newage p-3 mb-4 border-danger" id="uploadDocsToggleCard">
                     <button class="btn btn-newage-red w-100 py-3 pulse-glow-button" id="uploadDocsToggleBtn" onclick="toggleRightWorkspace(true)">
                         <i class="bi bi-folder-symlink fs-5 me-2"></i> 📂 Upload Documents
                     </button>
@@ -195,110 +191,110 @@
                                 </thead>
                                 <tbody>
                                     <!-- Row 1 -->
-                                    <tr class="doc-upload-row">
+                                    <tr class="doc-upload-row" data-doc-type="ssc_certificate">
                                         <td class="small fw-semibold">SSC Certificate</td>
                                         <td>
-                                            <input type="file" class="form-control form-control-sm doc-file-input" onchange="handleFileSelected(this)">
+                                            <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
                                         </td>
                                         <td class="text-center status-col">
                                             <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
                                         </td>
                                     </tr>
                                     <!-- Row 2 -->
-                                    <tr class="doc-upload-row">
+                                    <tr class="doc-upload-row" data-doc-type="ssc_marksheet">
                                         <td class="small fw-semibold">SSC Marksheet</td>
                                         <td>
-                                            <input type="file" class="form-control form-control-sm doc-file-input" onchange="handleFileSelected(this)">
+                                            <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
                                         </td>
                                         <td class="text-center status-col">
                                             <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
                                         </td>
                                     </tr>
                                     <!-- Row 3 -->
-                                    <tr class="doc-upload-row">
+                                    <tr class="doc-upload-row" data-doc-type="hsc_certificate">
                                         <td class="small fw-semibold">HSC Certificate</td>
                                         <td>
-                                            <input type="file" class="form-control form-control-sm doc-file-input" onchange="handleFileSelected(this)">
+                                            <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
                                         </td>
                                         <td class="text-center status-col">
                                             <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
                                         </td>
                                     </tr>
                                     <!-- Row 4 -->
-                                    <tr class="doc-upload-row">
+                                    <tr class="doc-upload-row" data-doc-type="hsc_marksheet">
                                         <td class="small fw-semibold">HSC Marksheet</td>
                                         <td>
-                                            <input type="file" class="form-control form-control-sm doc-file-input" onchange="handleFileSelected(this)">
+                                            <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
                                         </td>
                                         <td class="text-center status-col">
                                             <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
                                         </td>
                                     </tr>
                                     <!-- Row 5 -->
-                                    <tr class="doc-upload-row">
+                                    <tr class="doc-upload-row" data-doc-type="recommendation_letter">
                                         <td class="small fw-semibold">Recommendation Letter (2 Copies)</td>
                                         <td>
-                                            <input type="file" class="form-control form-control-sm doc-file-input" onchange="handleFileSelected(this)">
+                                            <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
                                         </td>
                                         <td class="text-center status-col">
                                             <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
                                         </td>
                                     </tr>
                                     <!-- Row 6 -->
-                                    <tr class="doc-upload-row">
+                                    <tr class="doc-upload-row" data-doc-type="passport">
                                         <td class="small fw-semibold">Passport</td>
                                         <td>
-                                            <input type="file" class="form-control form-control-sm doc-file-input" onchange="handleFileSelected(this)">
+                                            <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
                                         </td>
                                         <td class="text-center status-col">
                                             <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
                                         </td>
                                     </tr>
                                     <!-- Row 7 -->
-                                    <tr class="doc-upload-row">
+                                    <tr class="doc-upload-row" data-doc-type="student_nid">
                                         <td class="small fw-semibold">Student NID</td>
                                         <td>
-                                            <input type="file" class="form-control form-control-sm doc-file-input" onchange="handleFileSelected(this)">
+                                            <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
                                         </td>
                                         <td class="text-center status-col">
                                             <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
                                         </td>
                                     </tr>
                                     <!-- Row 8 -->
-                                    <tr class="doc-upload-row">
+                                    <tr class="doc-upload-row" data-doc-type="cv">
                                         <td class="small fw-semibold">CV</td>
                                         <td>
-                                            <input type="file" class="form-control form-control-sm doc-file-input" onchange="handleFileSelected(this)">
+                                            <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
                                         </td>
                                         <td class="text-center status-col">
                                             <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
                                         </td>
                                     </tr>
                                     <!-- Row 9 -->
-                                    <tr class="doc-upload-row">
+                                    <tr class="doc-upload-row" data-doc-type="sop">
                                         <td class="small fw-semibold">SOP</td>
                                         <td>
-                                            <input type="file" class="form-control form-control-sm doc-file-input" onchange="handleFileSelected(this)">
+                                            <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
                                         </td>
                                         <td class="text-center status-col">
                                             <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
                                         </td>
                                     </tr>
                                     <!-- Row 10 -->
-                                    <tr class="doc-upload-row">
+                                    <tr class="doc-upload-row" data-doc-type="bank_statement">
                                         <td class="small fw-semibold">Bank Statement</td>
                                         <td>
-                                            <input type="file" class="form-control form-control-sm doc-file-input" onchange="handleFileSelected(this)">
+                                            <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
                                         </td>
                                         <td class="text-center status-col">
                                             <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
                                         </td>
                                     </tr>
                                     <!-- Row 11 -->
-                                    <tr class="doc-upload-row">
+                                    <tr class="doc-upload-row" data-doc-type="other_documents">
                                         <td class="small fw-semibold">Other Documents</td>
                                         <td>
-                                            <input type="file" class="form-control form-control-sm doc-file-input" onchange="handleFileSelected(this)">
+                                            <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
                                         </td>
                                         <td class="text-center status-col">
                                             <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
@@ -326,6 +322,9 @@
 
     </main>
 
+    <!-- Upload Toast Notification Container -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 9999" id="uploadToastContainer"></div>
+
     <!-- FOOTER -->
     <footer class="footer-newage">
         <div class="container text-center">
@@ -348,28 +347,28 @@
                     
                     <h6 class="fw-bold border-bottom pb-1 text-danger">Personal Details</h6>
                     <div class="row g-2 mb-3">
-                        <div class="col-6"><strong>Full Name:</strong> Sakib Rahman</div>
-                        <div class="col-6"><strong>Date of Birth:</strong> 1999-10-10</div>
-                        <div class="col-6"><strong>Email:</strong> sakib@gmail.com</div>
-                        <div class="col-6"><strong>Contact No:</strong> +880 1712-345678</div>
-                        <div class="col-6"><strong>Gender:</strong> Male</div>
-                        <div class="col-6"><strong>Post Code:</strong> 1209</div>
-                        <div class="col-12"><strong>Address:</strong> House 45, Road 12, Dhanmondi, Dhaka</div>
+                        <div class="col-6"><strong>Full Name:</strong> <span id="info-fullName">—</span></div>
+                        <div class="col-6"><strong>Date of Birth:</strong> <span id="info-dob">—</span></div>
+                        <div class="col-6"><strong>Email:</strong> <span id="info-email">—</span></div>
+                        <div class="col-6"><strong>Contact No:</strong> <span id="info-contact">—</span></div>
+                        <div class="col-6"><strong>Gender:</strong> <span id="info-gender">—</span></div>
+                        <div class="col-6"><strong>Post Code:</strong> <span id="info-postCode">—</span></div>
+                        <div class="col-12"><strong>Address:</strong> <span id="info-address">—</span></div>
                     </div>
 
                     <h6 class="fw-bold border-bottom pb-1 text-danger">Academic Qualifications</h6>
                     <div class="row g-2 mb-3">
-                        <div class="col-6"><strong>S.S.C Result:</strong> GPA 5.00/5.00 (2018)</div>
-                        <div class="col-6"><strong>H.S.C Result:</strong> GPA 5.00/5.00 (2020)</div>
-                        <div class="col-6"><strong>Bachelor:</strong> CGPA 3.65/4.00 (2024)</div>
-                        <div class="col-6"><strong>Major:</strong> Computer Science & Engineering</div>
+                        <div class="col-6"><strong>S.S.C Result:</strong> <span id="info-ssc">—</span></div>
+                        <div class="col-6"><strong>H.S.C Result:</strong> <span id="info-hsc">—</span></div>
+                        <div class="col-6"><strong>Bachelor:</strong> <span id="info-bachelor">—</span></div>
+                        <div class="col-6"><strong>Major:</strong> <span id="info-major">—</span></div>
                     </div>
 
                     <h6 class="fw-bold border-bottom pb-1 text-danger">English Test Score</h6>
                     <div class="row g-2">
-                        <div class="col-6"><strong>Test Name:</strong> IELTS Academic</div>
-                        <div class="col-6"><strong>Overall Score:</strong> 7.5</div>
-                        <div class="col-12"><strong>Bands:</strong> Listening: 8.0, Reading: 7.5, Writing: 6.5, Speaking: 7.0</div>
+                        <div class="col-6"><strong>Test Name:</strong> <span id="info-testName">—</span></div>
+                        <div class="col-6"><strong>Overall Score:</strong> <span id="info-testScore">—</span></div>
+                        <div class="col-12"><strong>Bands:</strong> <span id="info-testBands">—</span></div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -436,12 +435,372 @@
     <!-- Bootstrap 5.3 JS Bundle CDN -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- JavaScript States and Functions -->
+    <!-- Cloudinary Upload + Firestore Integration (ES Module) -->
+    <script type="module">
+        // ── Cloudinary Config ──────────────────────────────────────────────────
+        const CLOUDINARY_CLOUD_NAME = 'v5e5mn0a';
+        const CLOUDINARY_UPLOAD_PRESET = 'newage_present';
+        const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`;
+
+        // ── Firebase Auth & Firestore (shared instance from auth.js) ───────────
+        import { auth, db, onAuthStateChanged, collection, query, where, getDocs, updateDoc, doc } from "./auth.js";
+
+        // Track logged-in user and their Firestore document ID
+        let currentUser = null;
+        let studentDocId = null;
+
+        // ── Helper: safe text setter ────────────────────────────────────────
+        function setText(id, value) {
+            const el = document.getElementById(id);
+            if (el) el.textContent = value || '—';
+        }
+
+        // ── Helper: derive initials from full name ──────────────────────────
+        function getInitials(name) {
+            if (!name) return '?';
+            return name.trim().split(/\s+/).map(w => w[0].toUpperCase()).slice(0, 2).join('');
+        }
+
+        // ── Helper: derive display name from email ─────────────────────────
+        function nameFromEmail(email) {
+            if (!email) return 'New Student';
+            return email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        }
+
+        // ── Populate DOM with student record ───────────────────────────────
+        function populateProfile(data, docId) {
+            const p = data.personalInfo || {};
+            const edu = data.educationalProfile || {};
+            const eng = data.englishProficiency || {};
+
+            const fullName = p.fullName || nameFromEmail(p.email);
+            const initials = getInitials(fullName);
+
+            // Navbar
+            const shortId = docId ? docId.substring(0, 6).toUpperCase() : '——';
+            const navEl = document.getElementById('navStudentId');
+            if (navEl) navEl.innerHTML = `<i class="bi bi-mortarboard me-1"></i> ID: #${shortId}`;
+
+            // Profile card
+            const avatar = document.getElementById('profileAvatar');
+            if (avatar) avatar.textContent = initials;
+            setText('profileName', fullName);
+            setText('profileEmail', p.email || auth.currentUser?.email || '');
+
+            // Qualification: show highest degree
+            let qual = '—';
+            if (edu.master?.major) qual = `MSc in ${edu.master.major}`;
+            else if (edu.bachelor?.major) qual = `B.Sc. in ${edu.bachelor.major}`;
+            else if (edu.hsc?.major) qual = `HSC — ${edu.hsc.major}`;
+            setText('profileQualification', qual);
+            setText('profileCounselor', 'Newage Counselor');
+
+            // Application Status Badge Logic
+            const statusStr = data.status || 'Pending';
+            const statusBadgeEl = document.getElementById('profileStatusBadge');
+            if (statusBadgeEl) {
+                const s = statusStr.toLowerCase().trim();
+                if (s === 'approved') {
+                    statusBadgeEl.className = 'badge bg-success px-2 py-1';
+                    statusBadgeEl.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i>Approved';
+                } else if (s === 'processing') {
+                    statusBadgeEl.className = 'badge bg-info text-dark px-2 py-1';
+                    statusBadgeEl.innerHTML = '<i class="bi bi-gear-fill me-1"></i>Processing';
+                } else if (s === 'rejected') {
+                    statusBadgeEl.className = 'badge bg-danger px-2 py-1';
+                    statusBadgeEl.innerHTML = '<i class="bi bi-x-circle-fill me-1"></i>Rejected';
+                } else {
+                    statusBadgeEl.className = 'badge bg-warning text-dark px-2 py-1';
+                    statusBadgeEl.innerHTML = '<i class="bi bi-clock-history me-1"></i>Pending';
+                }
+            }
+
+            // Top banner — show applied course & status badge
+            const course = (data.preferences?.courseChoices || [])[0];
+            const country = (data.preferences?.countryChoices || [])[0];
+            const bannerArea = document.getElementById('topBannerArea');
+            if (bannerArea) {
+                let badgeHTML = '';
+                const s = statusStr.toLowerCase().trim();
+                if (s === 'approved') {
+                    badgeHTML = '<span class="badge bg-success py-2 px-3 fs-6"><i class="bi bi-check-circle-fill me-1"></i>Approved</span>';
+                } else if (s === 'processing') {
+                    badgeHTML = '<span class="badge bg-info text-dark py-2 px-3 fs-6"><i class="bi bi-gear-fill me-1"></i>Processing</span>';
+                } else if (s === 'rejected') {
+                    badgeHTML = '<span class="badge bg-danger py-2 px-3 fs-6"><i class="bi bi-x-circle-fill me-1"></i>Rejected</span>';
+                } else {
+                    badgeHTML = '<span class="badge bg-warning text-dark py-2 px-3 fs-6"><i class="bi bi-clock-history me-1"></i>Pending</span>';
+                }
+
+                bannerArea.innerHTML = `
+                    <div class="alert alert-newage-success d-flex align-items-center justify-content-between p-3" role="alert">
+                        <div class="d-flex align-items-center">
+                            <span class="fs-4 me-3"><i class="bi bi-mortarboard-fill text-danger"></i></span>
+                            <div>
+                                <strong class="d-block text-dark fs-6">Application Status: ${escapeHtml(statusStr)}</strong>
+                                ${course ? `<span class="small text-danger fw-bold">📚 ${course}</span>` : ''}
+                                ${country ? `<span class="text-muted small ms-2">Target: ${country}</span>` : ''}
+                            </div>
+                        </div>
+                        ${badgeHTML}
+                    </div>`;
+            }
+
+            // Enable Upload section toggle card when application data exists
+            const toggleCard = document.getElementById('uploadDocsToggleCard');
+            if (toggleCard) toggleCard.classList.remove('d-none');
+
+            // Re-enable Info Modal button
+            const infoBtn = document.querySelector('[data-bs-target="#viewInfoModal"]');
+            if (infoBtn) {
+                infoBtn.disabled = false;
+                infoBtn.title = 'View Profile Record';
+            }
+
+            // View Info Modal
+            setText('info-fullName', p.fullName);
+            setText('info-dob', p.dob);
+            setText('info-email', p.email);
+            setText('info-contact', p.contactNo);
+            setText('info-gender', p.gender);
+            setText('info-postCode', p.postCode);
+            setText('info-address', p.address);
+
+            const sscGpa = edu.ssc?.gpa ? `GPA ${edu.ssc.gpa}${edu.ssc.passingYear ? ` (${edu.ssc.passingYear})` : ''}` : '—';
+            const hscGpa = edu.hsc?.gpa ? `GPA ${edu.hsc.gpa}${edu.hsc.passingYear ? ` (${edu.hsc.passingYear})` : ''}` : '—';
+            const bachGpa = edu.bachelor?.cgpa ? `CGPA ${edu.bachelor.cgpa}${edu.bachelor.passingYear ? ` (${edu.bachelor.passingYear})` : ''}` : '—';
+            setText('info-ssc', sscGpa);
+            setText('info-hsc', hscGpa);
+            setText('info-bachelor', bachGpa);
+            setText('info-major', edu.bachelor?.major || edu.hsc?.major || '—');
+
+            setText('info-testName', eng.testName);
+            setText('info-testScore', eng.overallScore);
+            const bands = eng.sectionScores;
+            if (bands) {
+                setText('info-testBands',
+                    `Listening: ${bands.listening || '—'}, Reading: ${bands.reading || '—'}, Writing: ${bands.writing || '—'}, Speaking: ${bands.speaking || '—'}`);
+            }
+        }
+
+        // ── Show new-student call-to-action banner & hide uploads ─────────
+        function showNewStudentState(email) {
+            const displayName = nameFromEmail(email);
+            const initials = getInitials(displayName);
+
+            const navEl = document.getElementById('navStudentId');
+            if (navEl) navEl.innerHTML = `<i class="bi bi-mortarboard me-1"></i> New Student`;
+
+            const avatar = document.getElementById('profileAvatar');
+            if (avatar) avatar.textContent = initials;
+            setText('profileName', displayName);
+            setText('profileEmail', email);
+            setText('profileQualification', 'Not submitted yet');
+            setText('profileCounselor', 'Pending Assignment');
+
+            // 1. Hide the upload toggle button on the left sidebar
+            const toggleCard = document.getElementById('uploadDocsToggleCard');
+            if (toggleCard) toggleCard.classList.add('d-none');
+
+            // 2. Hide upload checklist workspace
+            const uploadWorkspace = document.getElementById('uploadWorkspace');
+            if (uploadWorkspace) uploadWorkspace.classList.add('d-none');
+
+            // 3. Render prominent message and button in main workspace
+            const welcomeWorkspace = document.getElementById('welcomeWorkspace');
+            if (welcomeWorkspace) {
+                welcomeWorkspace.classList.remove('d-none');
+                welcomeWorkspace.innerHTML = `
+                    <div class="fs-1 text-danger opacity-75 mb-3">
+                        <i class="bi bi-lock-fill" style="font-size: 4.5rem;"></i>
+                    </div>
+                    <h3 class="fw-bold mb-2 text-dark">Document Upload Restricted</h3>
+                    <p class="text-muted text-center max-width-500 mb-4 fs-5">
+                        You must fill up the Application Form first to upload documents.
+                    </p>
+                    <div class="alert alert-warning p-3 mb-4 text-start border border-warning" style="max-width: 480px;">
+                        <i class="bi bi-info-circle-fill me-2"></i> Document uploads will unlock automatically once your official application profile is submitted.
+                    </div>
+                    <a href="application_form.html" class="btn btn-danger btn-lg px-4 py-3 fw-bold shadow">
+                        <i class="bi bi-file-earmark-text-fill me-2"></i> You must fill up the Application Form first to upload documents
+                    </a>`;
+            }
+
+            const bannerArea = document.getElementById('topBannerArea');
+            if (bannerArea) {
+                bannerArea.innerHTML = `
+                    <div class="alert alert-warning border-0 shadow-sm p-4 mb-0" role="alert">
+                        <div class="d-flex flex-wrap align-items-center gap-3">
+                            <span class="fs-2">📋</span>
+                            <div class="flex-grow-1">
+                                <h5 class="fw-bold mb-1">Welcome, ${displayName}! Application Profile Required</h5>
+                                <p class="mb-0 text-muted small">No application record found for <strong>${email}</strong>. Please complete the student application form to unlock document uploads.</p>
+                            </div>
+                            <a href="application_form.html" class="btn btn-dark px-4 py-2 fw-semibold flex-shrink-0">
+                                <i class="bi bi-file-earmark-person me-2"></i>Fill Application Form
+                            </a>
+                        </div>
+                    </div>`;
+            }
+
+            // Disable the View My Information button since there's no data
+            const infoBtn = document.querySelector('[data-bs-target="#viewInfoModal"]');
+            if (infoBtn) {
+                infoBtn.disabled = true;
+                infoBtn.title = 'Submit your application form first';
+            }
+        }
+
+        // ── Auth State Handler ─────────────────────────────────────────────
+        onAuthStateChanged(auth, async (user) => {
+            console.log("Auth State: ", user);
+            currentUser = user;
+
+            // 🔒 Redirect unauthenticated users immediately
+            if (!user) {
+                console.warn("Auth State: No authenticated user. Redirecting to login.html...");
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Try to find matching Firestore student record by email
+            try {
+                const q = query(
+                    collection(db, 'students'),
+                    where('personalInfo.email', '==', user.email)
+                );
+                const snap = await getDocs(q);
+
+                if (!snap.empty) {
+                    // ✅ Record found — populate everything
+                    studentDocId = snap.docs[0].id;
+                    populateProfile(snap.docs[0].data(), studentDocId);
+                } else {
+                    // 🆕 New student — no application yet
+                    showNewStudentState(user.email);
+                }
+            } catch (e) {
+                console.warn('Could not resolve student Firestore doc:', e);
+                showNewStudentState(user.email);
+            }
+        });
+
+        // ── Toast Helper ───────────────────────────────────────────────────────
+        function showToast(message, type = 'danger') {
+            const container = document.getElementById('uploadToastContainer');
+            if (!container) return;
+            const id = 'toast_' + Date.now();
+            const bgClass = type === 'success' ? 'bg-success' : 'bg-danger';
+            const icon = type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill';
+            container.insertAdjacentHTML('beforeend', `
+                <div id="${id}" class="toast align-items-center text-white ${bgClass} border-0 mb-2" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="5000">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <i class="bi ${icon} me-2"></i>${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>`);
+            const toastEl = document.getElementById(id);
+            const toast = new bootstrap.Toast(toastEl);
+            toast.show();
+            toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
+        }
+
+        // ── Status Cell Helpers ────────────────────────────────────────────────
+        function setStatusUploading(statusCell) {
+            statusCell.innerHTML = `<span class="text-warning small fw-semibold"><span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Uploading...</span>`;
+        }
+
+        function setStatusSuccess(statusCell, secureUrl) {
+            statusCell.innerHTML = `
+                <div class="d-flex flex-column align-items-center gap-1">
+                    <span class="text-success fs-5"><i class="bi bi-check-circle-fill"></i></span>
+                    <a href="${secureUrl}" target="_blank" rel="noopener noreferrer" class="badge bg-success text-decoration-none" style="font-size:0.7rem;">View File</a>
+                </div>`;
+        }
+
+        function setStatusError(statusCell) {
+            statusCell.innerHTML = `<span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>`;
+        }
+
+        // ── Core Upload Function ───────────────────────────────────────────────
+        async function uploadToCloudinary(file, docType, statusCell, fileInput) {
+            // Disable input while uploading
+            fileInput.disabled = true;
+            setStatusUploading(statusCell);
+
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+
+                const response = await fetch(CLOUDINARY_UPLOAD_URL, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    throw new Error(errData.error?.message || `Upload failed (HTTP ${response.status})`);
+                }
+
+                const data = await response.json();
+                const secureUrl = data.secure_url;
+
+                // ✅ Update UI
+                setStatusSuccess(statusCell, secureUrl);
+                showToast(`✅ "${docType.replace(/_/g, ' ')}" uploaded successfully!`, 'success');
+
+                // ── Save to Firestore ──────────────────────────────────────────
+                if (studentDocId) {
+                    try {
+                        const studentRef = doc(db, 'students', studentDocId);
+                        await updateDoc(studentRef, {
+                            [`documents.${docType}`]: secureUrl,
+                            [`documents.${docType}_uploadedAt`]: new Date().toISOString()
+                        });
+                        console.log(`Saved ${docType} URL to Firestore for student: ${studentDocId}`);
+                    } catch (firestoreErr) {
+                        console.warn('Firestore updateDoc failed (upload was still successful):', firestoreErr);
+                    }
+                } else {
+                    console.warn('No Firestore student doc found — URL saved locally only. Student may not be logged in or doc does not exist yet.');
+                }
+
+            } catch (error) {
+                console.error('Cloudinary upload error:', error);
+                setStatusError(statusCell);
+                showToast(`Upload failed for "${docType.replace(/_/g, ' ')}": ${error.message}`, 'danger');
+            } finally {
+                fileInput.disabled = false;
+            }
+        }
+
+        // ── Attach Change Listeners After DOM Ready ────────────────────────────
+        document.addEventListener('DOMContentLoaded', () => {
+            const rows = document.querySelectorAll('.doc-upload-row');
+            rows.forEach(row => {
+                const fileInput = row.querySelector('.doc-file-input');
+                const statusCell = row.querySelector('.status-col');
+                const docType = row.dataset.docType || 'unknown_document';
+
+                fileInput.addEventListener('change', () => {
+                    if (fileInput.files && fileInput.files.length > 0) {
+                        uploadToCloudinary(fileInput.files[0], docType, statusCell, fileInput);
+                    } else {
+                        setStatusError(statusCell);
+                    }
+                });
+            });
+        });
+    </script>
+
+    <!-- Non-module page utility functions -->
     <script>
         function toggleRightWorkspace(showUploads) {
             const welcomeCard = document.getElementById('welcomeWorkspace');
             const uploadCard = document.getElementById('uploadWorkspace');
-
             if (showUploads) {
                 welcomeCard.classList.add('d-none');
                 uploadCard.classList.remove('d-none');
@@ -451,37 +810,19 @@
             }
         }
 
-        function handleFileSelected(input) {
-            const row = input.closest('tr');
-            const statusCell = row.querySelector('.status-col');
-
-            if (input.files && input.files.length > 0) {
-                // Change status icon from cross to checkmark
-                statusCell.innerHTML = `<span class="text-success fs-5"><i class="bi bi-check-circle-fill"></i></span>`;
-            } else {
-                // Change back to cross
-                statusCell.innerHTML = `<span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>`;
-            }
-        }
-
         function submitAllDocs() {
-            // Count total uploads
             const rows = document.querySelectorAll('.doc-upload-row');
-            let uploadedCount = 0;
-            
-            rows.forEach(row => {
-                const input = row.querySelector('.doc-file-input');
-                if (input.files && input.files.length > 0) {
-                    uploadedCount++;
-                }
-            });
+            // Count rows where the status cell shows a "View File" link (i.e. upload succeeded)
+            const uploadedCount = Array.from(rows).filter(row =>
+                row.querySelector('.status-col a') !== null
+            ).length;
 
             if (uploadedCount === 0) {
-                alert('You have not selected any files yet. Please upload at least one document before submitting.');
+                alert('No documents have been uploaded yet. Please select and upload at least one document before submitting.');
                 return;
             }
 
-            alert(`Successfully submitted ${uploadedCount} out of ${rows.length} documents. Your counselor has been notified to verify them.`);
+            alert(`✅ ${uploadedCount} out of ${rows.length} documents submitted to your counselor for verification!`);
             toggleRightWorkspace(false);
         }
 
