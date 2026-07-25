@@ -731,66 +731,337 @@ function buildDocumentsSection(studentData) {
 }
 
 /**
- * Updates a student's application status in Firestore
+ * Resolves applications array for a student, falling back to legacy preferences if empty
+ * @param {Object} student 
+ * @returns {Array<Object>}
+ */
+function getStudentApplications(student) {
+    if (!student) return [];
+    
+    // 1. Return explicit applications array if present
+    if (Array.isArray(student.applications) && student.applications.length > 0) {
+        return student.applications;
+    }
+    
+    // 2. Fallback: Generate initial application objects from legacy preferences
+    const apps = [];
+    const courses = student.preferences?.courseChoices || [];
+    const countries = student.preferences?.countryChoices || [];
+    const unis = student.preferences?.universityChoices || [];
+    const defaultStatus = student.status || 'Pending';
+
+    const count = Math.max(courses.length, countries.length, unis.length);
+    if (count > 0) {
+        for (let i = 0; i < count; i++) {
+            apps.push({
+                id: `app_legacy_${i + 1}`,
+                country: countries[i] || countries[0] || 'N/A',
+                university: unis[i] || unis[0] || 'Target University',
+                course: courses[i] || courses[0] || 'General Program',
+                intake: 'September 2026',
+                course_link: '',
+                status: defaultStatus,
+                createdAt: new Date().toISOString()
+            });
+        }
+    }
+
+    return apps;
+}
+
+/**
+ * Builds HTML for Applications Management Section in Student Profile Modal
+ * @param {string} studentId 
+ * @param {Object} student 
+ * @returns {string}
+ */
+function buildApplicationsManagementSection(studentId, student) {
+    const apps = getStudentApplications(student);
+
+    let rowsHTML = '';
+    if (apps.length === 0) {
+        rowsHTML = `
+            <tr>
+                <td colspan="5" class="text-center text-muted py-3">
+                    <i class="bi bi-folder-x me-1"></i> No application tracking records found for this student. Use the form above to add one.
+                </td>
+            </tr>`;
+    } else {
+        rowsHTML = apps.map((app) => {
+            const status = app.status || 'Pending';
+            const linkHTML = app.course_link 
+                ? `<a href="${escapeHtml(app.course_link)}" target="_blank" rel="noopener noreferrer" class="btn btn-xs btn-outline-primary py-0 px-2 small">
+                      <i class="bi bi-box-arrow-up-right me-1"></i>Link
+                   </a>`
+                : `<span class="text-muted small fst-italic">—</span>`;
+
+            return `
+                <tr>
+                    <td class="align-middle">
+                        <div class="fw-bold text-dark small">${escapeHtml(app.course || 'N/A')}</div>
+                        <small class="text-muted"><i class="bi bi-building me-1"></i>${escapeHtml(app.university || 'N/A')}</small>
+                    </td>
+                    <td class="align-middle">
+                        <span class="badge bg-danger px-2 py-1 me-1">${escapeHtml(app.country || 'N/A')}</span>
+                        <small class="text-muted d-block mt-1">${escapeHtml(app.intake || 'N/A')}</small>
+                    </td>
+                    <td class="align-middle text-center">${linkHTML}</td>
+                    <td class="align-middle">
+                        <select id="appStatusSelect_${app.id}" class="form-select form-select-sm small fw-semibold">
+                            <option value="Pending" ${status === 'Pending' ? 'selected' : ''}>⏳ Pending</option>
+                            <option value="Processing" ${status === 'Processing' ? 'selected' : ''}>⚙️ Processing</option>
+                            <option value="Approved" ${status === 'Approved' ? 'selected' : ''}>✅ Approved</option>
+                            <option value="Rejected" ${status === 'Rejected' ? 'selected' : ''}>❌ Rejected</option>
+                        </select>
+                    </td>
+                    <td class="align-middle text-end text-nowrap">
+                        <button class="btn btn-sm btn-outline-success me-1 py-1 px-2 fw-semibold" onclick="updateApplicationStatus('${studentId}', '${app.id}')" title="Save status for this application">
+                            <i class="bi bi-check-lg me-1"></i>Save
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger py-1 px-2" onclick="deleteApplication('${studentId}', '${app.id}')" title="Remove application">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>`;
+        }).join('');
+    }
+
+    return `
+        <!-- APPLICATIONS MANAGEMENT SECTION -->
+        <div class="card border-danger-subtle mb-3">
+            <div class="card-header bg-dark text-white d-flex align-items-center justify-content-between py-2">
+                <h6 class="mb-0 fw-bold text-white"><i class="bi bi-mortarboard-fill text-danger me-2"></i>Applications Management (${apps.length})</h6>
+                <span class="badge bg-danger px-2 py-1">Multi-Application Tracker</span>
+            </div>
+            <div class="card-body bg-light p-3">
+                <!-- Add Application Form -->
+                <div class="border rounded p-3 bg-white mb-3 shadow-sm">
+                    <h6 class="fw-bold text-dark small mb-2"><i class="bi bi-plus-circle-fill text-danger me-1"></i> Add New University Application</h6>
+                    <div class="row g-2">
+                        <div class="col-md-2 col-6">
+                            <label class="form-label text-muted small mb-1 fw-semibold">Country</label>
+                            <input type="text" id="newAppCountry" class="form-control form-control-sm" placeholder="e.g. Canada" required>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <label class="form-label text-muted small mb-1 fw-semibold">University</label>
+                            <input type="text" id="newAppUni" class="form-control form-control-sm" placeholder="e.g. Univ of Toronto" required>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <label class="form-label text-muted small mb-1 fw-semibold">Course Name</label>
+                            <input type="text" id="newAppCourse" class="form-control form-control-sm" placeholder="e.g. MSc Data Science" required>
+                        </div>
+                        <div class="col-md-2 col-6">
+                            <label class="form-label text-muted small mb-1 fw-semibold">Intake</label>
+                            <input type="text" id="newAppIntake" class="form-control form-control-sm" placeholder="e.g. Fall 2026">
+                        </div>
+                        <div class="col-md-2 col-6">
+                            <label class="form-label text-muted small mb-1 fw-semibold">Initial Status</label>
+                            <select id="newAppStatus" class="form-select form-select-sm fw-semibold">
+                                <option value="Pending">⏳ Pending</option>
+                                <option value="Processing">⚙️ Processing</option>
+                                <option value="Approved">✅ Approved</option>
+                                <option value="Rejected">❌ Rejected</option>
+                            </select>
+                        </div>
+                        <div class="col-md-9 col-12">
+                            <label class="form-label text-muted small mb-1 fw-semibold">Course Link / URL</label>
+                            <input type="url" id="newAppLink" class="form-control form-control-sm" placeholder="https://university.edu/course-page">
+                        </div>
+                        <div class="col-md-3 col-12 d-flex align-items-end">
+                            <button class="btn btn-sm btn-newage-red w-100 fw-bold py-1" onclick="addNewApplication('${studentId}')">
+                                <i class="bi bi-plus-lg me-1"></i> Add Application
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="appManagerAlert"></div>
+
+                <!-- Existing Applications Table -->
+                <div class="table-responsive rounded border bg-white">
+                    <table class="table table-sm table-hover align-middle mb-0 small">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Course &amp; University</th>
+                                <th>Country &amp; Intake</th>
+                                <th class="text-center">Link</th>
+                                <th>Status</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rowsHTML}</tbody>
+                    </table>
+                </div>
+            </div>
+        </div>`;
+}
+
+/**
+ * Adds a new application object to a student's applications array in Firestore
  * @param {string} studentId 
  */
-export async function updateStudentStatus(studentId) {
-    const selectEl = document.getElementById('modalStudentStatusSelect');
-    const updateBtn = document.getElementById('updateStatusBtn');
-    const alertArea = document.getElementById('statusUpdateAlert');
+export async function addNewApplication(studentId) {
+    const country = document.getElementById('newAppCountry')?.value.trim();
+    const university = document.getElementById('newAppUni')?.value.trim();
+    const course = document.getElementById('newAppCourse')?.value.trim();
+    const intake = document.getElementById('newAppIntake')?.value.trim() || 'September 2026';
+    const course_link = document.getElementById('newAppLink')?.value.trim() || '';
+    const status = document.getElementById('newAppStatus')?.value || 'Pending';
+    const alertArea = document.getElementById('appManagerAlert');
 
-    if (!selectEl) return;
-    const newStatus = selectEl.value;
-
-    if (updateBtn) {
-        updateBtn.disabled = true;
-        updateBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Updating...';
+    if (!country || !university || !course) {
+        alert('Please specify Country, University, and Course Name.');
+        return;
     }
+
+    const student = window.loadedStudentsMap ? window.loadedStudentsMap[studentId] : null;
+    if (!student) return;
+
+    const existingApps = getStudentApplications(student);
+    const newAppObj = {
+        id: 'app_' + Date.now(),
+        country,
+        university,
+        course,
+        intake,
+        course_link,
+        status,
+        createdAt: new Date().toISOString()
+    };
+
+    const updatedApps = [...existingApps, newAppObj];
 
     try {
         const studentRef = doc(db, 'students', studentId);
         await updateDoc(studentRef, {
-            status: newStatus,
-            statusUpdatedAt: serverTimestamp()
+            applications: updatedApps,
+            status: status
         });
 
         // Update local memory map
-        if (window.loadedStudentsMap && window.loadedStudentsMap[studentId]) {
-            window.loadedStudentsMap[studentId].status = newStatus;
-        }
+        student.applications = updatedApps;
+        student.status = status;
 
-        console.log(`Successfully updated status for student ${studentId} to: ${newStatus}`);
+        console.log(`Added new application to student ${studentId}:`, newAppObj);
 
-        if (alertArea) {
-            alertArea.innerHTML = `
-                <div class="alert alert-success alert-dismissible fade show py-2 px-3 small mb-0" role="alert">
-                    <i class="bi bi-check-circle-fill me-1"></i> Application status updated to <strong>${escapeHtml(newStatus)}</strong>!
+        // Re-render modal view to show updated application table
+        viewStudentDetails(studentId);
+
+        const newAlertArea = document.getElementById('appManagerAlert');
+        if (newAlertArea) {
+            newAlertArea.innerHTML = `
+                <div class="alert alert-success alert-dismissible fade show py-2 px-3 small mb-3" role="alert">
+                    <i class="bi bi-check-circle-fill me-1"></i> Application for <strong>${escapeHtml(course)} (${escapeHtml(university)})</strong> added successfully!
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>`;
         }
 
-        // Refresh tables if present on current view
-        if (document.getElementById('studentsTableBody')) {
-            fetchStudents();
-        }
-        if (document.getElementById('recentApplicationsTableBody') || document.getElementById('totalStudentsKpi')) {
-            loadCEODashboardData();
-        }
+        if (document.getElementById('studentsTableBody')) fetchStudents();
+        if (document.getElementById('recentApplicationsTableBody') || document.getElementById('totalStudentsKpi')) loadCEODashboardData();
 
     } catch (error) {
-        console.error("Error updating student status:", error);
+        console.error("Error adding application:", error);
         if (alertArea) {
             alertArea.innerHTML = `
-                <div class="alert alert-danger alert-dismissible fade show py-2 px-3 small mb-0" role="alert">
+                <div class="alert alert-danger alert-dismissible fade show py-2 px-3 small mb-3" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i> Failed to add application: ${escapeHtml(error.message)}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>`;
+        }
+    }
+}
+
+/**
+ * Updates status for a specific application in a student's applications array
+ * @param {string} studentId 
+ * @param {string} appId 
+ */
+export async function updateApplicationStatus(studentId, appId) {
+    const selectEl = document.getElementById(`appStatusSelect_${appId}`);
+    const alertArea = document.getElementById('appManagerAlert');
+    if (!selectEl) return;
+    const newStatus = selectEl.value;
+
+    const student = window.loadedStudentsMap ? window.loadedStudentsMap[studentId] : null;
+    if (!student) return;
+
+    const apps = getStudentApplications(student);
+    let updatedCourseName = '';
+    const updatedApps = apps.map(app => {
+        if (app.id === appId) {
+            updatedCourseName = app.course;
+            return { ...app, status: newStatus, statusUpdatedAt: new Date().toISOString() };
+        }
+        return app;
+    });
+
+    try {
+        const studentRef = doc(db, 'students', studentId);
+        await updateDoc(studentRef, {
+            applications: updatedApps
+        });
+
+        student.applications = updatedApps;
+
+        console.log(`Updated status of application ${appId} to ${newStatus} for student ${studentId}`);
+
+        if (alertArea) {
+            alertArea.innerHTML = `
+                <div class="alert alert-success alert-dismissible fade show py-2 px-3 small mb-3" role="alert">
+                    <i class="bi bi-check-circle-fill me-1"></i> Status for <strong>${escapeHtml(updatedCourseName)}</strong> updated to <strong>${escapeHtml(newStatus)}</strong>!
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>`;
+        }
+
+        if (document.getElementById('studentsTableBody')) fetchStudents();
+        if (document.getElementById('recentApplicationsTableBody') || document.getElementById('totalStudentsKpi')) loadCEODashboardData();
+
+    } catch (error) {
+        console.error("Error updating application status:", error);
+        if (alertArea) {
+            alertArea.innerHTML = `
+                <div class="alert alert-danger alert-dismissible fade show py-2 px-3 small mb-3" role="alert">
                     <i class="bi bi-exclamation-triangle-fill me-1"></i> Failed to update status: ${escapeHtml(error.message)}
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>`;
         }
-    } finally {
-        if (updateBtn) {
-            updateBtn.disabled = false;
-            updateBtn.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i> Update Status';
+    }
+}
+
+/**
+ * Removes an application object from a student's applications array
+ * @param {string} studentId 
+ * @param {string} appId 
+ */
+export async function deleteApplication(studentId, appId) {
+    if (!confirm('Are you sure you want to remove this application record?')) return;
+    const student = window.loadedStudentsMap ? window.loadedStudentsMap[studentId] : null;
+    if (!student) return;
+
+    const apps = getStudentApplications(student);
+    const updatedApps = apps.filter(app => app.id !== appId);
+
+    try {
+        const studentRef = doc(db, 'students', studentId);
+        await updateDoc(studentRef, { applications: updatedApps });
+
+        student.applications = updatedApps;
+        viewStudentDetails(studentId);
+
+        const alertArea = document.getElementById('appManagerAlert');
+        if (alertArea) {
+            alertArea.innerHTML = `
+                <div class="alert alert-warning alert-dismissible fade show py-2 px-3 small mb-3" role="alert">
+                    <i class="bi bi-trash me-1"></i> Application removed.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>`;
         }
+
+        if (document.getElementById('studentsTableBody')) fetchStudents();
+        if (document.getElementById('recentApplicationsTableBody') || document.getElementById('totalStudentsKpi')) loadCEODashboardData();
+
+    } catch (error) {
+        console.error("Error deleting application:", error);
     }
 }
 
@@ -807,8 +1078,6 @@ export function viewStudentDetails(studentId) {
         return;
     }
 
-    const currentStatus = student.status || 'Pending';
-
     const modalTitle = document.getElementById('studentDetailModalTitle');
     const modalBody = document.getElementById('studentDetailModalBody');
 
@@ -816,29 +1085,7 @@ export function viewStudentDetails(studentId) {
     
     if (modalBody) {
         modalBody.innerHTML = `
-            <!-- Application Status Control Bar -->
-            <div class="card bg-light border-secondary-subtle p-3 mb-3">
-                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
-                    <div>
-                        <h6 class="fw-bold mb-1 text-dark">
-                            <i class="bi bi-flag-fill text-danger me-1"></i> Application Status Management
-                        </h6>
-                        <small class="text-muted">Update candidate application status dynamically across portals.</small>
-                    </div>
-                    <div class="d-flex align-items-center gap-2">
-                        <select id="modalStudentStatusSelect" class="form-select form-select-sm fw-bold border-secondary" style="min-width: 140px;">
-                            <option value="Pending" ${currentStatus === 'Pending' ? 'selected' : ''}>⏳ Pending</option>
-                            <option value="Processing" ${currentStatus === 'Processing' ? 'selected' : ''}>⚙️ Processing</option>
-                            <option value="Approved" ${currentStatus === 'Approved' ? 'selected' : ''}>✅ Approved</option>
-                            <option value="Rejected" ${currentStatus === 'Rejected' ? 'selected' : ''}>❌ Rejected</option>
-                        </select>
-                        <button class="btn btn-sm btn-newage-red fw-semibold text-nowrap" id="updateStatusBtn" onclick="updateStudentStatus('${studentId}')">
-                            <i class="bi bi-arrow-repeat me-1"></i> Update Status
-                        </button>
-                    </div>
-                </div>
-                <div id="statusUpdateAlert" class="mt-2"></div>
-            </div>
+            ${buildApplicationsManagementSection(studentId, student)}
 
             <div class="row g-3">
                 <div class="col-md-6">
@@ -912,7 +1159,9 @@ window.fetchStudents = fetchStudents;
 window.loadCEODashboardData = loadCEODashboardData;
 window.viewStudentDetails = viewStudentDetails;
 window.viewStudentProfile = viewStudentDetails;
-window.updateStudentStatus = updateStudentStatus;
+window.addNewApplication = addNewApplication;
+window.updateApplicationStatus = updateApplicationStatus;
+window.deleteApplication = deleteApplication;
 window.updateDetectedRoleUI = updateDetectedRoleUI;
 window.setDemoCredentials = function(email) {
     const emailInput = document.getElementById('emailInput');

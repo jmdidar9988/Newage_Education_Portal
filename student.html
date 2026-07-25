@@ -467,6 +467,35 @@
             return email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
         }
 
+        // ── Helper: resolve applications array for logged-in student ────────
+        function getStudentApplications(student) {
+            if (!student) return [];
+            if (Array.isArray(student.applications) && student.applications.length > 0) {
+                return student.applications;
+            }
+            const apps = [];
+            const courses = student.preferences?.courseChoices || [];
+            const countries = student.preferences?.countryChoices || [];
+            const unis = student.preferences?.universityChoices || [];
+            const defaultStatus = student.status || 'Pending';
+
+            const count = Math.max(courses.length, countries.length, unis.length);
+            if (count > 0) {
+                for (let i = 0; i < count; i++) {
+                    apps.push({
+                        id: `app_legacy_${i + 1}`,
+                        country: countries[i] || countries[0] || 'N/A',
+                        university: unis[i] || unis[0] || 'Target University',
+                        course: courses[i] || courses[0] || 'General Program',
+                        intake: 'September 2026',
+                        course_link: '',
+                        status: defaultStatus
+                    });
+                }
+            }
+            return apps;
+        }
+
         // ── Populate DOM with student record ───────────────────────────────
         function populateProfile(data, docId) {
             const p = data.personalInfo || {};
@@ -495,54 +524,83 @@
             setText('profileQualification', qual);
             setText('profileCounselor', 'Newage Counselor');
 
-            // Application Status Badge Logic
-            const statusStr = data.status || 'Pending';
+            // Multi-Application Tracker Status Logic
+            const apps = getStudentApplications(data);
             const statusBadgeEl = document.getElementById('profileStatusBadge');
             if (statusBadgeEl) {
-                const s = statusStr.toLowerCase().trim();
-                if (s === 'approved') {
-                    statusBadgeEl.className = 'badge bg-success px-2 py-1';
-                    statusBadgeEl.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i>Approved';
-                } else if (s === 'processing') {
-                    statusBadgeEl.className = 'badge bg-info text-dark px-2 py-1';
-                    statusBadgeEl.innerHTML = '<i class="bi bi-gear-fill me-1"></i>Processing';
-                } else if (s === 'rejected') {
-                    statusBadgeEl.className = 'badge bg-danger px-2 py-1';
-                    statusBadgeEl.innerHTML = '<i class="bi bi-x-circle-fill me-1"></i>Rejected';
-                } else {
-                    statusBadgeEl.className = 'badge bg-warning text-dark px-2 py-1';
-                    statusBadgeEl.innerHTML = '<i class="bi bi-clock-history me-1"></i>Pending';
-                }
+                statusBadgeEl.className = 'badge bg-dark px-2 py-1';
+                statusBadgeEl.innerHTML = `<i class="bi bi-mortarboard me-1"></i>${apps.length} Active`;
             }
 
-            // Top banner — show applied course & status badge
-            const course = (data.preferences?.courseChoices || [])[0];
-            const country = (data.preferences?.countryChoices || [])[0];
+            // Top Banner: Render "My University Applications" Tracker Card
             const bannerArea = document.getElementById('topBannerArea');
             if (bannerArea) {
-                let badgeHTML = '';
-                const s = statusStr.toLowerCase().trim();
-                if (s === 'approved') {
-                    badgeHTML = '<span class="badge bg-success py-2 px-3 fs-6"><i class="bi bi-check-circle-fill me-1"></i>Approved</span>';
-                } else if (s === 'processing') {
-                    badgeHTML = '<span class="badge bg-info text-dark py-2 px-3 fs-6"><i class="bi bi-gear-fill me-1"></i>Processing</span>';
-                } else if (s === 'rejected') {
-                    badgeHTML = '<span class="badge bg-danger py-2 px-3 fs-6"><i class="bi bi-x-circle-fill me-1"></i>Rejected</span>';
+                let rowsHTML = '';
+                if (apps.length === 0) {
+                    rowsHTML = `
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-3">
+                                No university applications registered yet.
+                            </td>
+                        </tr>`;
                 } else {
-                    badgeHTML = '<span class="badge bg-warning text-dark py-2 px-3 fs-6"><i class="bi bi-clock-history me-1"></i>Pending</span>';
+                    rowsHTML = apps.map((app) => {
+                        const status = app.status || 'Pending';
+                        let badgeHTML = '';
+                        const s = status.toLowerCase().trim();
+                        if (s === 'approved') {
+                            badgeHTML = '<span class="badge bg-success px-2 py-1"><i class="bi bi-check-circle-fill me-1"></i>Approved</span>';
+                        } else if (s === 'processing') {
+                            badgeHTML = '<span class="badge bg-info text-dark px-2 py-1"><i class="bi bi-gear-fill me-1"></i>Processing</span>';
+                        } else if (s === 'rejected') {
+                            badgeHTML = '<span class="badge bg-danger px-2 py-1"><i class="bi bi-x-circle-fill me-1"></i>Rejected</span>';
+                        } else {
+                            badgeHTML = '<span class="badge bg-warning text-dark px-2 py-1"><i class="bi bi-clock-history me-1"></i>Pending</span>';
+                        }
+
+                        const linkHTML = app.course_link
+                            ? `<a href="${escapeHtml(app.course_link)}" target="_blank" rel="noopener noreferrer" class="btn btn-xs btn-outline-primary py-0 px-2 small">
+                                  <i class="bi bi-box-arrow-up-right me-1"></i>View Course
+                               </a>`
+                            : `<span class="text-muted small fst-italic">—</span>`;
+
+                        return `
+                            <tr>
+                                <td class="fw-bold text-dark">${escapeHtml(app.country || 'N/A')}</td>
+                                <td class="fw-semibold text-secondary">${escapeHtml(app.university || 'N/A')}</td>
+                                <td class="fw-bold text-danger">${escapeHtml(app.course || 'N/A')}</td>
+                                <td>${escapeHtml(app.intake || 'N/A')}</td>
+                                <td class="text-center">${linkHTML}</td>
+                                <td>${badgeHTML}</td>
+                            </tr>`;
+                    }).join('');
                 }
 
                 bannerArea.innerHTML = `
-                    <div class="alert alert-newage-success d-flex align-items-center justify-content-between p-3" role="alert">
-                        <div class="d-flex align-items-center">
-                            <span class="fs-4 me-3"><i class="bi bi-mortarboard-fill text-danger"></i></span>
-                            <div>
-                                <strong class="d-block text-dark fs-6">Application Status: ${escapeHtml(statusStr)}</strong>
-                                ${course ? `<span class="small text-danger fw-bold">📚 ${course}</span>` : ''}
-                                ${country ? `<span class="text-muted small ms-2">Target: ${country}</span>` : ''}
+                    <div class="card-newage border-danger shadow-sm mb-4">
+                        <div class="card-header-newage bg-dark text-white d-flex align-items-center justify-content-between py-3">
+                            <h6 class="mb-0 text-white fw-bold">
+                                <i class="bi bi-mortarboard-fill text-danger me-2"></i>My University Applications (${apps.length})
+                            </h6>
+                            <span class="badge bg-danger px-2 py-1">Real-time Application Tracker</span>
+                        </div>
+                        <div class="p-3">
+                            <div class="table-responsive rounded border bg-white">
+                                <table class="table table-hover align-middle mb-0 small">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Country</th>
+                                            <th>University</th>
+                                            <th>Course Name</th>
+                                            <th>Intake</th>
+                                            <th class="text-center">Course Link</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>${rowsHTML}</tbody>
+                                </table>
                             </div>
                         </div>
-                        ${badgeHTML}
                     </div>`;
             }
 
