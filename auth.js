@@ -667,7 +667,7 @@ function renderCEOAnalyticsCharts(studentItems = []) {
             labels: Object.keys(countryCounts),
             datasets: [{
                 data: Object.values(countryCounts),
-                backgroundColor: ['#00ADB5', '#0b2447', '#16325b', '#FCA311', '#10b981', '#6366f1'],
+                backgroundColor: ['#E63946', '#FFC107', '#457B9D', '#1D3557', '#F4A261', '#2A9D8F'],
                 borderWidth: 2,
                 borderColor: isDark ? '#07172f' : '#ffffff'
             }]
@@ -693,7 +693,7 @@ function renderCEOAnalyticsCharts(studentItems = []) {
             datasets: [{
                 label: 'Applications',
                 data: Object.values(statusCounts),
-                backgroundColor: ['#10b981', '#FCA311', '#00ADB5', '#ef4444'],
+                backgroundColor: ['#2A9D8F', '#FFC107', '#457B9D', '#E63946'],
                 borderRadius: 6
             }]
         },

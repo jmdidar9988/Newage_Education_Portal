@@ -34,17 +34,17 @@
     --footer-text: #94a3b8;
     --shadow-color: rgba(0, 0, 0, 0.08);
 
-    /* Premium Teal/Cyan & Amber Accent Theme */
-    --accent-primary: #00ADB5;
-    --accent-hover: #008C93;
-    --accent-secondary: #FCA311;
+    /* Premium Energetic Red & Gold Yellow Theme */
+    --accent-primary: #E63946;
+    --accent-secondary: #FFC107;
+    --accent-hover: #D32F2F;
     --accent-text: #ffffff;
-    --ne-accent-red: #00ADB5;
-    --ne-accent-red-hover: #008C93;
+    --ne-accent-red: #E63946;
+    --ne-accent-red-hover: #D32F2F;
     --ne-gradient-dark: linear-gradient(135deg, #0b2447 0%, #051329 100%);
     --ne-gradient-navy: linear-gradient(135deg, #0b2447 0%, #16325b 100%);
-    --ne-gradient-red: linear-gradient(135deg, #00ADB5 0%, #008C93 100%);
-    --ne-glow-red: 0 0 15px rgba(0, 173, 181, 0.4);
+    --ne-gradient-red: linear-gradient(135deg, #E63946 0%, #D32F2F 100%);
+    --ne-glow-red: 0 0 15px rgba(230, 57, 70, 0.4);
     --ne-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
     --ne-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.06);
     --ne-shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.12);
@@ -75,15 +75,15 @@
     --footer-text: #94a3b8;
     --shadow-color: rgba(0, 0, 0, 0.4);
 
-    /* Premium Teal/Cyan & Amber Accent Theme */
-    --accent-primary: #00ADB5;
-    --accent-hover: #008C93;
-    --accent-secondary: #FCA311;
+    /* Premium Energetic Red & Gold Yellow Theme */
+    --accent-primary: #E63946;
+    --accent-secondary: #FFC107;
+    --accent-hover: #D32F2F;
     --accent-text: #ffffff;
-    --ne-accent-red: #00ADB5;
-    --ne-accent-red-hover: #008C93;
-    --ne-gradient-red: linear-gradient(135deg, #00ADB5 0%, #008C93 100%);
-    --ne-glow-red: 0 0 15px rgba(0, 173, 181, 0.4);
+    --ne-accent-red: #E63946;
+    --ne-accent-red-hover: #D32F2F;
+    --ne-gradient-red: linear-gradient(135deg, #E63946 0%, #D32F2F 100%);
+    --ne-glow-red: 0 0 15px rgba(230, 57, 70, 0.4);
 }
 
 /* Custom Modern Navy Scrollbar */
@@ -131,7 +131,8 @@
     color: var(--accent-text) !important;
 }
 
-.bg-accent-secondary {
+.bg-accent-secondary,
+.bg-warning {
     background-color: var(--accent-secondary) !important;
     color: #0b2447 !important;
 }
@@ -139,6 +140,11 @@
 .text-accent,
 .text-danger {
     color: var(--accent-primary) !important;
+}
+
+.text-warning,
+.text-amber {
+    color: var(--accent-secondary) !important;
 }
 
 .border-accent,
@@ -153,16 +159,16 @@
     color: #ffffff !important;
     border: none !important;
     font-weight: 600;
-    box-shadow: 0 4px 12px rgba(0, 173, 181, 0.25) !important;
+    box-shadow: 0 4px 12px rgba(230, 57, 70, 0.25) !important;
     transition: var(--ne-transition);
 }
 
 .btn-accent:hover,
 .btn-danger:hover,
 .btn-newage-red:hover {
-    background: linear-gradient(135deg, var(--accent-hover) 0%, #006b70 100%) !important;
+    background: linear-gradient(135deg, var(--accent-hover) 0%, #b71c1c 100%) !important;
     color: #ffffff !important;
-    box-shadow: 0 6px 18px rgba(0, 173, 181, 0.4) !important;
+    box-shadow: 0 6px 18px rgba(230, 57, 70, 0.4) !important;
     transform: translateY(-1px);
 }
 
@@ -178,7 +184,7 @@
 .btn-newage-outline:hover {
     background: var(--accent-primary) !important;
     color: #ffffff !important;
-    box-shadow: 0 4px 12px rgba(0, 173, 181, 0.3) !important;
+    box-shadow: 0 4px 12px rgba(230, 57, 70, 0.3) !important;
 }
 
 .btn-apply-now {
