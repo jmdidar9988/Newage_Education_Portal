@@ -346,29 +346,38 @@
         </div>
     </div>
 
-    <!-- MODAL 2: Message Counselor -->
+    <!-- MODAL 2: Message Counselor / Support Chat -->
     <div class="modal fade" id="messageCounselorModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header bg-dark text-white border-bottom border-danger">
-                    <h5 class="modal-title text-white">Chat with Counselor</h5>
+                    <h5 class="modal-title text-white"><i class="bi bi-chat-left-text-fill text-danger me-2"></i>Messages &amp; Counselor Support</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form id="chatForm" onsubmit="sendMessage(event)">
-                    <div class="modal-body">
-                        <div class="alert alert-secondary py-2 small mb-3">
-                            You are messaging your counselor <strong>Kabir Hossain</strong>.
-                        </div>
-                        <div class="mb-3">
-                            <label for="counselorMessage" class="form-label fw-bold small text-muted">Your Message</label>
-                            <textarea class="form-control" id="counselorMessage" rows="4" placeholder="Type your message here..." required></textarea>
+                <div class="modal-body p-3">
+                    <div class="alert alert-light border small py-2 mb-3">
+                        <i class="bi bi-person-badge-fill text-danger me-1"></i> Direct chat with your assigned Newage Education Consultants.
+                    </div>
+
+                    <!-- Scrollable Chat History Container -->
+                    <div class="border rounded bg-white p-3 mb-3" id="studentChatHistory" style="max-height: 320px; min-height: 200px; overflow-y: auto;">
+                        <div class="text-center text-muted py-4 small">
+                            <span class="spinner-border spinner-border-sm me-1"></span> Loading chat history...
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-newage-red btn-sm">Send Message</button>
-                    </div>
-                </form>
+
+                    <form id="chatForm" onsubmit="sendStudentMessage(event)">
+                        <div class="input-group">
+                            <textarea class="form-control" id="counselorMessage" rows="2" placeholder="Type your message here..." required></textarea>
+                            <button type="submit" class="btn btn-newage-red fw-bold px-4" id="sendMsgBtn">
+                                <i class="bi bi-send-fill me-1"></i> Send
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer bg-light py-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                </div>
             </div>
         </div>
     </div>
@@ -411,11 +420,12 @@
         const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`;
 
         // ── Firebase Auth & Firestore (shared instance from auth.js) ───────────
-        import { auth, db, onAuthStateChanged, collection, query, where, getDocs, updateDoc, doc, escapeHtml as escapeHtmlAuth } from "./auth.js";
+        import { auth, db, onAuthStateChanged, collection, query, where, getDocs, updateDoc, doc, escapeHtml as escapeHtmlAuth, arrayUnion } from "./auth.js";
 
-        // Track logged-in user and their Firestore document ID
+        // Track logged-in user, their Firestore document ID, and full data object
         let currentUser = null;
         let studentDocId = null;
+        let currentStudentData = null;
 
         // ── Helper: HTML Escaper ─────────────────────────────────────────────
         function escapeHtml(unsafe) {
@@ -456,8 +466,103 @@
             return student.applications;
         }
 
+        // ── Helper: Format message timestamp ───────────────────────────────
+        function formatTimestamp(ts) {
+            if (!ts) return '';
+            try {
+                const d = new Date(ts);
+                return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ', ' + d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+            } catch (e) {
+                return '';
+            }
+        }
+
+        // ── Helper: Render Student Messages & Support Chat ─────────────────
+        function renderStudentChat(messages) {
+            const chatBox = document.getElementById('studentChatHistory');
+            if (!chatBox) return;
+
+            const msgList = Array.isArray(messages) ? messages : [];
+
+            if (msgList.length === 0) {
+                chatBox.innerHTML = `
+                    <div class="text-center text-muted py-4 small">
+                        <i class="bi bi-chat-square-text fs-3 d-block mb-1 opacity-50"></i>
+                        No messages yet. Ask a question or send an update to your assigned counselor!
+                    </div>`;
+                return;
+            }
+
+            chatBox.innerHTML = msgList.map(msg => {
+                const isStudent = (msg.sender === 'Student');
+                const bgClass = isStudent ? 'bg-danger text-white ms-auto' : 'bg-light border text-dark me-auto';
+                const alignClass = isStudent ? 'justify-content-end' : 'justify-content-start';
+                const senderLabel = isStudent ? 'You' : 'Counselor Support';
+                const timeStr = formatTimestamp(msg.timestamp);
+
+                return `
+                    <div class="d-flex ${alignClass} mb-2">
+                        <div class="p-2 rounded-3 shadow-sm ${bgClass}" style="max-width: 80%; font-size: 0.85rem;">
+                            <div class="fw-bold mb-1" style="font-size: 0.725rem; opacity: 0.85;">${senderLabel}</div>
+                            <div class="text-break">${escapeHtml(msg.text)}</div>
+                            <div class="text-end mt-1" style="font-size: 0.65rem; opacity: 0.75;">${timeStr}</div>
+                        </div>
+                    </div>`;
+            }).join('');
+
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // ── Handler: Send Student Message to Firestore ─────────────────────
+        window.sendStudentMessage = async function(event) {
+            if (event) event.preventDefault();
+            const inputEl = document.getElementById('counselorMessage');
+            if (!inputEl) return;
+            const text = inputEl.value.trim();
+            if (!text) return;
+
+            if (!studentDocId) {
+                alert('Student profile not loaded yet.');
+                return;
+            }
+
+            const sendBtn = document.getElementById('sendMsgBtn');
+            if (sendBtn) sendBtn.disabled = true;
+
+            const newMsg = {
+                id: 'msg_' + Date.now(),
+                sender: 'Student',
+                text: text,
+                timestamp: new Date().toISOString()
+            };
+
+            try {
+                const studentRef = doc(db, 'students', studentDocId);
+                await updateDoc(studentRef, {
+                    messages: arrayUnion(newMsg)
+                });
+
+                if (!currentStudentData) currentStudentData = {};
+                if (!Array.isArray(currentStudentData.messages)) currentStudentData.messages = [];
+                currentStudentData.messages.push(newMsg);
+
+                inputEl.value = '';
+                renderStudentChat(currentStudentData.messages);
+                showToast('💬 Message sent to your counselor!', 'success');
+
+            } catch (error) {
+                console.error("Error sending student message:", error);
+                showToast('Failed to send message: ' + error.message, 'danger');
+            } finally {
+                if (sendBtn) sendBtn.disabled = false;
+            }
+        };
+
         // ── Populate DOM with student record ───────────────────────────────
         function populateProfile(data, docId) {
+            currentStudentData = data;
+            renderStudentChat(data?.messages);
+
             const p = data?.personalInfo || {};
             const edu = data?.educationalProfile || {};
             const eng = data?.englishProficiency || {};

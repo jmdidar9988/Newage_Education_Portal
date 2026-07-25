@@ -22,7 +22,8 @@ import {
     orderBy,
     doc,
     updateDoc,
-    serverTimestamp 
+    serverTimestamp,
+    arrayUnion
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 // Firebase configuration provided by user
@@ -60,7 +61,8 @@ export {
     orderBy, 
     doc, 
     updateDoc, 
-    serverTimestamp 
+    serverTimestamp,
+    arrayUnion
 };
 
 /**
@@ -995,6 +997,129 @@ function buildApplicationsManagementSection(studentId, student) {
 }
 
 /**
+ * Format timestamps into human readable string
+ */
+function formatTimestamp(ts) {
+    if (!ts) return '';
+    try {
+        const d = new Date(ts);
+        return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ', ' + d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    } catch (e) {
+        return '';
+    }
+}
+
+/**
+ * Builds HTML for Messages & Counselor Support Section in Student Profile Modal
+ * @param {string} studentId 
+ * @param {Object} student 
+ * @returns {string}
+ */
+function buildMessagesSection(studentId, student) {
+    const messages = Array.isArray(student?.messages) ? student.messages : [];
+
+    let chatHTML = '';
+    if (messages.length === 0) {
+        chatHTML = `
+            <div class="text-center text-muted py-4 small">
+                <i class="bi bi-chat-dots fs-3 d-block mb-1 opacity-50"></i>
+                No messages yet. Send a reply below to start the conversation with the student.
+            </div>`;
+    } else {
+        chatHTML = messages.map(msg => {
+            const isStudent = (msg.sender === 'Student');
+            const bgClass = isStudent ? 'bg-light border text-dark me-auto' : 'bg-danger text-white ms-auto';
+            const alignClass = isStudent ? 'justify-content-start' : 'justify-content-end';
+            const senderLabel = isStudent ? (escapeHtml(student.personalInfo?.fullName || 'Student')) : 'Consultant (You)';
+            const timeStr = formatTimestamp(msg.timestamp);
+
+            return `
+                <div class="d-flex ${alignClass} mb-2">
+                    <div class="p-2 rounded-3 shadow-sm ${bgClass}" style="max-width: 80%; font-size: 0.85rem;">
+                        <div class="fw-bold mb-1" style="font-size: 0.725rem; opacity: 0.85;">${senderLabel}</div>
+                        <div class="text-break">${escapeHtml(msg.text)}</div>
+                        <div class="text-end mt-1" style="font-size: 0.65rem; opacity: 0.75;">${timeStr}</div>
+                    </div>
+                </div>`;
+        }).join('');
+    }
+
+    return `
+        <!-- MESSAGES & COUNSELOR SUPPORT SECTION -->
+        <div class="card border-primary-subtle mb-3">
+            <div class="card-header bg-dark text-white d-flex align-items-center justify-content-between py-2">
+                <h6 class="mb-0 fw-bold text-white"><i class="bi bi-chat-left-text-fill text-danger me-2"></i>Messages &amp; Support (${messages.length})</h6>
+                <span class="badge bg-danger px-2 py-1">Direct Chat</span>
+            </div>
+            <div class="card-body bg-light p-3">
+                <div class="border rounded bg-white p-3 mb-3" id="modalChatHistory_${studentId}" style="max-height: 250px; overflow-y: auto;">
+                    ${chatHTML}
+                </div>
+                <div id="modalChatAlert_${studentId}"></div>
+                <div class="input-group">
+                    <textarea id="modalChatInput_${studentId}" class="form-control form-control-sm" rows="2" placeholder="Type your reply to the student..."></textarea>
+                    <button class="btn btn-danger btn-sm px-3 fw-semibold" onclick="sendConsultantReply('${studentId}')">
+                        <i class="bi bi-send-fill me-1"></i> Reply
+                    </button>
+                </div>
+            </div>
+        </div>`;
+}
+
+/**
+ * Sends a reply message from CEO/Employee to student's Firestore document
+ * @param {string} studentId 
+ */
+export async function sendConsultantReply(studentId) {
+    const inputEl = document.getElementById(`modalChatInput_${studentId}`);
+    const alertEl = document.getElementById(`modalChatAlert_${studentId}`);
+    if (!inputEl) return;
+    const text = inputEl.value.trim();
+    if (!text) {
+        alert('Please enter a message before replying.');
+        return;
+    }
+
+    const student = window.loadedStudentsMap ? window.loadedStudentsMap[studentId] : null;
+    if (!student) return;
+
+    const newMsg = {
+        id: 'msg_' + Date.now(),
+        sender: 'Consultant',
+        text: text,
+        timestamp: new Date().toISOString()
+    };
+
+    try {
+        const studentRef = doc(db, 'students', studentId);
+        await updateDoc(studentRef, {
+            messages: arrayUnion(newMsg)
+        });
+
+        // Update local memory map
+        if (!Array.isArray(student.messages)) student.messages = [];
+        student.messages.push(newMsg);
+
+        console.log(`Consultant reply sent to student ${studentId}:`, newMsg);
+
+        // Re-render modal to display new message
+        viewStudentDetails(studentId);
+
+        // Scroll chat box to bottom
+        setTimeout(() => {
+            const chatBox = document.getElementById(`modalChatHistory_${studentId}`);
+            if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+        }, 100);
+
+    } catch (error) {
+        console.error("Error sending consultant reply:", error);
+        if (alertEl) {
+            alertEl.innerHTML = `<div class="alert alert-danger py-1 px-2 small mb-2"><i class="bi bi-exclamation-triangle-fill me-1"></i> Failed to send: ${escapeHtml(error.message)}</div>`;
+        }
+    }
+}
+
+/**
  * Adds a new application object to a student's applications array in Firestore
  * @param {string} studentId 
  */
@@ -1195,6 +1320,7 @@ export function viewStudentDetails(studentId) {
             <div id="profileEditAlert"></div>
 
             ${buildApplicationsManagementSection(studentId, student)}
+            ${buildMessagesSection(studentId, student)}
 
             <div class="row g-3" id="personalInfoSection">
                 <div class="col-md-6">
@@ -1438,6 +1564,7 @@ window.deleteApplication = deleteApplication;
 window.toggleEditMode = toggleEditMode;
 window.saveProfileChanges = saveProfileChanges;
 window.approveDocument = approveDocument;
+window.sendConsultantReply = sendConsultantReply;
 window.updateDetectedRoleUI = updateDetectedRoleUI;
 window.setDemoCredentials = function(email) {
     const emailInput = document.getElementById('emailInput');
