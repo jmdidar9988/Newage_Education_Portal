@@ -33,12 +33,18 @@
     --footer-bg: #07172f;
     --footer-text: #94a3b8;
     --shadow-color: rgba(0, 0, 0, 0.08);
-    --ne-accent-red: #dc2626;
-    --ne-accent-red-hover: #b91c1c;
+
+    /* Premium Teal/Cyan & Amber Accent Theme */
+    --accent-primary: #00ADB5;
+    --accent-hover: #008C93;
+    --accent-secondary: #FCA311;
+    --accent-text: #ffffff;
+    --ne-accent-red: #00ADB5;
+    --ne-accent-red-hover: #008C93;
     --ne-gradient-dark: linear-gradient(135deg, #0b2447 0%, #051329 100%);
     --ne-gradient-navy: linear-gradient(135deg, #0b2447 0%, #16325b 100%);
-    --ne-gradient-red: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
-    --ne-glow-red: 0 0 15px rgba(220, 38, 38, 0.4);
+    --ne-gradient-red: linear-gradient(135deg, #00ADB5 0%, #008C93 100%);
+    --ne-glow-red: 0 0 15px rgba(0, 173, 181, 0.4);
     --ne-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
     --ne-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.06);
     --ne-shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.12);
@@ -68,6 +74,16 @@
     --footer-bg: #041124;
     --footer-text: #94a3b8;
     --shadow-color: rgba(0, 0, 0, 0.4);
+
+    /* Premium Teal/Cyan & Amber Accent Theme */
+    --accent-primary: #00ADB5;
+    --accent-hover: #008C93;
+    --accent-secondary: #FCA311;
+    --accent-text: #ffffff;
+    --ne-accent-red: #00ADB5;
+    --ne-accent-red-hover: #008C93;
+    --ne-gradient-red: linear-gradient(135deg, #00ADB5 0%, #008C93 100%);
+    --ne-glow-red: 0 0 15px rgba(0, 173, 181, 0.4);
 }
 
 /* Custom Modern Navy Scrollbar */
@@ -106,6 +122,79 @@
 [data-theme="dark"] .skeleton-line {
     background: linear-gradient(90deg, #16325b 25%, #1e3a8a 37%, #16325b 63%);
     background-size: 200% 100%;
+}
+
+/* Accent Utility Classes & Bootstrap Red Overrides */
+.bg-accent,
+.bg-danger {
+    background-color: var(--accent-primary) !important;
+    color: var(--accent-text) !important;
+}
+
+.bg-accent-secondary {
+    background-color: var(--accent-secondary) !important;
+    color: #0b2447 !important;
+}
+
+.text-accent,
+.text-danger {
+    color: var(--accent-primary) !important;
+}
+
+.border-accent,
+.border-danger {
+    border-color: var(--accent-primary) !important;
+}
+
+.btn-accent,
+.btn-danger,
+.btn-newage-red {
+    background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-hover) 100%) !important;
+    color: #ffffff !important;
+    border: none !important;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(0, 173, 181, 0.25) !important;
+    transition: var(--ne-transition);
+}
+
+.btn-accent:hover,
+.btn-danger:hover,
+.btn-newage-red:hover {
+    background: linear-gradient(135deg, var(--accent-hover) 0%, #006b70 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 6px 18px rgba(0, 173, 181, 0.4) !important;
+    transform: translateY(-1px);
+}
+
+.btn-outline-danger,
+.btn-newage-outline {
+    background: transparent !important;
+    color: var(--accent-primary) !important;
+    border: 1.5px solid var(--accent-primary) !important;
+    font-weight: 600;
+}
+
+.btn-outline-danger:hover,
+.btn-newage-outline:hover {
+    background: var(--accent-primary) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(0, 173, 181, 0.3) !important;
+}
+
+.btn-apply-now {
+    background: var(--accent-primary) !important;
+    color: #ffffff !important;
+    border: none !important;
+}
+
+.btn-apply-now:hover {
+    background: var(--accent-hover) !important;
+    color: #ffffff !important;
+}
+
+.logo-top-red {
+    background: var(--accent-primary) !important;
+    color: #ffffff !important;
 }
 
 /* Utility Classes Driven by Variables */
