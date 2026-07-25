@@ -738,31 +738,36 @@
                 return;
             }
 
-            // Try to find matching Firestore student record by email
+            // 🔍 Query students collection by authenticated user's email address
             try {
-                let snap = await getDocs(query(
+                const q = query(
                     collection(db, 'students'),
                     where('personalInfo.email', '==', user.email)
-                ));
+                );
+                let querySnapshot = await getDocs(q);
 
-                if (snap.empty) {
-                    snap = await getDocs(query(
+                // Fallback check if email is stored at root level
+                if (querySnapshot.empty) {
+                    const fallbackQuery = query(
                         collection(db, 'students'),
                         where('email', '==', user.email)
-                    ));
+                    );
+                    querySnapshot = await getDocs(fallbackQuery);
                 }
 
-                if (!snap.empty) {
-                    // ✅ Record found — populate everything with Firestore data
-                    const docSnap = snap.docs[0];
+                if (!querySnapshot.empty) {
+                    // ✅ Student data found — extract document data and populate DOM
+                    const docSnap = querySnapshot.docs[0];
                     studentDocId = docSnap.id;
-                    populateProfile(docSnap.data(), studentDocId);
+                    const studentData = docSnap.data();
+
+                    populateProfile(studentData, studentDocId);
                 } else {
-                    // 🆕 New student — no application in Firestore yet
+                    // 🆕 Query is empty — fallback to email-parsed name & show Submit Application Form UI
                     showNewStudentState(user.email);
                 }
             } catch (e) {
-                console.warn('Could not resolve student Firestore doc:', e);
+                console.warn('Could not resolve student Firestore doc by email:', e);
                 showNewStudentState(user.email);
             }
         });
