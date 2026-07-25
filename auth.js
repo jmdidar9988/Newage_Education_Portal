@@ -17,6 +17,7 @@ import {
     collection, 
     addDoc, 
     getDocs,
+    getDoc,
     query,
     where,
     orderBy,
@@ -167,8 +168,51 @@ export async function handleFirebaseLogin(event) {
                 throw signInErr;
             }
         }
-        console.log("Firebase Sign In Success:", userCredential.user);
-        routeByRole(userCredential.user.email || email);
+
+        const user = userCredential.user;
+        console.log("Firebase Sign In Success for UID:", user.uid, "Email:", user.email);
+
+        if (submitBtn) {
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Loading Dashboard...';
+        }
+
+        // 🔍 Firestore Role Check & Automatic Routing
+        try {
+            const userDocRef = doc(db, "users", user.uid);
+            const userDocSnap = await getDoc(userDocRef);
+
+            if (userDocSnap.exists()) {
+                const userData = userDocSnap.data();
+                const role = (userData.role || '').toLowerCase().trim();
+                console.log("Found user document in Firestore 'users' collection with role:", role);
+
+                if (role === 'ceo' || role === 'admin') {
+                    window.location.href = 'index.html';
+                    return;
+                } else if (role === 'employee' || role === 'counselor') {
+                    window.location.href = 'employee.html';
+                    return;
+                } else if (role === 'student') {
+                    window.location.href = 'student.html';
+                    return;
+                }
+            } else {
+                console.log("User doc not found in 'users' collection for UID:", user.uid, "- Defaulting to fallback routing...");
+            }
+        } catch (docErr) {
+            console.warn("Error fetching user document from 'users' collection:", docErr);
+        }
+
+        // Fallback for Student / Legacy role check by email domain
+        const emailLower = (user.email || email).toLowerCase().trim();
+        if (emailLower === 'ceo@newage.com' || emailLower.startsWith('ceo.')) {
+            window.location.href = 'index.html';
+        } else if (emailLower.includes('employee') || emailLower.includes('counselor')) {
+            window.location.href = 'employee.html';
+        } else {
+            window.location.href = 'student.html';
+        }
+
     } catch (error) {
         console.error("Firebase Sign In Error:", error);
         if (submitBtn) {

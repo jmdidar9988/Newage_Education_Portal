@@ -528,32 +528,16 @@
                         <form id="loginForm" onsubmit="handleFirebaseLogin(event)">
                             <div class="modal-body py-4">
                                 <h6 class="fw-bold mb-1 text-white">Welcome to Newage Portal</h6>
-                                <p class="text-white-50 small mb-3">Role is automatically identified based on your email credentials.</p>
+                                <p class="text-white-50 small mb-3">Sign in with your registered email credentials.</p>
                                 
                                 <div id="signinAlert"></div>
-
-                                <!-- Quick Demo Selector Pills -->
-                                <div class="mb-3">
-                                    <label class="form-label text-white-50 small d-block mb-1">Quick Demo Accounts:</label>
-                                    <div class="d-flex gap-1 flex-wrap">
-                                        <button type="button" class="btn btn-sm btn-outline-danger py-1 px-2" onclick="setDemoCredentials('ceo@newage.com')">
-                                            <i class="bi bi-shield-lock me-1"></i> CEO
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-outline-warning py-1 px-2 text-warning" onclick="setDemoCredentials('employee@newage.com')">
-                                            <i class="bi bi-briefcase me-1"></i> Employee
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-outline-info py-1 px-2 text-info" onclick="setDemoCredentials('student@newage.com')">
-                                            <i class="bi bi-mortarboard me-1"></i> Student
-                                        </button>
-                                    </div>
-                                </div>
 
                                 <!-- Email -->
                                 <div class="mb-3">
                                     <label for="emailInput" class="form-label">Email Address</label>
                                     <div class="input-group">
                                         <span class="input-group-text bg-dark border-secondary text-secondary"><i class="bi bi-envelope"></i></span>
-                                        <input type="email" class="form-control" id="emailInput" placeholder="name@newage.com" required value="ceo@newage.com" oninput="updateDetectedRoleUI()">
+                                        <input type="email" class="form-control" id="emailInput" placeholder="name@example.com" required>
                                     </div>
                                 </div>
 
@@ -562,19 +546,13 @@
                                     <label for="passwordInput" class="form-label">Password</label>
                                     <div class="input-group">
                                         <span class="input-group-text bg-dark border-secondary text-secondary"><i class="bi bi-lock"></i></span>
-                                        <input type="password" class="form-control" id="passwordInput" placeholder="••••••••" required value="password123">
+                                        <input type="password" class="form-control" id="passwordInput" placeholder="••••••••" required>
                                     </div>
                                 </div>
 
-                                <!-- Auto-Identified Role Indicator -->
-                                <div class="mb-4 p-2 rounded bg-dark border border-secondary d-flex align-items-center justify-content-between">
-                                    <span class="small text-white-50">Identified Portal Role:</span>
-                                    <span id="detectedRoleBadge" class="badge bg-danger fs-6 px-3 py-1">👑 CEO Portal</span>
-                                </div>
-
                                 <!-- Sign In Action -->
-                                <button type="submit" id="signinSubmitBtn" class="btn btn-newage-red w-100 py-2">
-                                    Sign In & Access Portal <i class="bi bi-arrow-right-short ms-1"></i>
+                                <button type="submit" id="signinSubmitBtn" class="btn btn-newage-red w-100 py-2 mt-2">
+                                    Sign In &amp; Access Portal <i class="bi bi-arrow-right-short ms-1"></i>
                                 </button>
                             </div>
                         </form>
