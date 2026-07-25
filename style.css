@@ -28,6 +28,44 @@
     --ne-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Custom Modern Navy Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #07172f;
+}
+::-webkit-scrollbar-thumb {
+    background: #16325b;
+    border-radius: 4px;
+    border: 2px solid #07172f;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #dc2626;
+}
+
+/* Skeleton Loading Animation */
+@keyframes skeletonShimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+.skeleton-line {
+    display: inline-block;
+    height: 0.9rem;
+    width: 100%;
+    background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 37%, #e2e8f0 63%);
+    background-size: 200% 100%;
+    animation: skeletonShimmer 1.4s infinite;
+    border-radius: 4px;
+}
+
+[data-bs-theme="dark"] .skeleton-line {
+    background: linear-gradient(90deg, #16325b 25%, #1e3a8a 37%, #16325b 63%);
+    background-size: 200% 100%;
+}
+
 /* Navy Blue Utility Classes & Bootstrap Overrides */
 .bg-navy,
 .bg-dark {

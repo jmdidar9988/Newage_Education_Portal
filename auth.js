@@ -564,6 +564,152 @@ export async function openStudentChat(studentId) {
 }
 
 /**
+ * 🟡 Skeleton Loading Generator
+ */
+function getSkeletonRowsHTML(cols = 5, rows = 4) {
+    let html = '';
+    for (let r = 0; r < rows; r++) {
+        html += '<tr>';
+        for (let c = 0; c < cols; c++) {
+            html += `<td class="py-2.5"><span class="skeleton-line"></span></td>`;
+        }
+        html += '</tr>';
+    }
+    return html;
+}
+
+/**
+ * 🌙 Theme Toggle Controller with LocalStorage Persistence
+ */
+export function initThemeToggle() {
+    const savedTheme = localStorage.getItem('newage_theme') || 'dark';
+    document.documentElement.setAttribute('data-bs-theme', savedTheme);
+    updateThemeToggleIcons(savedTheme);
+}
+
+export function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-bs-theme') || 'dark';
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-bs-theme', next);
+    localStorage.setItem('newage_theme', next);
+    updateThemeToggleIcons(next);
+    renderCEOAnalyticsCharts(window.lastLoadedStudentItems || []);
+}
+
+function updateThemeToggleIcons(theme) {
+    const icons = document.querySelectorAll('.themeToggleIcon');
+    icons.forEach(icon => {
+        if (theme === 'dark') {
+            icon.className = 'themeToggleIcon bi bi-sun-fill text-warning';
+        } else {
+            icon.className = 'themeToggleIcon bi bi-moon-stars-fill text-primary';
+        }
+    });
+}
+
+/**
+ * 📊 Chart.js CEO Analytics Renderer
+ */
+let countryChartInstance = null;
+let statusChartInstance = null;
+
+function renderCEOAnalyticsCharts(studentItems = []) {
+    if (typeof Chart === 'undefined') return;
+
+    const countryCanvas = document.getElementById('countryChartCanvas');
+    const statusCanvas = document.getElementById('statusChartCanvas');
+
+    if (!countryCanvas || !statusCanvas) return;
+
+    // Aggregate data
+    const countryCounts = {};
+    const statusCounts = { 'Approved': 0, 'Pending': 0, 'Processing': 0, 'Rejected': 0 };
+
+    if (studentItems.length > 0) {
+        studentItems.forEach(({ data }) => {
+            const country = (data.preferences?.countryChoices?.[0]) || 'Canada';
+            countryCounts[country] = (countryCounts[country] || 0) + 1;
+
+            const apps = getStudentApplications(data);
+            if (apps.length > 0) {
+                apps.forEach(app => {
+                    const st = app.status || 'Pending';
+                    if (statusCounts[st] !== undefined) statusCounts[st]++;
+                    else statusCounts['Pending']++;
+                });
+            } else {
+                statusCounts['Pending']++;
+            }
+        });
+    } else {
+        countryCounts['Canada'] = 14;
+        countryCounts['United Kingdom'] = 18;
+        countryCounts['Australia'] = 10;
+        countryCounts['United States'] = 8;
+        countryCounts['Germany'] = 5;
+
+        statusCounts['Approved'] = 12;
+        statusCounts['Pending'] = 24;
+        statusCounts['Processing'] = 15;
+        statusCounts['Rejected'] = 4;
+    }
+
+    const isDark = (document.documentElement.getAttribute('data-bs-theme') || 'dark') === 'dark';
+    const textColor = isDark ? '#ffffff' : '#1e293b';
+
+    // Chart 1: Target Country Doughnut Chart
+    if (countryChartInstance) countryChartInstance.destroy();
+    countryChartInstance = new Chart(countryCanvas, {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(countryCounts),
+            datasets: [{
+                data: Object.values(countryCounts),
+                backgroundColor: ['#dc2626', '#0b2447', '#16325b', '#f59e0b', '#10b981', '#6366f1'],
+                borderWidth: 2,
+                borderColor: isDark ? '#07172f' : '#ffffff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { color: textColor, boxWidth: 12, padding: 12, font: { family: 'Inter' } }
+                }
+            }
+        }
+    });
+
+    // Chart 2: Application Pipeline Bar Chart
+    if (statusChartInstance) statusChartInstance.destroy();
+    statusChartInstance = new Chart(statusCanvas, {
+        type: 'bar',
+        data: {
+            labels: Object.keys(statusCounts),
+            datasets: [{
+                label: 'Applications',
+                data: Object.values(statusCounts),
+                backgroundColor: ['#10b981', '#f59e0b', '#3b82f6', '#ef4444'],
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                x: { ticks: { color: textColor, font: { family: 'Inter' } }, grid: { display: false } },
+                y: { beginAtZero: true, ticks: { color: textColor, stepSize: 2, font: { family: 'Inter' } } }
+            }
+        }
+    });
+}
+
+/**
  * Fetches all student records from Firestore 'students' collection and renders them dynamically for Employee Portal
  */
 export async function fetchStudents() {
@@ -572,13 +718,8 @@ export async function fetchStudents() {
 
     if (!tableBody) return;
 
-    tableBody.innerHTML = `
-        <tr>
-            <td colspan="5" class="text-center py-4 text-muted">
-                <span class="spinner-border spinner-border-sm text-danger me-2" role="status" aria-hidden="true"></span>
-                Loading student records from Firestore...
-            </td>
-        </tr>`;
+    // Show skeleton loaders before data arrives
+    tableBody.innerHTML = getSkeletonRowsHTML(6, 5);
 
     try {
         let snapshot;
@@ -593,7 +734,7 @@ export async function fetchStudents() {
         if (snapshot.empty) {
             tableBody.innerHTML = `
                 <tr>
-                    <td colspan="5" class="text-center py-4 text-muted">
+                    <td colspan="6" class="text-center py-4 text-muted">
                         <i class="bi bi-folder-x fs-4 d-block mb-1 text-secondary"></i>
                         No student records found in database.
                     </td>
@@ -620,6 +761,7 @@ export async function fetchStudents() {
         studentItems.forEach(({ id, data }) => {
             const fullName = data.personalInfo?.fullName || 'N/A';
             const email = data.personalInfo?.email || 'N/A';
+            const phone = data.personalInfo?.contactNo || 'N/A';
             const primaryCountry = (data.preferences?.countryChoices && data.preferences.countryChoices.length > 0) 
                 ? data.preferences.countryChoices[0] 
                 : 'N/A';
@@ -629,30 +771,33 @@ export async function fetchStudents() {
 
             const unread = hasUnreadStudentMessages(data);
             const chatBtnHTML = unread
-                ? `<button class="btn btn-sm btn-outline-danger shadow-sm ms-1 position-relative" onclick="openStudentChat('${id}')" title="Unread student message!">
-                      <i class="bi bi-chat-left-text-fill me-1"></i>Chat
-                      <span class="badge bg-danger rounded-pill ms-1">New</span>
+                ? `<button class="btn btn-sm btn-outline-danger position-relative py-1 px-2.5 rounded-3" onclick="openStudentChat('${id}')" title="Unread student message!">
+                      <i class="bi bi-chat-left-text-fill"></i>
+                      <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.55rem;">!</span>
                    </button>`
-                : `<button class="btn btn-sm btn-outline-secondary shadow-sm ms-1" onclick="openStudentChat('${id}')" title="Chat with student">
-                      <i class="bi bi-chat-left-text me-1"></i>Chat
+                : `<button class="btn btn-sm btn-outline-secondary py-1 px-2.5 rounded-3" onclick="openStudentChat('${id}')" title="Chat with student">
+                      <i class="bi bi-chat-left-text-fill"></i>
                    </button>`;
 
             html += `
                 <tr>
-                    <td>
-                        <div class="fw-bold text-dark">${escapeHtml(fullName)}</div>
-                        <small class="text-muted" style="font-size: 0.725rem;">Ref: ${id.substring(0, 8)}</small>
+                    <td class="py-2.5 ps-4">
+                        <div class="fw-bold text-dark mb-0" style="font-size: 0.875rem;">${escapeHtml(fullName)}</div>
+                        <small class="text-muted" style="font-size: 0.7rem;">ID: #${id.substring(0, 8).toUpperCase()}</small>
                     </td>
-                    <td class="text-muted small">${escapeHtml(email)}</td>
-                    <td>
-                        <span class="badge bg-danger px-2 py-1">${escapeHtml(primaryCountry)}</span>
+                    <td class="text-muted small py-2.5">${escapeHtml(email)}</td>
+                    <td class="small py-2.5">${escapeHtml(phone)}</td>
+                    <td class="py-2.5">
+                        <span class="badge bg-danger px-2.5 py-1 rounded-pill">${escapeHtml(primaryCountry)}</span>
                     </td>
-                    <td class="small fw-semibold text-secondary">${escapeHtml(primaryCourse)}</td>
-                    <td>
-                        <button class="btn btn-sm btn-dark shadow-sm" onclick="viewStudentDetails('${id}')">
-                            <i class="bi bi-eye me-1"></i> View Details
-                        </button>
-                        ${chatBtnHTML}
+                    <td class="small fw-semibold text-secondary py-2.5">${escapeHtml(primaryCourse)}</td>
+                    <td class="py-2.5 text-center pe-4">
+                        <div class="d-inline-flex align-items-center gap-1">
+                            <button class="btn btn-sm btn-navy py-1 px-2.5 rounded-3" onclick="viewStudentDetails('${id}')" title="View Full Profile">
+                                <i class="bi bi-eye-fill me-1"></i> View
+                            </button>
+                            ${chatBtnHTML}
+                        </div>
                     </td>
                 </tr>`;
         });
@@ -663,7 +808,7 @@ export async function fetchStudents() {
         console.error("Error fetching students from Firestore:", error);
         tableBody.innerHTML = `
             <tr>
-                <td colspan="5" class="text-center py-4 text-danger">
+                <td colspan="6" class="text-center py-4 text-danger">
                     <i class="bi bi-exclamation-triangle-fill me-1"></i>
                     Failed to fetch students: ${escapeHtml(error.message || 'Database error')}
                 </td>
@@ -680,13 +825,8 @@ export async function loadCEODashboardData() {
     const badgeEl = document.getElementById('ceoStudentCountBadge');
 
     if (tableBody) {
-        tableBody.innerHTML = `
-            <tr>
-                <td colspan="6" class="text-center py-4 text-muted">
-                    <span class="spinner-border spinner-border-sm text-danger me-2" role="status" aria-hidden="true"></span>
-                    Fetching recent student records from Firestore...
-                </td>
-            </tr>`;
+        // Show skeleton loaders before data arrives
+        tableBody.innerHTML = getSkeletonRowsHTML(6, 5);
     }
 
     try {
@@ -704,6 +844,20 @@ export async function loadCEODashboardData() {
         if (kpiEl) kpiEl.innerText = count.toLocaleString();
         if (badgeEl) badgeEl.innerText = `${count} Records`;
 
+        const studentItems = [];
+        window.loadedStudentsMap = window.loadedStudentsMap || {};
+
+        snapshot.forEach((doc) => {
+            const data = doc.data();
+            window.loadedStudentsMap[doc.id] = data;
+            studentItems.push({ id: doc.id, data });
+        });
+
+        window.lastLoadedStudentItems = studentItems;
+
+        // Render Chart.js Analytics
+        renderCEOAnalyticsCharts(studentItems);
+
         if (!tableBody) return;
 
         if (snapshot.empty) {
@@ -716,15 +870,6 @@ export async function loadCEODashboardData() {
                 </tr>`;
             return;
         }
-
-        const studentItems = [];
-        window.loadedStudentsMap = window.loadedStudentsMap || {};
-
-        snapshot.forEach((doc) => {
-            const data = doc.data();
-            window.loadedStudentsMap[doc.id] = data;
-            studentItems.push({ id: doc.id, data });
-        });
 
         // 🟢 Sort students: Most recent message appears at top
         studentItems.sort((a, b) => getLatestMessageTime(b.data) - getLatestMessageTime(a.data));
@@ -755,16 +900,16 @@ export async function loadCEODashboardData() {
                 <tr>
                     <td>
                         <div class="fw-bold text-dark">${escapeHtml(fullName)}</div>
-                        <small class="text-muted" style="font-size: 0.725rem;">ID: ${id.substring(0, 8)}</small>
+                        <small class="text-muted" style="font-size: 0.725rem;">ID: #${id.substring(0, 8).toUpperCase()}</small>
                     </td>
                     <td class="text-muted small">${escapeHtml(email)}</td>
                     <td class="small">${escapeHtml(phone)}</td>
                     <td>
-                        <span class="badge bg-danger px-2 py-1">${escapeHtml(primaryCountry)}</span>
+                        <span class="badge bg-danger px-2.5 py-1 rounded-pill">${escapeHtml(primaryCountry)}</span>
                     </td>
                     <td class="small fw-semibold text-secondary">${escapeHtml(primaryCourse)}</td>
                     <td>
-                        <button class="btn btn-sm btn-dark shadow-sm" onclick="viewStudentDetails('${id}')">
+                        <button class="btn btn-sm btn-navy shadow-sm" onclick="viewStudentDetails('${id}')">
                             <i class="bi bi-person-lines-fill me-1"></i> View Profile
                         </button>
                         ${chatBtnHTML}
@@ -1871,9 +2016,14 @@ window.setDemoCredentials = function(email) {
     }
 };
 
-// Automatically fetch data depending on active dashboard
+window.initThemeToggle = initThemeToggle;
+window.toggleTheme = toggleTheme;
+
+// Automatically fetch data & initialize theme depending on active dashboard
 if (typeof window !== 'undefined') {
+    initThemeToggle();
     window.addEventListener('DOMContentLoaded', () => {
+        initThemeToggle();
         if (document.getElementById('studentsTableBody')) {
             fetchStudents();
         }
