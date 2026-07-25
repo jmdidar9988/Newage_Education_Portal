@@ -32,6 +32,12 @@
                         </a>
                     </li>
                     <li class="nav-item me-3">
+                        <button class="btn btn-sm btn-outline-light py-1 px-3 position-relative" data-bs-toggle="modal" data-bs-target="#messageCounselorModal" onclick="markStudentMessagesAsRead()">
+                            <i class="bi bi-chat-left-text-fill text-warning me-1"></i> Chat
+                            <span id="navChatUnreadBadge" class="badge bg-danger rounded-pill d-none ms-1">New</span>
+                        </button>
+                    </li>
+                    <li class="nav-item me-3">
                         <span class="text-white-50" id="navStudentId"><i class="bi bi-mortarboard me-1"></i> <span class="spinner-border spinner-border-sm"></span></span>
                     </li>
                     <li class="nav-item">
@@ -85,8 +91,9 @@
                             <button class="btn btn-newage-dark btn-sm" data-bs-toggle="modal" data-bs-target="#viewInfoModal">
                                 <i class="bi bi-file-person me-1"></i> View My Information
                             </button>
-                            <button class="btn btn-newage-outline btn-sm" data-bs-toggle="modal" data-bs-target="#messageCounselorModal">
-                                <i class="bi bi-chat-left-dots me-1"></i> Message Counselor
+                            <button class="btn btn-newage-outline btn-sm position-relative" id="studentChatBtn" data-bs-toggle="modal" data-bs-target="#messageCounselorModal" onclick="markStudentMessagesAsRead()">
+                                <i class="bi bi-chat-left-text-fill me-1 text-danger"></i> Chat
+                                <span id="studentChatUnreadBadge" class="badge bg-danger rounded-pill d-none ms-1">New</span>
                             </button>
                         </div>
                     </div>
@@ -477,6 +484,60 @@
             }
         }
 
+        // ── Helper: Check Unread Consultant Messages for Student ────────────
+        function checkStudentUnreadMessages(messages) {
+            const msgs = Array.isArray(messages) ? messages : [];
+            const badge = document.getElementById('studentChatUnreadBadge');
+            const navBadge = document.getElementById('navChatUnreadBadge');
+
+            if (msgs.length === 0) {
+                if (badge) badge.classList.add('d-none');
+                if (navBadge) navBadge.classList.add('d-none');
+                return;
+            }
+
+            const lastMsg = msgs[msgs.length - 1];
+            const isUnread = (lastMsg.sender === 'Consultant' && lastMsg.isRead !== true);
+
+            if (isUnread) {
+                if (badge) badge.classList.remove('d-none');
+                if (navBadge) navBadge.classList.remove('d-none');
+            } else {
+                if (badge) badge.classList.add('d-none');
+                if (navBadge) navBadge.classList.add('d-none');
+            }
+        }
+
+        // ── Handler: Mark Consultant Messages as Read by Student ─────────────
+        window.markStudentMessagesAsRead = async function() {
+            const badge = document.getElementById('studentChatUnreadBadge');
+            const navBadge = document.getElementById('navChatUnreadBadge');
+            if (badge) badge.classList.add('d-none');
+            if (navBadge) navBadge.classList.add('d-none');
+
+            if (!studentDocId || !currentStudentData || !Array.isArray(currentStudentData.messages)) return;
+
+            let updated = false;
+            const updatedMessages = currentStudentData.messages.map(m => {
+                if (m.sender === 'Consultant' && m.isRead !== true) {
+                    updated = true;
+                    return { ...m, isRead: true };
+                }
+                return m;
+            });
+
+            if (updated) {
+                try {
+                    const studentRef = doc(db, 'students', studentDocId);
+                    await updateDoc(studentRef, { messages: updatedMessages });
+                    currentStudentData.messages = updatedMessages;
+                    console.log("Student marked consultant messages as read.");
+                } catch (e) {
+                    console.error("Failed to mark student messages as read:", e);
+                }
+            }
+        };
+
         // ── Helper: Render Student Messages & Support Chat ─────────────────
         function renderStudentChat(messages) {
             const chatBox = document.getElementById('studentChatHistory');
@@ -533,7 +594,8 @@
                 id: 'msg_' + Date.now(),
                 sender: 'Student',
                 text: text,
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
+                isRead: false
             };
 
             try {
@@ -548,7 +610,7 @@
 
                 inputEl.value = '';
                 renderStudentChat(currentStudentData.messages);
-                showToast('💬 Message sent to your counselor!', 'success');
+                showToast('💬 Message sent!', 'success');
 
             } catch (error) {
                 console.error("Error sending student message:", error);
@@ -562,6 +624,10 @@
         function populateProfile(data, docId) {
             currentStudentData = data;
             renderStudentChat(data?.messages);
+            checkStudentUnreadMessages(data?.messages);
+
+            // Add focus listener to chat textarea to mark read on interaction
+            document.getElementById('counselorMessage')?.addEventListener('focus', markStudentMessagesAsRead);
 
             const p = data?.personalInfo || {};
             const edu = data?.educationalProfile || {};

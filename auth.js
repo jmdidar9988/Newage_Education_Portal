@@ -413,6 +413,79 @@ export async function saveStudentApplication(event) {
 /**
  * Fetches all student records from Firestore 'students' collection and renders them dynamically for Employee Portal
  */
+/**
+ * Helper to get latest message timestamp for sorting
+ */
+function getLatestMessageTime(studentData) {
+    const msgs = Array.isArray(studentData?.messages) ? studentData.messages : [];
+    if (msgs.length === 0) {
+        return studentData?.createdAt ? new Date(studentData.createdAt).getTime() : 0;
+    }
+    let maxTs = 0;
+    for (const m of msgs) {
+        const t = m.timestamp ? new Date(m.timestamp).getTime() : 0;
+        if (t > maxTs) maxTs = t;
+    }
+    return maxTs;
+}
+
+/**
+ * Helper to check if student has unread messages sent by 'Student'
+ */
+function hasUnreadStudentMessages(studentData) {
+    const msgs = Array.isArray(studentData?.messages) ? studentData.messages : [];
+    if (msgs.length === 0) return false;
+    const lastMsg = msgs[msgs.length - 1];
+    return lastMsg.sender === 'Student' && lastMsg.isRead !== true;
+}
+
+/**
+ * Marks messages sent by a specific role as read in Firestore
+ */
+export async function markMessagesAsRead(studentId, unreadSender = 'Student') {
+    const student = window.loadedStudentsMap ? window.loadedStudentsMap[studentId] : null;
+    if (!student || !Array.isArray(student.messages)) return;
+
+    let updated = false;
+    const updatedMessages = student.messages.map(m => {
+        if (m.sender === unreadSender && m.isRead !== true) {
+            updated = true;
+            return { ...m, isRead: true };
+        }
+        return m;
+    });
+
+    if (updated) {
+        try {
+            const studentRef = doc(db, 'students', studentId);
+            await updateDoc(studentRef, { messages: updatedMessages });
+            student.messages = updatedMessages;
+            console.log(`Marked ${unreadSender} messages as read for student ${studentId}`);
+            if (document.getElementById('studentsTableBody')) fetchStudents();
+            if (document.getElementById('recentApplicationsTableBody')) loadCEODashboardData();
+        } catch (err) {
+            console.error("Error marking messages as read:", err);
+        }
+    }
+}
+
+/**
+ * Opens student chat directly from table action button and marks messages as read
+ */
+export async function openStudentChat(studentId) {
+    await markMessagesAsRead(studentId, 'Student');
+    viewStudentDetails(studentId);
+    setTimeout(() => {
+        const chatBox = document.getElementById(`modalChatHistory_${studentId}`);
+        if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+        const chatInput = document.getElementById(`modalChatInput_${studentId}`);
+        if (chatInput) chatInput.focus();
+    }, 250);
+}
+
+/**
+ * Fetches all student records from Firestore 'students' collection and renders them dynamically for Employee Portal
+ */
 export async function fetchStudents() {
     const tableBody = document.getElementById('studentsTableBody');
     const studentCountBadge = document.getElementById('studentCountBadge');
@@ -451,13 +524,20 @@ export async function fetchStudents() {
 
         if (studentCountBadge) studentCountBadge.innerText = `${snapshot.size} Records`;
 
-        let html = '';
+        const studentItems = [];
         window.loadedStudentsMap = window.loadedStudentsMap || {};
 
         snapshot.forEach((doc) => {
             const data = doc.data();
             window.loadedStudentsMap[doc.id] = data;
+            studentItems.push({ id: doc.id, data });
+        });
 
+        // 🟢 Sort students: Most recent message appears at the top
+        studentItems.sort((a, b) => getLatestMessageTime(b.data) - getLatestMessageTime(a.data));
+
+        let html = '';
+        studentItems.forEach(({ id, data }) => {
             const fullName = data.personalInfo?.fullName || 'N/A';
             const email = data.personalInfo?.email || 'N/A';
             const primaryCountry = (data.preferences?.countryChoices && data.preferences.countryChoices.length > 0) 
@@ -467,11 +547,21 @@ export async function fetchStudents() {
                 ? data.preferences.courseChoices[0] 
                 : 'N/A';
 
+            const unread = hasUnreadStudentMessages(data);
+            const chatBtnHTML = unread
+                ? `<button class="btn btn-sm btn-outline-danger shadow-sm ms-1 position-relative" onclick="openStudentChat('${id}')" title="Unread student message!">
+                      <i class="bi bi-chat-left-text-fill me-1"></i>Chat
+                      <span class="badge bg-danger rounded-pill ms-1">New</span>
+                   </button>`
+                : `<button class="btn btn-sm btn-outline-secondary shadow-sm ms-1" onclick="openStudentChat('${id}')" title="Chat with student">
+                      <i class="bi bi-chat-left-text me-1"></i>Chat
+                   </button>`;
+
             html += `
                 <tr>
                     <td>
                         <div class="fw-bold text-dark">${escapeHtml(fullName)}</div>
-                        <small class="text-muted" style="font-size: 0.725rem;">Ref: ${doc.id.substring(0, 8)}</small>
+                        <small class="text-muted" style="font-size: 0.725rem;">Ref: ${id.substring(0, 8)}</small>
                     </td>
                     <td class="text-muted small">${escapeHtml(email)}</td>
                     <td>
@@ -479,9 +569,10 @@ export async function fetchStudents() {
                     </td>
                     <td class="small fw-semibold text-secondary">${escapeHtml(primaryCourse)}</td>
                     <td>
-                        <button class="btn btn-sm btn-dark shadow-sm" onclick="viewStudentDetails('${doc.id}')">
+                        <button class="btn btn-sm btn-dark shadow-sm" onclick="viewStudentDetails('${id}')">
                             <i class="bi bi-eye me-1"></i> View Details
                         </button>
+                        ${chatBtnHTML}
                     </td>
                 </tr>`;
         });
@@ -546,13 +637,20 @@ export async function loadCEODashboardData() {
             return;
         }
 
-        let html = '';
+        const studentItems = [];
         window.loadedStudentsMap = window.loadedStudentsMap || {};
 
         snapshot.forEach((doc) => {
             const data = doc.data();
             window.loadedStudentsMap[doc.id] = data;
+            studentItems.push({ id: doc.id, data });
+        });
 
+        // 🟢 Sort students: Most recent message appears at top
+        studentItems.sort((a, b) => getLatestMessageTime(b.data) - getLatestMessageTime(a.data));
+
+        let html = '';
+        studentItems.forEach(({ id, data }) => {
             const fullName = data.personalInfo?.fullName || 'N/A';
             const email = data.personalInfo?.email || 'N/A';
             const phone = data.personalInfo?.contactNo || 'N/A';
@@ -563,11 +661,21 @@ export async function loadCEODashboardData() {
                 ? data.preferences.courseChoices[0]
                 : 'N/A';
 
+            const unread = hasUnreadStudentMessages(data);
+            const chatBtnHTML = unread
+                ? `<button class="btn btn-sm btn-outline-danger shadow-sm ms-1 position-relative" onclick="openStudentChat('${id}')" title="Unread student message!">
+                      <i class="bi bi-chat-left-text-fill me-1"></i>Chat
+                      <span class="badge bg-danger rounded-pill ms-1">New</span>
+                   </button>`
+                : `<button class="btn btn-sm btn-outline-secondary shadow-sm ms-1" onclick="openStudentChat('${id}')" title="Chat with student">
+                      <i class="bi bi-chat-left-text me-1"></i>Chat
+                   </button>`;
+
             html += `
                 <tr>
                     <td>
                         <div class="fw-bold text-dark">${escapeHtml(fullName)}</div>
-                        <small class="text-muted" style="font-size: 0.725rem;">ID: ${doc.id.substring(0, 8)}</small>
+                        <small class="text-muted" style="font-size: 0.725rem;">ID: ${id.substring(0, 8)}</small>
                     </td>
                     <td class="text-muted small">${escapeHtml(email)}</td>
                     <td class="small">${escapeHtml(phone)}</td>
@@ -576,9 +684,10 @@ export async function loadCEODashboardData() {
                     </td>
                     <td class="small fw-semibold text-secondary">${escapeHtml(primaryCourse)}</td>
                     <td>
-                        <button class="btn btn-sm btn-dark shadow-sm" onclick="viewStudentDetails('${doc.id}')">
+                        <button class="btn btn-sm btn-dark shadow-sm" onclick="viewStudentDetails('${id}')">
                             <i class="bi bi-person-lines-fill me-1"></i> View Profile
                         </button>
+                        ${chatBtnHTML}
                     </td>
                 </tr>`;
         });
@@ -598,6 +707,7 @@ export async function loadCEODashboardData() {
                 </tr>`;
         }
     }
+}
 }
 
 /**
@@ -1087,7 +1197,8 @@ export async function sendConsultantReply(studentId) {
         id: 'msg_' + Date.now(),
         sender: 'Consultant',
         text: text,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        isRead: false
     };
 
     try {
@@ -1565,6 +1676,8 @@ window.toggleEditMode = toggleEditMode;
 window.saveProfileChanges = saveProfileChanges;
 window.approveDocument = approveDocument;
 window.sendConsultantReply = sendConsultantReply;
+window.openStudentChat = openStudentChat;
+window.markMessagesAsRead = markMessagesAsRead;
 window.updateDetectedRoleUI = updateDetectedRoleUI;
 window.setDemoCredentials = function(email) {
     const emailInput = document.getElementById('emailInput');
