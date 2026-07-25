@@ -915,6 +915,9 @@ export async function loadCEODashboardData() {
                             <i class="bi bi-person-lines-fill me-1"></i> View Profile
                         </button>
                         ${chatBtnHTML}
+                        <button class="btn btn-sm btn-accent text-white shadow-sm ms-1" onclick="deleteStudentRecord('${id}')" title="Delete Student Record (CEO Only)">
+                            <i class="bi bi-trash-fill me-1"></i> Delete
+                        </button>
                     </td>
                 </tr>`;
         });
@@ -1992,6 +1995,27 @@ export async function handleAddNewEmployee(event) {
 /**
  * Expose functions globally for inline HTML event handlers
  */
+/**
+ * Deletes a student record from Firestore (CEO Privilege Only)
+ * @param {string} studentId 
+ */
+export async function deleteStudentRecord(studentId) {
+    if (!confirm('⚠️ Are you sure you want to permanently delete this student record? This action cannot be undone.')) return;
+    try {
+        await deleteDoc(doc(db, 'students', studentId));
+        alert('✅ Student record deleted successfully.');
+        if (document.getElementById('recentApplicationsTableBody')) {
+            loadCEODashboardData();
+        } else if (document.getElementById('studentsTableBody')) {
+            fetchStudents();
+        }
+    } catch (error) {
+        console.error('Error deleting student:', error);
+        alert('Failed to delete student record: ' + error.message);
+    }
+}
+
+window.deleteStudentRecord = deleteStudentRecord;
 window.handleFirebaseLogin = handleFirebaseLogin;
 window.handleFirebaseSignUp = handleFirebaseSignUp;
 window.handleAddNewEmployee = handleAddNewEmployee;

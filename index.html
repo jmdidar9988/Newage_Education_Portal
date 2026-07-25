@@ -72,12 +72,6 @@
                             <button class="btn btn-navy" data-bs-toggle="modal" data-bs-target="#viewDocumentsModal">
                                 <i class="bi bi-file-earmark-pdf me-1"></i> View Student Documents
                             </button>
-                            <button class="btn btn-navy position-relative" onclick="scrollToRequests()">
-                                <i class="bi bi-bell-fill me-1"></i> View Update Requests
-                                <span id="requestsBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-accent border border-light">
-                                    1
-                                </span>
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -134,8 +128,8 @@
 
         <!-- Tasks & Updates Row -->
         <div class="row g-4 mb-4 animate-fade-up stagger-3">
-            <!-- Left Column: Tasks Status -->
-            <div class="col-lg-7">
+            <!-- Full Width: Tasks Status -->
+            <div class="col-12">
                 <div class="card-newage h-100 border-0 shadow-sm rounded-4">
                     <div class="card-header bg-navy text-white d-flex justify-content-between align-items-center py-3 px-4 rounded-top-4">
                         <h5 class="mb-0 text-white fw-bold"><i class="bi bi-list-check me-2 text-accent"></i>Counselor Tasks &amp; Actions</h5>
@@ -173,41 +167,6 @@
                                     </tr>
                                 </tbody>
                             </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Right Column: Pending Update Requests Section -->
-            <div class="col-lg-5" id="requestsSection">
-                <div class="card-newage h-100 border-0 shadow-sm rounded-4">
-                    <div class="card-header bg-navy text-white d-flex justify-content-between align-items-center py-3 px-4 rounded-top-4">
-                        <h5 class="mb-0 text-white fw-bold"><i class="bi bi-exclamation-triangle-fill me-2 text-accent"></i>Info Update Requests</h5>
-                        <span id="requestsCountBadge" class="badge bg-accent rounded-pill px-2.5 py-1">1 Action Required</span>
-                    </div>
-                    <div class="p-3">
-                        <div id="requestContainer">
-                            <div class="card p-3 mb-3 border-warning-subtle bg-warning-subtle bg-opacity-10 rounded-3">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <h6 class="mb-0 fw-bold text-dark">Sakib Rahman</h6>
-                                    <span class="text-muted small">Student ID: #8201</span>
-                                </div>
-                                <p class="small text-muted mb-3">
-                                    <strong>Request Details:</strong> "Hello, my date of birth in my portal is locked as 1999-10-10, but on my passport, it is 1998-10-10. Please correct it."
-                                </p>
-                                <div class="d-flex gap-2">
-                                    <button class="btn btn-sm btn-success w-50" onclick="handleRequest('Approve')">
-                                        <i class="bi bi-check2"></i> Approve
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger w-50" onclick="handleRequest('Decline')">
-                                        <i class="bi bi-x-lg"></i> Decline
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <div id="noRequestsMsg" class="text-center py-4 d-none">
-                            <div class="fs-1 text-muted mb-2"><i class="bi bi-check-circle-fill text-success"></i></div>
-                            <p class="text-muted mb-0">No pending update requests.</p>
                         </div>
                     </div>
                 </div>

@@ -120,9 +120,6 @@
                                     <button class="btn btn-dark btn-sm py-2 px-3 fw-semibold rounded-3" data-bs-toggle="modal" data-bs-target="#viewInfoModal">
                                         <i class="bi bi-file-person me-1"></i> View Detailed Record
                                     </button>
-                                    <button class="btn btn-outline-warning btn-sm py-2 px-3 fw-semibold rounded-3" data-bs-toggle="modal" data-bs-target="#requestUpdateModal">
-                                        <i class="bi bi-pencil-square me-1"></i> Request Data Correction
-                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -435,33 +432,6 @@
                 <div class="modal-footer bg-light py-2">
                     <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL 3: Request Update -->
-    <div class="modal fade" id="requestUpdateModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header bg-dark text-white border-bottom border-danger">
-                    <h5 class="modal-title text-white">Request Profile Data Correction</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form id="correctionRequestForm" onsubmit="submitCorrectionRequest(event)">
-                    <div class="modal-body">
-                        <div class="alert alert-info py-2 small mb-3">
-                            <i class="bi bi-info-circle-fill"></i> Data changes are subject to review and confirmation by administrative managers.
-                        </div>
-                        <div class="mb-3">
-                            <label for="correctionMessage" class="form-label fw-bold small text-muted">Describe modifications required</label>
-                            <textarea class="form-control" id="correctionMessage" rows="4" placeholder="Detail any misspelled names, incorrect dates, or marks. e.g. 'Please change my DOB to 1998-10-10...'" required></textarea>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-newage-red btn-sm">Submit Request</button>
-                    </div>
-                </form>
             </div>
         </div>
     </div>
@@ -1211,17 +1181,6 @@
                 alert('Message sent successfully! Kabir Hossain will respond shortly.');
                 document.getElementById('chatForm').reset();
                 const modal = bootstrap.Modal.getInstance(document.getElementById('messageCounselorModal'));
-                modal.hide();
-            }
-        }
-
-        function submitCorrectionRequest(event) {
-            event.preventDefault();
-            const message = document.getElementById('correctionMessage').value.trim();
-            if (message) {
-                alert('Data correction request sent successfully. Admin team will review and contact you.');
-                document.getElementById('correctionRequestForm').reset();
-                const modal = bootstrap.Modal.getInstance(document.getElementById('requestUpdateModal'));
                 modal.hide();
             }
         }
