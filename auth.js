@@ -21,6 +21,7 @@ import {
     where,
     orderBy,
     doc,
+    setDoc,
     updateDoc,
     serverTimestamp,
     arrayUnion
@@ -1695,10 +1696,114 @@ export async function saveProfileChanges(studentId) {
 }
 
 /**
+ * Creates a new Employee user account using a Secondary Firebase App instance
+ * so the CEO remains logged into the primary auth instance.
+ * @param {Event} event 
+ */
+export async function handleAddNewEmployee(event) {
+    if (event) event.preventDefault();
+
+    const nameEl = document.getElementById('newEmployeeName');
+    const emailEl = document.getElementById('newEmployeeEmail');
+    const passwordEl = document.getElementById('newEmployeePassword');
+    const alertEl = document.getElementById('addEmployeeAlert');
+    const submitBtn = document.getElementById('createEmployeeBtn');
+
+    if (!nameEl || !emailEl || !passwordEl) return;
+
+    const employeeName = nameEl.value.trim();
+    const employeeEmail = emailEl.value.trim();
+    const employeePassword = passwordEl.value;
+
+    if (alertEl) alertEl.innerHTML = '';
+
+    if (!employeeName || !employeeEmail || !employeePassword) {
+        alert('Please fill out all fields.');
+        return;
+    }
+
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Creating Account...';
+    }
+
+    try {
+        // 1. Initialize or retrieve Secondary App instance
+        let secondaryApp;
+        if (getApps().some(a => a.name === "SecondaryApp")) {
+            secondaryApp = getApp("SecondaryApp");
+        } else {
+            secondaryApp = initializeApp(firebaseConfig, "SecondaryApp");
+        }
+        const secondaryAuth = getAuth(secondaryApp);
+
+        // 2. Create secondary auth user for new employee
+        const userCred = await createUserWithEmailAndPassword(secondaryAuth, employeeEmail, employeePassword);
+        const newEmployeeUid = userCred.user.uid;
+        console.log("New Employee account created silently on secondaryAuth with UID:", newEmployeeUid);
+
+        // 3. Save new employee user record in Firestore 'users' collection using primary db instance
+        await setDoc(doc(db, "users", newEmployeeUid), {
+            fullName: employeeName,
+            email: employeeEmail,
+            role: "employee",
+            createdAt: Date.now()
+        });
+
+        console.log("Employee role document saved to 'users' collection in Firestore for:", newEmployeeUid);
+
+        // 4. Immediately sign out secondary auth instance
+        try {
+            await signOut(secondaryAuth);
+        } catch (soErr) {
+            console.warn("Secondary auth signout notice:", soErr);
+        }
+
+        // 5. Success feedback UI & reset form
+        if (alertEl) {
+            alertEl.innerHTML = `
+                <div class="alert alert-success alert-dismissible fade show py-2 small mb-3" role="alert">
+                    <i class="bi bi-check-circle-fill me-1"></i> <strong>Employee account created successfully!</strong> Registered for <code>${escapeHtml(employeeEmail)}</code>.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>`;
+        }
+
+        document.getElementById('addEmployeeForm')?.reset();
+
+    } catch (error) {
+        console.error("Error creating employee account:", error);
+        let msg = "Failed to create employee account.";
+        if (error.code === 'auth/email-already-in-use') {
+            msg = "This email address is already registered.";
+        } else if (error.code === 'auth/weak-password') {
+            msg = "Password should be at least 6 characters long.";
+        } else if (error.code === 'auth/invalid-email') {
+            msg = "Please enter a valid email address.";
+        } else if (error.message) {
+            msg = error.message.replace("Firebase: ", "");
+        }
+
+        if (alertEl) {
+            alertEl.innerHTML = `
+                <div class="alert alert-danger alert-dismissible fade show py-2 small mb-3" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i> ${escapeHtml(msg)}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>`;
+        }
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> Create Employee Account';
+        }
+    }
+}
+
+/**
  * Expose functions globally for inline HTML event handlers
  */
 window.handleFirebaseLogin = handleFirebaseLogin;
 window.handleFirebaseSignUp = handleFirebaseSignUp;
+window.handleAddNewEmployee = handleAddNewEmployee;
 window.saveStudentApplication = saveStudentApplication;
 window.fetchStudents = fetchStudents;
 window.loadCEODashboardData = loadCEODashboardData;

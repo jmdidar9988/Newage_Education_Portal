@@ -46,7 +46,10 @@
                 <h1 class="display-5 fw-bold text-white">Welcome back, Chief Executive Officer</h1>
                 <p class="lead my-3 text-white-50">Manage counselors, review student records, and control portal activities from one centralized terminal.</p>
                 <div class="d-flex flex-wrap gap-2 mt-4">
-                    <button class="btn btn-newage-red" data-bs-toggle="modal" data-bs-target="#assignTaskModal">
+                    <button class="btn btn-newage-red shadow-sm" data-bs-toggle="modal" data-bs-target="#addNewEmployeeModal">
+                        <i class="bi bi-person-plus-fill me-1"></i> Add New Employee
+                    </button>
+                    <button class="btn btn-newage-dark" data-bs-toggle="modal" data-bs-target="#assignTaskModal">
                         <i class="bi bi-plus-circle me-1"></i> Assign New Task
                     </button>
                     <button class="btn btn-newage-dark" data-bs-toggle="modal" data-bs-target="#employeeUpdatesModal">
@@ -389,6 +392,48 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-newage-dark" data-bs-dismiss="modal">Close</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Add New Employee Account (CEO Only) -->
+    <div class="modal fade" id="addNewEmployeeModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white border-bottom border-danger">
+                    <h5 class="modal-title text-white"><i class="bi bi-person-plus-fill text-danger me-2"></i>Register New Employee Account</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="addEmployeeForm" onsubmit="handleAddNewEmployee(event)">
+                    <div class="modal-body">
+                        <div id="addEmployeeAlert"></div>
+
+                        <div class="alert alert-info py-2 small mb-3">
+                            <i class="bi bi-shield-lock-fill me-1"></i> CEO Access Control: Register staff account with staff role permissions.
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="newEmployeeName" class="form-label fw-bold small text-muted">Employee Full Name</label>
+                            <input type="text" class="form-control" id="newEmployeeName" placeholder="e.g. Tanvir Ahmed" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="newEmployeeEmail" class="form-label fw-bold small text-muted">Employee Email Address</label>
+                            <input type="email" class="form-control" id="newEmployeeEmail" placeholder="e.g. tanvir.employee@newage.com" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="newEmployeePassword" class="form-label fw-bold small text-muted">Temporary Account Password</label>
+                            <input type="password" class="form-control" id="newEmployeePassword" placeholder="Minimum 6 characters" minlength="6" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-newage-red btn-sm fw-bold" id="createEmployeeBtn">
+                            <i class="bi bi-check-circle-fill me-1"></i> Create Employee Account
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
