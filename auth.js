@@ -584,6 +584,7 @@ function getSkeletonRowsHTML(cols = 5, rows = 4) {
 export function initThemeToggle() {
     const savedTheme = localStorage.getItem('newage_theme') || 'dark';
     document.documentElement.setAttribute('data-bs-theme', savedTheme);
+    document.documentElement.setAttribute('data-theme', savedTheme);
     updateThemeToggleIcons(savedTheme);
 }
 
@@ -591,6 +592,7 @@ export function toggleTheme() {
     const current = document.documentElement.getAttribute('data-bs-theme') || 'dark';
     const next = current === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-bs-theme', next);
+    document.documentElement.setAttribute('data-theme', next);
     localStorage.setItem('newage_theme', next);
     updateThemeToggleIcons(next);
     renderCEOAnalyticsCharts(window.lastLoadedStudentItems || []);

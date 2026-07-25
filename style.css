@@ -5,19 +5,36 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
 
-:root {
-    --ne-navy-primary: #0b2447;
-    --ne-navy-dark: #07172f;
-    --ne-navy-light: #16325b;
-    --ne-navy-card: #0f2744;
-    --ne-dark-bg: #07172f;
-    --ne-card-dark: #0f2744;
+/* ==========================================================================
+   DYNAMIC THEMING SYSTEM (CSS VARIABLES)
+   ========================================================================== */
+
+:root,
+[data-bs-theme="light"],
+[data-theme="light"] {
+    --page-bg: #f4f7f6;
+    --card-bg: #ffffff;
+    --card-header-bg: #ffffff;
+    --card-header-text: #0b2447;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --nav-bg: #ffffff;
+    --nav-text: #1e293b;
+    --border-color: #e2e8f0;
+    --table-header-bg: #0b2447;
+    --table-header-text: #ffffff;
+    --table-bg: #ffffff;
+    --table-row-hover: rgba(11, 36, 71, 0.04);
+    --input-bg: #ffffff;
+    --input-text: #0f172a;
+    --input-border: #cbd5e1;
+    --modal-bg: #ffffff;
+    --modal-text: #1e293b;
+    --footer-bg: #07172f;
+    --footer-text: #94a3b8;
+    --shadow-color: rgba(0, 0, 0, 0.08);
     --ne-accent-red: #dc2626;
     --ne-accent-red-hover: #b91c1c;
-    --ne-light-bg: #f8fafc;
-    --ne-text-dark: #1e293b;
-    --ne-text-muted: #64748b;
-    --ne-border-color: #e2e8f0;
     --ne-gradient-dark: linear-gradient(135deg, #0b2447 0%, #051329 100%);
     --ne-gradient-navy: linear-gradient(135deg, #0b2447 0%, #16325b 100%);
     --ne-gradient-red: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
@@ -28,21 +45,45 @@
     --ne-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+[data-bs-theme="dark"],
+[data-theme="dark"] {
+    --page-bg: #041124;
+    --card-bg: #0b2447;
+    --card-header-bg: #07172f;
+    --card-header-text: #ffffff;
+    --text-main: #ffffff;
+    --text-muted: #a0aec0;
+    --nav-bg: #0b2447;
+    --nav-text: #ffffff;
+    --border-color: #16325b;
+    --table-header-bg: #07172f;
+    --table-header-text: #ffffff;
+    --table-bg: #0b2447;
+    --table-row-hover: rgba(255, 255, 255, 0.06);
+    --input-bg: rgba(255, 255, 255, 0.06);
+    --input-text: #ffffff;
+    --input-border: rgba(255, 255, 255, 0.15);
+    --modal-bg: #0b2447;
+    --modal-text: #ffffff;
+    --footer-bg: #041124;
+    --footer-text: #94a3b8;
+    --shadow-color: rgba(0, 0, 0, 0.4);
+}
+
 /* Custom Modern Navy Scrollbar */
 ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
 }
 ::-webkit-scrollbar-track {
-    background: #07172f;
+    background: var(--page-bg);
 }
 ::-webkit-scrollbar-thumb {
-    background: #16325b;
+    background: var(--border-color);
     border-radius: 4px;
-    border: 2px solid #07172f;
 }
 ::-webkit-scrollbar-thumb:hover {
-    background: #dc2626;
+    background: var(--ne-accent-red);
 }
 
 /* Skeleton Loading Animation */
@@ -61,53 +102,80 @@
     border-radius: 4px;
 }
 
-[data-bs-theme="dark"] .skeleton-line {
+[data-bs-theme="dark"] .skeleton-line,
+[data-theme="dark"] .skeleton-line {
     background: linear-gradient(90deg, #16325b 25%, #1e3a8a 37%, #16325b 63%);
     background-size: 200% 100%;
 }
 
-/* Navy Blue Utility Classes & Bootstrap Overrides */
-.bg-navy,
-.bg-dark {
-    background-color: #0b2447 !important;
-    color: #ffffff !important;
+/* Utility Classes Driven by Variables */
+.bg-navy {
+    background-color: var(--card-bg) !important;
+    color: var(--text-main) !important;
 }
 
 .bg-navy-dark {
-    background-color: #07172f !important;
-    color: #ffffff !important;
+    background-color: var(--page-bg) !important;
+    color: var(--text-main) !important;
 }
 
 .bg-navy-light {
-    background-color: #16325b !important;
-    color: #ffffff !important;
+    background-color: var(--card-header-bg) !important;
+    color: var(--text-main) !important;
 }
 
 .text-navy {
-    color: #0b2447 !important;
+    color: var(--text-main) !important;
 }
 
 .border-navy {
-    border-color: #0b2447 !important;
+    border-color: var(--border-color) !important;
 }
 
-/* Global Styles */
+/* Global Body Styles */
 body {
     font-family: 'Inter', sans-serif;
-    background-color: var(--ne-light-bg);
-    color: var(--ne-text-dark);
+    background-color: var(--page-bg) !important;
+    color: var(--text-main) !important;
     font-size: 0.95rem;
     overflow-x: hidden;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 h1, h2, h3, h4, h5, h6 {
     font-family: 'Outfit', sans-serif;
     font-weight: 600;
+    color: inherit;
+}
+
+/* Theme Adaptive Overrides for Bootstrap Defaults */
+[data-bs-theme="dark"] .bg-white,
+[data-theme="dark"] .bg-white,
+[data-bs-theme="dark"] .bg-light,
+[data-theme="dark"] .bg-light {
+    background-color: var(--card-bg) !important;
+    color: var(--text-main) !important;
+}
+
+[data-bs-theme="dark"] .text-dark,
+[data-theme="dark"] .text-dark {
+    color: var(--text-main) !important;
+}
+
+[data-bs-theme="dark"] .text-muted,
+[data-theme="dark"] .text-muted {
+    color: var(--text-muted) !important;
+}
+
+[data-bs-theme="light"] .text-muted,
+[data-theme="light"] .text-muted {
+    color: var(--text-muted) !important;
 }
 
 /* Navbar Customizations */
 .navbar-newage {
-    background: var(--ne-gradient-dark);
+    background-color: var(--nav-bg) !important;
+    color: var(--nav-text) !important;
     border-bottom: 2px solid var(--ne-accent-red);
     box-shadow: var(--ne-shadow-md);
     padding: 0.8rem 1.5rem;
@@ -118,17 +186,12 @@ h1, h2, h3, h4, h5, h6 {
     font-weight: 700;
     font-size: 1.4rem;
     letter-spacing: -0.5px;
-}
-
-.navbar-newage .navbar-brand span {
-    color: var(--ne-accent-red);
-    position: relative;
-    display: inline-block;
+    color: var(--nav-text) !important;
 }
 
 .navbar-newage .portal-badge {
     background-color: rgba(220, 38, 38, 0.15);
-    color: #ff8a8a;
+    color: var(--ne-accent-red);
     border: 1px solid rgba(220, 38, 38, 0.3);
     font-weight: 500;
     font-size: 0.8rem;
@@ -138,29 +201,37 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Premium Card Styles */
-.card-newage {
-    background: #ffffff;
-    border: 1px solid var(--ne-border-color);
+.card-newage,
+.card,
+.dest-card {
+    background-color: var(--card-bg) !important;
+    color: var(--text-main) !important;
+    border: 1px solid var(--border-color) !important;
     border-radius: 16px;
     box-shadow: var(--ne-shadow-sm);
     transition: var(--ne-transition);
     overflow: hidden;
 }
 
-.card-newage:hover {
+.card-newage:hover,
+.card:hover,
+.dest-card:hover {
     transform: translateY(-4px);
-    box-shadow: var(--ne-shadow-md);
+    box-shadow: 0 12px 28px var(--shadow-color) !important;
 }
 
-.card-newage .card-header-newage {
-    background-color: #ffffff;
-    border-bottom: 1px solid var(--ne-border-color);
+.card-newage .card-header,
+.card-newage .card-header-newage,
+.card-header {
+    background-color: var(--card-header-bg) !important;
+    color: var(--card-header-text) !important;
+    border-bottom: 1px solid var(--border-color) !important;
     padding: 1.25rem 1.5rem;
 }
 
 .card-newage-dark {
-    background: var(--ne-gradient-dark);
-    color: #ffffff;
+    background: var(--ne-gradient-dark) !important;
+    color: #ffffff !important;
     border: none;
     border-radius: 16px;
     box-shadow: var(--ne-shadow-md);
@@ -175,7 +246,7 @@ h1, h2, h3, h4, h5, h6 {
 /* Custom Buttons */
 .btn-newage-red {
     background: var(--ne-gradient-red);
-    color: #ffffff;
+    color: #ffffff !important;
     border: none;
     font-weight: 600;
     border-radius: 8px;
@@ -184,19 +255,12 @@ h1, h2, h3, h4, h5, h6 {
     transition: var(--ne-transition);
 }
 
-.btn-newage-red:hover {
-    background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%);
-    color: #ffffff;
-    box-shadow: var(--ne-glow-red);
-    transform: translateY(-1px);
-}
-
 .btn-navy,
 .btn-newage-dark,
 .btn-dark {
-    background: #0b2447 !important;
-    color: #ffffff !important;
-    border: 1px solid #16325b !important;
+    background-color: var(--card-header-bg) !important;
+    color: var(--text-main) !important;
+    border: 1px solid var(--border-color) !important;
     font-weight: 600;
     border-radius: 8px;
     padding: 0.6rem 1.5rem;
@@ -206,15 +270,16 @@ h1, h2, h3, h4, h5, h6 {
 .btn-navy:hover,
 .btn-newage-dark:hover,
 .btn-dark:hover {
-    background: #16325b !important;
+    background-color: var(--ne-accent-red) !important;
     color: #ffffff !important;
+    border-color: var(--ne-accent-red) !important;
     transform: translateY(-1px);
 }
 
 .btn-newage-outline {
     background: transparent;
-    color: var(--ne-accent-red);
-    border: 1.5px solid var(--ne-accent-red);
+    color: var(--ne-accent-red) !important;
+    border: 1.5px solid var(--ne-accent-red) !important;
     font-weight: 600;
     border-radius: 8px;
     padding: 0.6rem 1.5rem;
@@ -222,139 +287,70 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .btn-newage-outline:hover {
-    background: var(--ne-accent-red);
-    color: #ffffff;
+    background: var(--ne-accent-red) !important;
+    color: #ffffff !important;
     box-shadow: var(--ne-glow-red);
     transform: translateY(-1px);
 }
 
-/* Custom badges */
-.badge-newage-red {
-    background-color: var(--ne-accent-red);
-    color: white;
-    font-weight: 600;
-    font-size: 0.75rem;
-    padding: 0.35em 0.65em;
-    border-radius: 50px;
-}
-
-/* Alerts Customizations */
-.alert-newage-success {
-    background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
-    border-left: 5px solid #22c55e;
-    border-top: 1px solid #bbf7d0;
-    border-right: 1px solid #bbf7d0;
-    border-bottom: 1px solid #bbf7d0;
-    border-radius: 12px;
-    box-shadow: var(--ne-shadow-sm);
-    color: #166534;
-    transition: var(--ne-transition);
-}
-
-.alert-newage-success:hover {
-    box-shadow: var(--ne-shadow-md);
-}
-
-/* Form Styles - Paper style digital form */
+/* Form Styles */
 .paper-form {
-    background: #ffffff;
-    border: 1px solid var(--ne-border-color);
+    background-color: var(--card-bg) !important;
+    color: var(--text-main) !important;
+    border: 1px solid var(--border-color) !important;
     border-radius: 16px;
     box-shadow: var(--ne-shadow-lg);
     position: relative;
     padding: 3rem;
 }
 
-.paper-form::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 6px;
-    background: var(--ne-gradient-red);
-    border-top-left-radius: 16px;
-    border-top-right-radius: 16px;
-}
-
-.form-section-title {
-    font-family: 'Outfit', sans-serif;
-    color: var(--ne-dark-bg);
-    border-left: 4px solid var(--ne-accent-red);
-    padding-left: 10px;
-    margin-bottom: 1.5rem;
-    margin-top: 2rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    font-size: 1rem;
-    letter-spacing: 0.5px;
-}
-
-.form-section-title:first-of-type {
-    margin-top: 0;
-}
-
-.paper-form label {
-    font-weight: 500;
-    color: #475569;
-    font-size: 0.85rem;
-    margin-bottom: 0.4rem;
-}
-
-.paper-form .form-control, 
-.paper-form .form-select {
-    border: 1.5px solid #cbd5e1;
+.form-control,
+.form-select {
+    background-color: var(--input-bg) !important;
+    color: var(--input-text) !important;
+    border: 1px solid var(--input-border) !important;
     border-radius: 8px;
     padding: 0.6rem 0.8rem;
-    font-size: 0.92rem;
     transition: var(--ne-transition);
 }
 
-.paper-form .form-control:focus, 
-.paper-form .form-select:focus {
-    border-color: var(--ne-accent-red);
+.form-control:focus,
+.form-select:focus {
+    background-color: var(--input-bg) !important;
+    color: var(--input-text) !important;
+    border-color: var(--ne-accent-red) !important;
     box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
 }
 
 /* Tables styling */
+.table,
 .table-newage {
-    border-collapse: separate;
-    border-spacing: 0 8px;
+    color: var(--text-main) !important;
 }
 
+.table thead th,
 .table-newage thead th {
-    background-color: #0b2447 !important;
-    color: #ffffff !important;
+    background-color: var(--table-header-bg) !important;
+    color: var(--table-header-text) !important;
     font-weight: 600;
-    border: none;
+    border: none !important;
     padding: 12px 16px;
     font-family: 'Outfit', sans-serif;
 }
 
-.table-newage thead th:first-child {
-    border-top-left-radius: 8px;
-}
-
-.table-newage thead th:last-child {
-    border-top-right-radius: 8px;
-}
-
-.table-newage tbody tr {
-    box-shadow: var(--ne-shadow-sm);
-    transition: var(--ne-transition);
-}
-
-.table-newage tbody tr:hover {
-    transform: scale(1.005);
-    box-shadow: var(--ne-shadow-md);
-}
-
+.table tbody td,
 .table-newage tbody td {
-    background-color: #ffffff;
-    border-top: 1px solid var(--ne-border-color);
-    border-bottom: 1px solid var(--ne-border-color);
+    background-color: var(--table-bg) !important;
+    color: var(--text-main) !important;
+    border-top: 1px solid var(--border-color) !important;
+    border-bottom: 1px solid var(--border-color) !important;
     padding: 14px 16px;
     vertical-align: middle;
+}
+
+.table tbody tr:hover,
+.table-hover tbody tr:hover {
+    background-color: var(--table-row-hover) !important;
 }
 
 .table-newage tbody tr td:first-child {
