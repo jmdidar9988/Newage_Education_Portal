@@ -414,29 +414,34 @@ export async function saveStudentApplication(event) {
  * Fetches all student records from Firestore 'students' collection and renders them dynamically for Employee Portal
  */
 /**
- * Helper to get latest message timestamp for sorting
+ * Helper to get latest message timestamp for sorting safely
  */
 function getLatestMessageTime(studentData) {
-    const msgs = Array.isArray(studentData?.messages) ? studentData.messages : [];
-    if (msgs.length === 0) {
-        return studentData?.createdAt ? new Date(studentData.createdAt).getTime() : 0;
+    if (!studentData) return 0;
+    const msgs = Array.isArray(studentData.messages) ? studentData.messages : [];
+    if (msgs.length > 0) {
+        const last = msgs[msgs.length - 1];
+        if (last && last.timestamp) {
+            const parsed = typeof last.timestamp === 'number' ? last.timestamp : new Date(last.timestamp).getTime();
+            if (!isNaN(parsed) && parsed > 0) return parsed;
+        }
     }
-    let maxTs = 0;
-    for (const m of msgs) {
-        const t = m.timestamp ? new Date(m.timestamp).getTime() : 0;
-        if (t > maxTs) maxTs = t;
+    if (studentData.createdAt) {
+        const created = typeof studentData.createdAt === 'number' ? studentData.createdAt : new Date(studentData.createdAt).getTime();
+        if (!isNaN(created) && created > 0) return created;
     }
-    return maxTs;
+    return 0;
 }
 
 /**
- * Helper to check if student has unread messages sent by 'Student'
+ * Helper to check if student has unread messages sent by 'Student' safely
  */
 function hasUnreadStudentMessages(studentData) {
-    const msgs = Array.isArray(studentData?.messages) ? studentData.messages : [];
+    if (!studentData) return false;
+    const msgs = Array.isArray(studentData.messages) ? studentData.messages : [];
     if (msgs.length === 0) return false;
     const lastMsg = msgs[msgs.length - 1];
-    return lastMsg.sender === 'Student' && lastMsg.isRead !== true;
+    return Boolean(lastMsg && lastMsg.sender === 'Student' && lastMsg.isRead !== true);
 }
 
 /**
@@ -1126,7 +1131,7 @@ function formatTimestamp(ts) {
  * @returns {string}
  */
 function buildMessagesSection(studentId, student) {
-    const messages = Array.isArray(student?.messages) ? student.messages : [];
+    const messages = (student && Array.isArray(student.messages)) ? student.messages : [];
 
     let chatHTML = '';
     if (messages.length === 0) {
@@ -1137,17 +1142,18 @@ function buildMessagesSection(studentId, student) {
             </div>`;
     } else {
         chatHTML = messages.map(msg => {
+            if (!msg) return '';
             const isStudent = (msg.sender === 'Student');
             const bgClass = isStudent ? 'bg-light border text-dark me-auto' : 'bg-danger text-white ms-auto';
             const alignClass = isStudent ? 'justify-content-start' : 'justify-content-end';
-            const senderLabel = isStudent ? (escapeHtml(student.personalInfo?.fullName || 'Student')) : 'Consultant (You)';
+            const senderLabel = isStudent ? (escapeHtml(student?.personalInfo?.fullName || 'Student')) : 'Consultant (You)';
             const timeStr = formatTimestamp(msg.timestamp);
 
             return `
                 <div class="d-flex ${alignClass} mb-2">
                     <div class="p-2 rounded-3 shadow-sm ${bgClass}" style="max-width: 80%; font-size: 0.85rem;">
                         <div class="fw-bold mb-1" style="font-size: 0.725rem; opacity: 0.85;">${senderLabel}</div>
-                        <div class="text-break">${escapeHtml(msg.text)}</div>
+                        <div class="text-break">${escapeHtml(msg.text || '')}</div>
                         <div class="text-end mt-1" style="font-size: 0.65rem; opacity: 0.75;">${timeStr}</div>
                     </div>
                 </div>`;

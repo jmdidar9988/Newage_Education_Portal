@@ -497,7 +497,7 @@
             }
 
             const lastMsg = msgs[msgs.length - 1];
-            const isUnread = (lastMsg.sender === 'Consultant' && lastMsg.isRead !== true);
+            const isUnread = Boolean(lastMsg && lastMsg.sender === 'Consultant' && lastMsg.isRead !== true);
 
             if (isUnread) {
                 if (badge) badge.classList.remove('d-none');
@@ -519,7 +519,7 @@
 
             let updated = false;
             const updatedMessages = currentStudentData.messages.map(m => {
-                if (m.sender === 'Consultant' && m.isRead !== true) {
+                if (m && m.sender === 'Consultant' && m.isRead !== true) {
                     updated = true;
                     return { ...m, isRead: true };
                 }
@@ -555,6 +555,7 @@
             }
 
             chatBox.innerHTML = msgList.map(msg => {
+                if (!msg) return '';
                 const isStudent = (msg.sender === 'Student');
                 const bgClass = isStudent ? 'bg-danger text-white ms-auto' : 'bg-light border text-dark me-auto';
                 const alignClass = isStudent ? 'justify-content-end' : 'justify-content-start';
@@ -565,7 +566,7 @@
                     <div class="d-flex ${alignClass} mb-2">
                         <div class="p-2 rounded-3 shadow-sm ${bgClass}" style="max-width: 80%; font-size: 0.85rem;">
                             <div class="fw-bold mb-1" style="font-size: 0.725rem; opacity: 0.85;">${senderLabel}</div>
-                            <div class="text-break">${escapeHtml(msg.text)}</div>
+                            <div class="text-break">${escapeHtml(msg.text || '')}</div>
                             <div class="text-end mt-1" style="font-size: 0.65rem; opacity: 0.75;">${timeStr}</div>
                         </div>
                     </div>`;
