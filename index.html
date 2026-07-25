@@ -47,98 +47,102 @@
     </nav>
 
     <!-- Main Content -->
-    <main class="container my-4 flex-grow-1 animate-fade-up">
+    <main class="container-fluid px-4 my-4 flex-grow-1 animate-fade-up">
         
-        <!-- Grand Welcome Banner -->
-        <div class="card-newage-dark p-4 p-md-5 mb-4 text-white position-relative overflow-hidden">
-            <div class="position-relative z-index-2">
-                <h1 class="display-5 fw-bold text-white">Welcome back, Chief Executive Officer</h1>
-                <p class="lead my-3 text-white-50">Manage counselors, review student records, and control portal activities from one centralized terminal.</p>
-                <div class="d-flex flex-wrap gap-2 mt-4">
-                    <button class="btn btn-newage-red shadow-sm" data-bs-toggle="modal" data-bs-target="#addNewEmployeeModal">
-                        <i class="bi bi-person-plus-fill me-1"></i> Add New Employee
-                    </button>
-                    <button class="btn btn-newage-dark" data-bs-toggle="modal" data-bs-target="#assignTaskModal">
-                        <i class="bi bi-plus-circle me-1"></i> Assign New Task
-                    </button>
-                    <button class="btn btn-newage-dark" data-bs-toggle="modal" data-bs-target="#employeeUpdatesModal">
-                        <i class="bi bi-journal-text me-1"></i> View Employee Updates
-                    </button>
-                    <a href="application_form.html" class="btn btn-newage-dark">
-                        <i class="bi bi-person-plus me-1"></i> Add New Student (Data Entry)
-                    </a>
-                    <button class="btn btn-newage-dark" data-bs-toggle="modal" data-bs-target="#viewDocumentsModal">
-                        <i class="bi bi-file-earmark-pdf me-1"></i> View Student Documents
-                    </button>
-                    <button class="btn btn-newage-dark position-relative" onclick="scrollToRequests()">
-                        <i class="bi bi-bell-fill me-1"></i> View Update Requests
-                        <span id="requestsBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-light">
-                            1
-                            <span class="visually-hidden">pending requests</span>
-                        </span>
-                    </button>
-                </div>
-            </div>
-            <!-- Decorative circle glow -->
-            <div class="position-absolute" style="width: 300px; height: 300px; background: rgba(220,38,38,0.15); border-radius: 50%; right: -50px; top: -50px; filter: blur(50px);"></div>
-        </div>
-
-        <!-- Quick Stats Cards -->
-        <div class="row g-3 mb-4">
-            <div class="col-md-3 col-sm-6">
-                <div class="card-newage p-3">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div>
-                            <p class="text-muted small mb-1">Active Student Applications</p>
-                            <h3 class="mb-0 text-danger fw-bold" id="totalStudentsKpi"><span class="spinner-border spinner-border-sm" role="status"></span></h3>
+        <!-- Welcome Banner Row -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card-newage-dark p-4 p-md-5 text-white position-relative overflow-hidden rounded-4">
+                    <div class="position-relative z-index-2">
+                        <h1 class="display-5 fw-bold text-white">Welcome back, Chief Executive Officer</h1>
+                        <p class="lead my-3 text-white-50">Manage counselors, review student records, and control portal activities from one centralized terminal.</p>
+                        <div class="d-flex flex-wrap gap-2 mt-4">
+                            <button class="btn btn-accent shadow-sm" data-bs-toggle="modal" data-bs-target="#addNewEmployeeModal">
+                                <i class="bi bi-person-plus-fill me-1"></i> Add New Employee
+                            </button>
+                            <button class="btn btn-navy" data-bs-toggle="modal" data-bs-target="#assignTaskModal">
+                                <i class="bi bi-plus-circle me-1"></i> Assign New Task
+                            </button>
+                            <button class="btn btn-navy" data-bs-toggle="modal" data-bs-target="#employeeUpdatesModal">
+                                <i class="bi bi-journal-text me-1"></i> View Employee Updates
+                            </button>
+                            <a href="application_form.html" class="btn btn-navy">
+                                <i class="bi bi-person-plus me-1"></i> Add New Student (Data Entry)
+                            </a>
+                            <button class="btn btn-navy" data-bs-toggle="modal" data-bs-target="#viewDocumentsModal">
+                                <i class="bi bi-file-earmark-pdf me-1"></i> View Student Documents
+                            </button>
+                            <button class="btn btn-navy position-relative" onclick="scrollToRequests()">
+                                <i class="bi bi-bell-fill me-1"></i> View Update Requests
+                                <span id="requestsBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-accent border border-light">
+                                    1
+                                </span>
+                            </button>
                         </div>
-                        <div class="fs-1 text-danger opacity-75"><i class="bi bi-people"></i></div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3 col-sm-6">
-                <div class="card-newage p-3">
+        </div>
+
+        <!-- Quick Stats Cards Row -->
+        <div class="row g-3 mb-4">
+            <div class="col-sm-6 col-xl-3">
+                <div class="card-newage p-3 h-100">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <p class="text-muted small mb-1">Active Student Applications</p>
+                            <h3 class="mb-0 text-accent fw-bold" id="totalStudentsKpi"><span class="spinner-border spinner-border-sm" role="status"></span></h3>
+                        </div>
+                        <div class="fs-1 text-accent opacity-75"><i class="bi bi-people"></i></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card-newage p-3 h-100">
                     <div class="d-flex align-items-center justify-content-between">
                         <div>
                             <p class="text-muted small mb-1">Visa Success Rate</p>
-                            <h3 class="mb-0 text-success">98.4%</h3>
+                            <h3 class="mb-0 text-success fw-bold">98.4%</h3>
                         </div>
                         <div class="fs-1 text-success opacity-75"><i class="bi bi-patch-check"></i></div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3 col-sm-6">
-                <div class="card-newage p-3">
+            <div class="col-sm-6 col-xl-3">
+                <div class="card-newage p-3 h-100">
                     <div class="d-flex align-items-center justify-content-between">
                         <div>
                             <p class="text-muted small mb-1">Active Counselors</p>
-                            <h3 class="mb-0">12</h3>
+                            <h3 class="mb-0 fw-bold">12</h3>
                         </div>
-                        <div class="fs-1 text-danger opacity-75"><i class="bi bi-person-workspace"></i></div>
+                        <div class="fs-1 text-accent opacity-75"><i class="bi bi-person-workspace"></i></div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3 col-sm-6">
-                <div class="card-newage p-3">
+            <div class="col-sm-6 col-xl-3">
+                <div class="card-newage p-3 h-100">
                     <div class="d-flex align-items-center justify-content-between">
                         <div>
                             <p class="text-muted small mb-1">Active Destinations</p>
-                            <h3 class="mb-0">8 Countries</h3>
+                            <h3 class="mb-0 fw-bold">8 Countries</h3>
                         </div>
-                        <div class="fs-1 text-danger opacity-75"><i class="bi bi-globe2"></i></div>
+                        <div class="fs-1 text-accent opacity-75"><i class="bi bi-globe2"></i></div>
                     </div>
                 </div>
-        <!-- DATA VISUALIZATION SECTION (Chart.js Analytics) -->
+            </div>
+        </div>
+
+        <!-- Charts Row -->
         <div class="row g-4 mb-4">
             <div class="col-lg-6">
                 <div class="card-newage border-0 shadow-sm rounded-4 h-100">
                     <div class="card-header bg-navy text-white d-flex align-items-center justify-content-between py-3 px-4 rounded-top-4">
                         <h6 class="mb-0 text-white fw-bold">
-                            <i class="bi bi-pie-chart-fill text-danger me-2"></i>Students by Target Country
+                            <i class="bi bi-pie-chart-fill text-accent me-2"></i>Students by Target Country
                         </h6>
-                        <span class="badge bg-danger px-2.5 py-1 rounded-pill">Market Distribution</span>
+                        <span class="badge bg-accent px-2.5 py-1 rounded-pill">Market Share</span>
                     </div>
-                    <div class="p-4" style="height: 280px; position: relative;">
+                    <div class="p-4" style="height: 290px; position: relative;">
                         <canvas id="countryChartCanvas"></canvas>
                     </div>
                 </div>
@@ -147,30 +151,30 @@
                 <div class="card-newage border-0 shadow-sm rounded-4 h-100">
                     <div class="card-header bg-navy text-white d-flex align-items-center justify-content-between py-3 px-4 rounded-top-4">
                         <h6 class="mb-0 text-white fw-bold">
-                            <i class="bi bi-bar-chart-line-fill text-danger me-2"></i>Application Pipeline Status
+                            <i class="bi bi-bar-chart-line-fill text-accent me-2"></i>Application Pipeline Status
                         </h6>
-                        <span class="badge bg-danger px-2.5 py-1 rounded-pill">Pipeline Metrics</span>
+                        <span class="badge bg-accent px-2.5 py-1 rounded-pill">Status Metrics</span>
                     </div>
-                    <div class="p-4" style="height: 280px; position: relative;">
+                    <div class="p-4" style="height: 290px; position: relative;">
                         <canvas id="statusChartCanvas"></canvas>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Two Column Workspace: Updates & Pending Approval Queue -->
-        <div class="row g-4">
-            <!-- Left Side: Tasks Status & Counselor Activity -->
-            <div class="col-lg-8">
-                <div class="card-newage mb-4">
-                    <div class="card-header-newage d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0"><i class="bi bi-list-check me-2"></i>Counselor Tasks & Actions</h5>
-                        <span class="badge bg-secondary">Live Tracker</span>
+        <!-- Tasks & Updates Row -->
+        <div class="row g-4 mb-4">
+            <!-- Left Column: Tasks Status -->
+            <div class="col-lg-7">
+                <div class="card-newage h-100 border-0 shadow-sm rounded-4">
+                    <div class="card-header bg-navy text-white d-flex justify-content-between align-items-center py-3 px-4 rounded-top-4">
+                        <h5 class="mb-0 text-white fw-bold"><i class="bi bi-list-check me-2 text-accent"></i>Counselor Tasks &amp; Actions</h5>
+                        <span class="badge bg-secondary rounded-pill px-2.5 py-1">Live Tracker</span>
                     </div>
                     <div class="p-3">
                         <div class="table-responsive">
-                            <table class="table table-newage">
-                                <thead>
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-navy-light text-white">
                                     <tr>
                                         <th>Assigned To</th>
                                         <th>Task Description</th>
@@ -204,19 +208,18 @@
                 </div>
             </div>
 
-            <!-- Right Side: Pending Update Requests Section -->
-            <div class="col-lg-4" id="requestsSection">
-                <div class="card-newage border-danger">
-                    <div class="card-header-newage bg-light border-bottom border-danger-subtle d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0 text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Info Update Requests</h5>
-                        <span id="requestsCountBadge" class="badge bg-danger">1 Action Required</span>
+            <!-- Right Column: Pending Update Requests Section -->
+            <div class="col-lg-5" id="requestsSection">
+                <div class="card-newage h-100 border-0 shadow-sm rounded-4">
+                    <div class="card-header bg-navy text-white d-flex justify-content-between align-items-center py-3 px-4 rounded-top-4">
+                        <h5 class="mb-0 text-white fw-bold"><i class="bi bi-exclamation-triangle-fill me-2 text-accent"></i>Info Update Requests</h5>
+                        <span id="requestsCountBadge" class="badge bg-accent rounded-pill px-2.5 py-1">1 Action Required</span>
                     </div>
                     <div class="p-3">
-                        <!-- Request Card Container -->
                         <div id="requestContainer">
-                            <div class="card p-3 mb-3 border-danger-subtle bg-danger-subtle bg-opacity-10">
+                            <div class="card p-3 mb-3 border-warning-subtle bg-warning-subtle bg-opacity-10 rounded-3">
                                 <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <h6 class="mb-0 fw-bold">Sakib Rahman</h6>
+                                    <h6 class="mb-0 fw-bold text-dark">Sakib Rahman</h6>
                                     <span class="text-muted small">Student ID: #8201</span>
                                 </div>
                                 <p class="small text-muted mb-3">
@@ -232,8 +235,6 @@
                                 </div>
                             </div>
                         </div>
-                        
-                        <!-- Empty State (Hidden initially) -->
                         <div id="noRequestsMsg" class="text-center py-4 d-none">
                             <div class="fs-1 text-muted mb-2"><i class="bi bi-check-circle-fill text-success"></i></div>
                             <p class="text-muted mb-0">No pending update requests.</p>
@@ -241,39 +242,45 @@
                     </div>
                 </div>
             </div>
-        <!-- Recent Student Applications Section (Firestore Live) -->
-        <div class="card-newage mt-4 mb-4">
-            <div class="card-header-newage bg-dark text-white d-flex justify-content-between align-items-center">
-                <h5 class="mb-0 text-white"><i class="bi bi-people-fill me-2"></i>Recent Student Applications (Firestore Live)</h5>
-                <div class="d-flex align-items-center gap-2">
-                    <span class="badge bg-danger" id="ceoStudentCountBadge">0 Records</span>
-                    <button class="btn btn-sm btn-outline-light py-1 px-2" onclick="loadCEODashboardData()" title="Sync Firestore Database">
-                        <i class="bi bi-arrow-clockwise me-1"></i> Sync Data
-                    </button>
-                </div>
-            </div>
-            <div class="p-3">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle small">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Phone</th>
-                                <th>Preferred Country</th>
-                                <th>Applied Course</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="recentApplicationsTableBody">
-                            <tr>
-                                <td colspan="6" class="text-center py-4 text-muted">
-                                    <span class="spinner-border spinner-border-sm text-danger me-2" role="status" aria-hidden="true"></span>
-                                    Fetching recent student records from Firestore...
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+        </div>
+
+        <!-- Full-Width Recent Student Applications Section (Firestore Live) -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card-newage border-0 shadow-sm rounded-4">
+                    <div class="card-header bg-navy text-white d-flex justify-content-between align-items-center py-3 px-4 rounded-top-4">
+                        <h5 class="mb-0 text-white fw-bold"><i class="bi bi-people-fill me-2 text-accent"></i>Recent Student Applications (Firestore Live)</h5>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-accent rounded-pill px-2.5 py-1" id="ceoStudentCountBadge">0 Records</span>
+                            <button class="btn btn-sm btn-outline-light py-1 px-3 rounded-3" onclick="loadCEODashboardData()" title="Sync Firestore Database">
+                                <i class="bi bi-arrow-clockwise me-1"></i> Sync Data
+                            </button>
+                        </div>
+                    </div>
+                    <div class="p-3">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle small mb-0">
+                                <thead class="bg-navy-light text-white">
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Phone</th>
+                                        <th>Preferred Country</th>
+                                        <th>Applied Course</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recentApplicationsTableBody">
+                                    <tr>
+                                        <td colspan="6" class="text-center py-4 text-muted">
+                                            <span class="spinner-border spinner-border-sm text-accent me-2" role="status" aria-hidden="true"></span>
+                                            Fetching recent student records from Firestore...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
