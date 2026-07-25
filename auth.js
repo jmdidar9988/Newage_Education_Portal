@@ -323,9 +323,11 @@ export async function saveStudentApplication(event) {
         const docRef = await addDoc(collection(db, "students"), studentData);
         console.log("Student Application Record Saved in Firestore with ID:", docRef.id);
 
-        // ── Auto Student Account Creation (Secondary Auth Instance) ───────────
+        // ── Auto Student Account Creation (Secondary Auth Instance) & Password Setup Email ───
         const studentEmail = studentData.personalInfo?.email?.trim();
         let accountStatusMsg = "Application Saved Successfully!";
+        let emailSentSuccessfully = false;
+        let emailErrorMessage = null;
 
         if (studentEmail) {
             try {
@@ -337,45 +339,73 @@ export async function saveStudentApplication(event) {
                 }
                 const secondaryAuth = getAuth(secondaryApp);
 
+                // 1. Create student account on secondary auth instance
                 try {
                     await createUserWithEmailAndPassword(secondaryAuth, studentEmail, "Temp@123456");
                     console.log("Student account created silently on secondaryAuth for:", studentEmail);
-                    accountStatusMsg = "Application Saved & Account Created! A password setup email has been sent to the student.";
+                    accountStatusMsg = "Application Saved & Student Account Created!";
                 } catch (createErr) {
                     console.warn("Secondary auth account creation notice:", createErr.code || createErr.message);
                     if (createErr.code === 'auth/email-already-in-use') {
-                        accountStatusMsg = "Application Saved! Student account already exists; password reset email dispatched.";
+                        accountStatusMsg = "Application Saved! Student account already exists.";
                     } else {
-                        accountStatusMsg = `Application Saved! (${createErr.message || 'Account registration note'}).`;
-                    }
-                } finally {
-                    // Dispatch password setup / reset email using primary Auth instance
-                    try {
-                        await sendPasswordResetEmail(auth, studentEmail);
-                        console.log("Password reset email sent to student:", studentEmail);
-                    } catch (resetErr) {
-                        console.warn("Password reset email error:", resetErr);
-                    }
-
-                    // Immediately sign out secondary auth instance
-                    try {
-                        await signOut(secondaryAuth);
-                    } catch (soErr) {
-                        console.warn("Secondary auth signout error:", soErr);
+                        accountStatusMsg = `Application Saved! (${createErr.message || 'Account registration note'})`;
                     }
                 }
+
+                // 2. Dispatch password setup/reset email via primary Auth instance with promise handlers
+                try {
+                    await sendPasswordResetEmail(auth, studentEmail)
+                        .then(() => {
+                            console.log("Password setup email sent successfully.");
+                            emailSentSuccessfully = true;
+                        })
+                        .catch((emailErr) => {
+                            console.error("Error sending email: ", emailErr);
+                            emailErrorMessage = emailErr.message || emailErr.code || "Firebase email error";
+                        });
+                } catch (outerEmailErr) {
+                    console.error("Error sending email: ", outerEmailErr);
+                    emailErrorMessage = outerEmailErr.message || "Failed to dispatch password setup email";
+                }
+
+                // 3. Cleanly sign out secondary auth instance
+                try {
+                    await signOut(secondaryAuth);
+                } catch (soErr) {
+                    console.warn("Secondary auth signout error:", soErr);
+                }
+
             } catch (secAppErr) {
                 console.warn("Secondary app initialization error:", secAppErr);
             }
         }
 
         if (alertContainer) {
-            alertContainer.innerHTML = `
-                <div class="alert alert-success alert-dismissible fade show shadow-sm py-3 mb-4" role="alert">
-                    <i class="bi bi-check-circle-fill me-2 fs-5 align-middle"></i> 
-                    <strong>${accountStatusMsg}</strong> Registered in Firestore database (Ref ID: <code>${docRef.id}</code>).
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>`;
+            if (emailSentSuccessfully) {
+                alertContainer.innerHTML = `
+                    <div class="alert alert-success alert-dismissible fade show shadow-sm py-3 mb-4" role="alert">
+                        <i class="bi bi-check-circle-fill me-2 fs-5 align-middle"></i> 
+                        <strong>${escapeHtml(accountStatusMsg)}</strong> Registered in Firestore database (Ref ID: <code>${docRef.id}</code>).<br>
+                        <span class="small mt-1 d-block"><i class="bi bi-envelope-check-fill me-1"></i> A password setup link has been dispatched to <strong>${escapeHtml(studentEmail)}</strong>. Please <strong>check your inbox and Spam folder to set your password</strong>.</span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>`;
+            } else if (emailErrorMessage) {
+                alertContainer.innerHTML = `
+                    <div class="alert alert-warning alert-dismissible fade show shadow-sm py-3 mb-4" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2 fs-5 align-middle"></i> 
+                        <strong>${escapeHtml(accountStatusMsg)}</strong> Registered in Firestore database (Ref ID: <code>${docRef.id}</code>).<br>
+                        <span class="small mt-1 d-block text-danger"><i class="bi bi-envelope-exclamation-fill me-1"></i> Password reset email error: ${escapeHtml(emailErrorMessage)}. Ensure authorized domain settings in Firebase Console.</span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>`;
+            } else {
+                alertContainer.innerHTML = `
+                    <div class="alert alert-success alert-dismissible fade show shadow-sm py-3 mb-4" role="alert">
+                        <i class="bi bi-check-circle-fill me-2 fs-5 align-middle"></i> 
+                        <strong>${escapeHtml(accountStatusMsg)}</strong> Registered in Firestore database (Ref ID: <code>${docRef.id}</code>).
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>`;
+            }
         }
 
         const toastEl = document.getElementById('saveToast');
