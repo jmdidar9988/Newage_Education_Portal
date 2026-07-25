@@ -32,12 +32,6 @@
                         </a>
                     </li>
                     <li class="nav-item me-3">
-                        <button class="btn btn-sm btn-outline-light py-1 px-3 position-relative" data-bs-toggle="modal" data-bs-target="#messageCounselorModal" onclick="markStudentMessagesAsRead()">
-                            <i class="bi bi-chat-left-text-fill text-warning me-1"></i> Chat
-                            <span id="navChatUnreadBadge" class="badge bg-danger rounded-pill d-none ms-1">New</span>
-                        </button>
-                    </li>
-                    <li class="nav-item me-3">
                         <span class="text-white-50" id="navStudentId"><i class="bi bi-mortarboard me-1"></i> <span class="spinner-border spinner-border-sm"></span></span>
                     </li>
                     <li class="nav-item">
@@ -48,7 +42,9 @@
                 </ul>
             </div>
         </div>
-    </nav    <!-- Interactive Workspace -->
+    </nav>
+
+    <!-- Interactive Workspace -->
     <main class="container-fluid container-xl my-4 flex-grow-1 animate-fade-up">
 
         <!-- Top Welcome / Status Banner -->
@@ -145,7 +141,7 @@
                 <!-- 4. SECTION: Document Vault & Verification Checklist Card -->
                 <section id="section-document-uploads" class="card-newage border-0 shadow-sm rounded-4 mb-4">
                     <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-3 px-4 rounded-top-4">
-                        <h5 class="mb-0 text-white fw-bold"><i class="bi bi-folder2-open me-2 text-danger"></i>Document Vault &amp; Verification Checklist</h5>
+                        <h5 class="mb-0 text-white fw-bold"><i class="bi bi-folder2-open me-2 text-danger"></i>Documents</h5>
                         <span class="badge bg-danger px-2.5 py-1.5 rounded-pill">Document Storage</span>
                     </div>
                     <div class="p-4" id="uploadWorkspaceContent">
