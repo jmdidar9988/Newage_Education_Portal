@@ -448,11 +448,24 @@
         const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`;
 
         // ── Firebase Auth & Firestore (shared instance from auth.js) ───────────
-        import { auth, db, onAuthStateChanged, collection, query, where, getDocs, updateDoc, doc } from "./auth.js";
+        import { auth, db, onAuthStateChanged, collection, query, where, getDocs, updateDoc, doc, escapeHtml as escapeHtmlAuth } from "./auth.js";
 
         // Track logged-in user and their Firestore document ID
         let currentUser = null;
         let studentDocId = null;
+
+        // ── Helper: HTML Escaper ─────────────────────────────────────────────
+        function escapeHtml(unsafe) {
+            if (unsafe === null || unsafe === undefined) return '';
+            return unsafe
+                .toString()
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+        window.escapeHtml = escapeHtml;
 
         // ── Helper: safe text setter ────────────────────────────────────────
         function setText(id, value) {
