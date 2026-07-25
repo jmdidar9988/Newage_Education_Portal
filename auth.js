@@ -1078,6 +1078,9 @@ export function viewStudentDetails(studentId) {
         return;
     }
 
+    // Store current studentId for edit operations
+    window._currentEditStudentId = studentId;
+
     const modalTitle = document.getElementById('studentDetailModalTitle');
     const modalBody = document.getElementById('studentDetailModalBody');
 
@@ -1085,35 +1088,47 @@ export function viewStudentDetails(studentId) {
     
     if (modalBody) {
         modalBody.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center mb-3" id="editProfileBar">
+                <span class="badge bg-dark px-3 py-2 small"><i class="bi bi-person-vcard me-1"></i>Student ID: ${studentId.substring(0, 8)}</span>
+                <button class="btn btn-outline-danger btn-sm px-3" id="editProfileBtn" onclick="toggleEditMode('${studentId}')">
+                    <i class="bi bi-pencil-square me-1"></i> Edit Profile
+                </button>
+            </div>
+            <div id="profileEditAlert"></div>
+
             ${buildApplicationsManagementSection(studentId, student)}
 
-            <div class="row g-3">
+            <div class="row g-3" id="personalInfoSection">
                 <div class="col-md-6">
                     <h6 class="fw-bold text-danger border-bottom pb-2 mb-2"><i class="bi bi-person-lines-fill me-1"></i> Personal Information</h6>
                     <ul class="list-group list-group-flush small">
-                        <li class="list-group-item d-flex justify-content-between px-0">
+                        <li class="list-group-item d-flex justify-content-between px-0" data-field="personalInfo.fullName">
                             <span class="text-muted">Full Name:</span>
-                            <span class="fw-bold">${escapeHtml(student.personalInfo?.fullName || 'N/A')}</span>
+                            <span class="fw-bold field-display">${escapeHtml(student.personalInfo?.fullName || 'N/A')}</span>
                         </li>
-                        <li class="list-group-item d-flex justify-content-between px-0">
+                        <li class="list-group-item d-flex justify-content-between px-0" data-field="personalInfo.email">
                             <span class="text-muted">Email:</span>
-                            <span>${escapeHtml(student.personalInfo?.email || 'N/A')}</span>
+                            <span class="field-display">${escapeHtml(student.personalInfo?.email || 'N/A')}</span>
                         </li>
-                        <li class="list-group-item d-flex justify-content-between px-0">
+                        <li class="list-group-item d-flex justify-content-between px-0" data-field="personalInfo.contactNo">
                             <span class="text-muted">Contact No:</span>
-                            <span>${escapeHtml(student.personalInfo?.contactNo || 'N/A')}</span>
+                            <span class="field-display">${escapeHtml(student.personalInfo?.contactNo || 'N/A')}</span>
                         </li>
-                        <li class="list-group-item d-flex justify-content-between px-0">
+                        <li class="list-group-item d-flex justify-content-between px-0" data-field="personalInfo.dob">
                             <span class="text-muted">Date of Birth:</span>
-                            <span>${escapeHtml(student.personalInfo?.dob || 'N/A')}</span>
+                            <span class="field-display">${escapeHtml(student.personalInfo?.dob || 'N/A')}</span>
                         </li>
-                        <li class="list-group-item d-flex justify-content-between px-0">
+                        <li class="list-group-item d-flex justify-content-between px-0" data-field="personalInfo.gender">
                             <span class="text-muted">Gender:</span>
-                            <span>${escapeHtml(student.personalInfo?.gender || 'N/A')}</span>
+                            <span class="field-display">${escapeHtml(student.personalInfo?.gender || 'N/A')}</span>
                         </li>
-                        <li class="list-group-item d-flex justify-content-between px-0">
+                        <li class="list-group-item d-flex justify-content-between px-0" data-field="personalInfo.address">
                             <span class="text-muted">Address:</span>
-                            <span>${escapeHtml(student.personalInfo?.address || 'N/A')}</span>
+                            <span class="field-display">${escapeHtml(student.personalInfo?.address || 'N/A')}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between px-0" data-field="personalInfo.postCode">
+                            <span class="text-muted">Post Code:</span>
+                            <span class="field-display">${escapeHtml(student.personalInfo?.postCode || 'N/A')}</span>
                         </li>
                     </ul>
                 </div>
@@ -1150,6 +1165,166 @@ export function viewStudentDetails(studentId) {
 }
 
 /**
+ * Toggles the Personal Information section between view mode and edit mode
+ * @param {string} studentId 
+ */
+export function toggleEditMode(studentId) {
+    const student = window.loadedStudentsMap ? window.loadedStudentsMap[studentId] : null;
+    if (!student) return;
+
+    const editBtn = document.getElementById('editProfileBtn');
+    const isEditing = editBtn && editBtn.dataset.editing === 'true';
+
+    // Define which fields are editable and their input types
+    const editableFields = {
+        'personalInfo.fullName': { label: 'Full Name', type: 'text', value: student.personalInfo?.fullName || '' },
+        'personalInfo.email': { label: 'Email', type: 'email', value: student.personalInfo?.email || '' },
+        'personalInfo.contactNo': { label: 'Contact No', type: 'tel', value: student.personalInfo?.contactNo || '' },
+        'personalInfo.dob': { label: 'Date of Birth', type: 'date', value: student.personalInfo?.dob || '' },
+        'personalInfo.gender': { label: 'Gender', type: 'select', value: student.personalInfo?.gender || '', options: ['Male', 'Female', 'Other'] },
+        'personalInfo.address': { label: 'Address', type: 'text', value: student.personalInfo?.address || '' },
+        'personalInfo.postCode': { label: 'Post Code', type: 'text', value: student.personalInfo?.postCode || '' }
+    };
+
+    if (isEditing) {
+        // Cancel edit — re-render the modal to reset to static view
+        viewStudentDetails(studentId);
+        return;
+    }
+
+    // Switch to edit mode: transform static text to inputs
+    const listItems = document.querySelectorAll('#personalInfoSection li[data-field]');
+    listItems.forEach(li => {
+        const fieldKey = li.getAttribute('data-field');
+        const fieldConfig = editableFields[fieldKey];
+        if (!fieldConfig) return;
+
+        const displaySpan = li.querySelector('.field-display');
+        if (!displaySpan) return;
+
+        let inputHTML = '';
+        if (fieldConfig.type === 'select') {
+            const optionsHtml = fieldConfig.options.map(opt =>
+                `<option value="${escapeHtml(opt)}" ${opt === fieldConfig.value ? 'selected' : ''}>${escapeHtml(opt)}</option>`
+            ).join('');
+            inputHTML = `<select class="form-select form-select-sm edit-input" data-field="${fieldKey}" style="max-width: 200px;">${optionsHtml}</select>`;
+        } else {
+            inputHTML = `<input type="${fieldConfig.type}" class="form-control form-control-sm edit-input" data-field="${fieldKey}" value="${escapeHtml(fieldConfig.value)}" style="max-width: 200px;">`;
+        }
+
+        displaySpan.outerHTML = inputHTML;
+    });
+
+    // Swap button to Save / Cancel
+    if (editBtn) {
+        editBtn.dataset.editing = 'true';
+        editBtn.outerHTML = `
+            <div class="d-flex gap-2">
+                <button class="btn btn-success btn-sm px-3" id="saveProfileBtn" onclick="saveProfileChanges('${studentId}')">
+                    <i class="bi bi-check-lg me-1"></i> Save Changes
+                </button>
+                <button class="btn btn-outline-secondary btn-sm px-3" id="cancelEditBtn" onclick="toggleEditMode('${studentId}')">
+                    <i class="bi bi-x-lg me-1"></i> Cancel
+                </button>
+            </div>`;
+    }
+}
+
+/**
+ * Saves edited profile fields to Firestore using dot notation to avoid overwriting nested data
+ * @param {string} studentId 
+ */
+export async function saveProfileChanges(studentId) {
+    const student = window.loadedStudentsMap ? window.loadedStudentsMap[studentId] : null;
+    if (!student) return;
+
+    const saveBtn = document.getElementById('saveProfileBtn');
+    const alertArea = document.getElementById('profileEditAlert');
+    
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
+    }
+
+    // Gather updated values from edit inputs
+    const editInputs = document.querySelectorAll('.edit-input');
+    const updatePayload = {};
+
+    editInputs.forEach(input => {
+        const fieldKey = input.getAttribute('data-field'); // e.g., "personalInfo.fullName"
+        const newValue = input.value.trim();
+        if (fieldKey && newValue !== '') {
+            updatePayload[fieldKey] = newValue;
+        }
+    });
+
+    if (Object.keys(updatePayload).length === 0) {
+        if (alertArea) {
+            alertArea.innerHTML = `
+                <div class="alert alert-warning alert-dismissible fade show py-2 px-3 small mb-3" role="alert">
+                    <i class="bi bi-info-circle me-1"></i> No changes detected.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>`;
+        }
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="bi bi-check-lg me-1"></i> Save Changes';
+        }
+        return;
+    }
+
+    try {
+        const studentRef = doc(db, 'students', studentId);
+        // Use dot notation keys directly — Firestore handles nested updates without overwriting siblings
+        await updateDoc(studentRef, updatePayload);
+
+        // Update local memory map to keep in sync
+        for (const [dotPath, value] of Object.entries(updatePayload)) {
+            const keys = dotPath.split('.');
+            let target = student;
+            for (let i = 0; i < keys.length - 1; i++) {
+                if (!target[keys[i]]) target[keys[i]] = {};
+                target = target[keys[i]];
+            }
+            target[keys[keys.length - 1]] = value;
+        }
+
+        console.log(`Profile updated for student ${studentId}:`, updatePayload);
+
+        // Re-render modal with updated data
+        viewStudentDetails(studentId);
+
+        // Show success toast after re-render
+        const newAlertArea = document.getElementById('profileEditAlert');
+        if (newAlertArea) {
+            newAlertArea.innerHTML = `
+                <div class="alert alert-success alert-dismissible fade show py-2 px-3 small mb-3" role="alert">
+                    <i class="bi bi-check-circle-fill me-1"></i> Profile updated successfully!
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>`;
+        }
+
+        // Refresh background tables
+        if (document.getElementById('studentsTableBody')) fetchStudents();
+        if (document.getElementById('recentApplicationsTableBody') || document.getElementById('totalStudentsKpi')) loadCEODashboardData();
+
+    } catch (error) {
+        console.error("Error saving profile changes:", error);
+        if (alertArea) {
+            alertArea.innerHTML = `
+                <div class="alert alert-danger alert-dismissible fade show py-2 px-3 small mb-3" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i> Failed to save: ${escapeHtml(error.message)}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>`;
+        }
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="bi bi-check-lg me-1"></i> Save Changes';
+        }
+    }
+}
+
+/**
  * Expose functions globally for inline HTML event handlers
  */
 window.handleFirebaseLogin = handleFirebaseLogin;
@@ -1162,6 +1337,8 @@ window.viewStudentProfile = viewStudentDetails;
 window.addNewApplication = addNewApplication;
 window.updateApplicationStatus = updateApplicationStatus;
 window.deleteApplication = deleteApplication;
+window.toggleEditMode = toggleEditMode;
+window.saveProfileChanges = saveProfileChanges;
 window.updateDetectedRoleUI = updateDetectedRoleUI;
 window.setDemoCredentials = function(email) {
     const emailInput = document.getElementById('emailInput');
