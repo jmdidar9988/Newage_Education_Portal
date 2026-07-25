@@ -915,9 +915,6 @@ export async function loadCEODashboardData() {
                             <i class="bi bi-person-lines-fill me-1"></i> View Profile
                         </button>
                         ${chatBtnHTML}
-                        <button class="btn btn-sm btn-accent text-white shadow-sm ms-1" onclick="deleteStudentRecord('${id}')" title="Delete Student Record (CEO Only)">
-                            <i class="bi bi-trash-fill me-1"></i> Delete
-                        </button>
                     </td>
                 </tr>`;
         });
@@ -1654,9 +1651,14 @@ export function viewStudentDetails(studentId) {
         modalBody.innerHTML = `
             <div class="d-flex justify-content-between align-items-center mb-3" id="editProfileBar">
                 <span class="badge bg-dark px-3 py-2 small"><i class="bi bi-person-vcard me-1"></i>Student ID: ${studentId.substring(0, 8)}</span>
-                <button class="btn btn-outline-danger btn-sm px-3" id="editProfileBtn" onclick="toggleEditMode('${studentId}')">
-                    <i class="bi bi-pencil-square me-1"></i> Edit Profile
-                </button>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-danger btn-sm px-3" id="editProfileBtn" onclick="toggleEditMode('${studentId}')">
+                        <i class="bi bi-pencil-square me-1"></i> Edit Profile
+                    </button>
+                    <button class="btn btn-accent text-white btn-sm px-3 shadow-sm" onclick="confirmAndDeleteStudent('${studentId}')" title="Delete Student Record">
+                        <i class="bi bi-trash-fill me-1"></i> Delete Student
+                    </button>
+                </div>
             </div>
             <div id="profileEditAlert"></div>
 
@@ -1996,26 +1998,95 @@ export async function handleAddNewEmployee(event) {
  * Expose functions globally for inline HTML event handlers
  */
 /**
- * Deletes a student record from Firestore (CEO Privilege Only)
+ * Prompts SweetAlert2 confirmation and deletes student document from Firestore
  * @param {string} studentId 
  */
-export async function deleteStudentRecord(studentId) {
-    if (!confirm('⚠️ Are you sure you want to permanently delete this student record? This action cannot be undone.')) return;
+export async function confirmAndDeleteStudent(studentId) {
+    const targetId = studentId || window._currentEditStudentId;
+    if (!targetId) {
+        alert("No student record selected for deletion.");
+        return;
+    }
+
+    if (typeof Swal !== 'undefined') {
+        const result = await Swal.fire({
+            title: 'Delete Student Record?',
+            text: 'Are you sure you want to permanently delete this student record? This action cannot be undone.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#E63946',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, Delete Record',
+            cancelButtonText: 'Cancel'
+        });
+        if (!result.isConfirmed) return;
+    } else {
+        if (!confirm('⚠️ Are you sure you want to permanently delete this student record?')) return;
+    }
+
     try {
-        await deleteDoc(doc(db, 'students', studentId));
-        alert('✅ Student record deleted successfully.');
-        if (document.getElementById('recentApplicationsTableBody')) {
+        await deleteDoc(doc(db, 'students', targetId));
+
+        // Hide modal if open
+        const modalEl = document.getElementById('studentDetailModal');
+        if (modalEl && window.bootstrap) {
+            const modalInstance = bootstrap.Modal.getInstance(modalEl);
+            if (modalInstance) modalInstance.hide();
+        }
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Deleted!',
+                text: 'Student record has been deleted successfully.',
+                icon: 'success',
+                confirmButtonColor: '#00ADB5'
+            });
+        } else {
+            alert('✅ Student record deleted successfully.');
+        }
+
+        // Refresh background tables
+        if (document.getElementById('recentApplicationsTableBody') || document.getElementById('totalStudentsKpi')) {
             loadCEODashboardData();
-        } else if (document.getElementById('studentsTableBody')) {
+        }
+        if (document.getElementById('studentsTableBody')) {
             fetchStudents();
         }
+
     } catch (error) {
-        console.error('Error deleting student:', error);
-        alert('Failed to delete student record: ' + error.message);
+        console.error('Error deleting student record:', error);
+        if (typeof Swal !== 'undefined') {
+            Swal.fire('Error', 'Failed to delete student: ' + error.message, 'error');
+        } else {
+            alert('Failed to delete student: ' + error.message);
+        }
     }
 }
 
-window.deleteStudentRecord = deleteStudentRecord;
+/**
+ * Filter CEO Recent Applications table rows dynamically
+ */
+export function filterCEOTable() {
+    const input = document.getElementById('ceoSearchInput');
+    if (!input) return;
+    const filter = input.value.toLowerCase().trim();
+    const tableBody = document.getElementById('recentApplicationsTableBody');
+    if (!tableBody) return;
+    const rows = tableBody.getElementsByTagName('tr');
+
+    for (let row of rows) {
+        const text = row.textContent.toLowerCase();
+        if (text.includes(filter)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    }
+}
+
+window.filterCEOTable = filterCEOTable;
+window.confirmAndDeleteStudent = confirmAndDeleteStudent;
+window.deleteStudentRecord = confirmAndDeleteStudent;
 window.handleFirebaseLogin = handleFirebaseLogin;
 window.handleFirebaseSignUp = handleFirebaseSignUp;
 window.handleAddNewEmployee = handleAddNewEmployee;

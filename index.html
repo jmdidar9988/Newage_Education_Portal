@@ -177,10 +177,16 @@
         <div class="row mb-5 animate-fade-up stagger-4">
             <div class="col-12">
                 <div class="card-newage border-0 shadow-sm rounded-4">
-                    <div class="card-header bg-navy text-white d-flex justify-content-between align-items-center py-3 px-4 rounded-top-4">
-                        <h5 class="mb-0 text-white fw-bold"><i class="bi bi-people-fill me-2 text-accent"></i>Recent Student Applications (Firestore Live)</h5>
+                    <div class="card-header bg-navy text-white d-flex flex-wrap justify-content-between align-items-center py-3 px-4 rounded-top-4 gap-2">
                         <div class="d-flex align-items-center gap-2">
+                            <h5 class="mb-0 text-white fw-bold"><i class="bi bi-people-fill me-2 text-accent"></i>Recent Student Applications (Firestore Live)</h5>
                             <span class="badge bg-accent rounded-pill px-2.5 py-1" id="ceoStudentCountBadge">0 Records</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="input-group input-group-sm" style="max-width: 300px;">
+                                <span class="input-group-text bg-white border-0 text-muted"><i class="bi bi-search"></i></span>
+                                <input type="text" class="form-control border-0 shadow-none" id="ceoSearchInput" placeholder="Search by name, email, or ID..." onkeyup="filterCEOTable()">
+                            </div>
                             <button class="btn btn-sm btn-outline-light py-1 px-3 rounded-3" onclick="loadCEODashboardData()" title="Sync Firestore Database">
                                 <i class="bi bi-arrow-clockwise me-1"></i> Sync Data
                             </button>
@@ -264,7 +270,10 @@
                 <div class="modal-body p-4" id="studentDetailModalBody">
                     <!-- Populated dynamically by viewStudentDetails() -->
                 </div>
-                <div class="modal-footer bg-light">
+                <div class="modal-footer bg-light justify-content-between" id="studentDetailModalFooter">
+                    <button type="button" class="btn btn-accent text-white btn-sm px-3 shadow-sm" onclick="confirmAndDeleteStudent(window._currentEditStudentId)">
+                        <i class="bi bi-trash-fill me-1"></i> Delete Student Record
+                    </button>
                     <button type="button" class="btn btn-secondary btn-sm px-4" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
