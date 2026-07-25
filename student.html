@@ -625,6 +625,31 @@
                 setText('info-testBands',
                     `Listening: ${bands.listening || '—'}, Reading: ${bands.reading || '—'}, Writing: ${bands.writing || '—'}, Speaking: ${bands.speaking || '—'}`);
             }
+
+            // ── Populate Document Verification Checklist on Page Load ─────────
+            const docs = data?.documents || {};
+            const docRows = document.querySelectorAll('.doc-upload-row');
+            docRows.forEach(row => {
+                const docType = row.dataset.docType;
+                const statusCell = row.querySelector('.status-col');
+                const fileInput = row.querySelector('.doc-file-input');
+
+                if (docType && statusCell) {
+                    const info = getDocInfo(docs, docType);
+                    if (info.url) {
+                        // Hide file input when document is already uploaded
+                        if (fileInput) fileInput.classList.add('d-none');
+                        setStatusSuccess(statusCell, info.url, docType, info.status);
+                    } else {
+                        // Show file input when document is not uploaded
+                        if (fileInput) {
+                            fileInput.classList.remove('d-none');
+                            fileInput.value = '';
+                        }
+                        statusCell.innerHTML = `<span class="text-muted small"><i class="bi bi-dash-circle me-1"></i>Not Uploaded</span>`;
+                    }
+                }
+            });
         }
 
         // ── Show new-student call-to-action banner & hide uploads ─────────
@@ -796,6 +821,13 @@
             const badgeClass = isApproved ? 'bg-success' : 'bg-warning text-dark';
             const badgeIcon = isApproved ? 'bi-check-circle-fill' : 'bi-clock-history';
 
+            // Hide file input element when document is uploaded
+            const row = statusCell.closest('.doc-upload-row');
+            if (row) {
+                const fileInput = row.querySelector('.doc-file-input');
+                if (fileInput) fileInput.classList.add('d-none');
+            }
+
             // Visually appealing Cross (X) button for Pending documents (side-by-side)
             const crossBtn = !isApproved
                 ? `<button type="button" class="btn-close ms-2" style="font-size: 0.65rem;" 
@@ -889,7 +921,7 @@
                     [`documents.${docType}_uploadedAt`]: deleteField()
                 });
 
-                // Reset the status cell in the UI
+                // Reset the status cell in the UI and show the file input again
                 const row = btnElement.closest('.doc-upload-row');
                 if (row) {
                     const statusCell = row.querySelector('.status-col');
@@ -897,7 +929,10 @@
                         statusCell.innerHTML = `<span class="text-muted small"><i class="bi bi-dash-circle me-1"></i>Not Uploaded</span>`;
                     }
                     const fileInput = row.querySelector('.doc-file-input');
-                    if (fileInput) fileInput.value = '';
+                    if (fileInput) {
+                        fileInput.classList.remove('d-none');
+                        fileInput.value = '';
+                    }
                 }
                 showToast(`🗑️ "${docType.replace(/_/g, ' ')}" deleted successfully.`, 'success');
                 console.log(`Deleted document field documents.${docType} for student: ${studentDocId}`);
