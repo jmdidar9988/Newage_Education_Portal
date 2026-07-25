@@ -132,36 +132,6 @@
             </div>
         </div>
 
-        <!-- Charts Row -->
-        <div class="row g-4 mb-4">
-            <div class="col-lg-6">
-                <div class="card-newage border-0 shadow-sm rounded-4 h-100">
-                    <div class="card-header bg-navy text-white d-flex align-items-center justify-content-between py-3 px-4 rounded-top-4">
-                        <h6 class="mb-0 text-white fw-bold">
-                            <i class="bi bi-pie-chart-fill text-accent me-2"></i>Students by Target Country
-                        </h6>
-                        <span class="badge bg-accent px-2.5 py-1 rounded-pill">Market Share</span>
-                    </div>
-                    <div class="p-4" style="height: 290px; position: relative;">
-                        <canvas id="countryChartCanvas"></canvas>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-6">
-                <div class="card-newage border-0 shadow-sm rounded-4 h-100">
-                    <div class="card-header bg-navy text-white d-flex align-items-center justify-content-between py-3 px-4 rounded-top-4">
-                        <h6 class="mb-0 text-white fw-bold">
-                            <i class="bi bi-bar-chart-line-fill text-accent me-2"></i>Application Pipeline Status
-                        </h6>
-                        <span class="badge bg-accent px-2.5 py-1 rounded-pill">Status Metrics</span>
-                    </div>
-                    <div class="p-4" style="height: 290px; position: relative;">
-                        <canvas id="statusChartCanvas"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Tasks & Updates Row -->
         <div class="row g-4 mb-4">
             <!-- Left Column: Tasks Status -->
@@ -245,7 +215,7 @@
         </div>
 
         <!-- Full-Width Recent Student Applications Section (Firestore Live) -->
-        <div class="row mb-4">
+        <div class="row mb-5">
             <div class="col-12">
                 <div class="card-newage border-0 shadow-sm rounded-4">
                     <div class="card-header bg-navy text-white d-flex justify-content-between align-items-center py-3 px-4 rounded-top-4">
@@ -280,6 +250,36 @@
                                 </tbody>
                             </table>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Visual Analytics & Market Insights Row (Chart.js at Bottom) -->
+        <div class="row g-4 mb-4 mt-2">
+            <div class="col-lg-6">
+                <div class="card-newage border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-header bg-navy text-white d-flex align-items-center justify-content-between py-3 px-4 rounded-top-4">
+                        <h6 class="mb-0 text-white fw-bold">
+                            <i class="bi bi-pie-chart-fill text-accent me-2"></i>Students by Target Country
+                        </h6>
+                        <span class="badge bg-accent px-2.5 py-1 rounded-pill">Market Share</span>
+                    </div>
+                    <div class="p-4" style="height: 290px; position: relative;">
+                        <canvas id="countryChartCanvas"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card-newage border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-header bg-navy text-white d-flex align-items-center justify-content-between py-3 px-4 rounded-top-4">
+                        <h6 class="mb-0 text-white fw-bold">
+                            <i class="bi bi-bar-chart-line-fill text-accent me-2"></i>Application Pipeline Status
+                        </h6>
+                        <span class="badge bg-accent px-2.5 py-1 rounded-pill">Status Metrics</span>
+                    </div>
+                    <div class="p-4" style="height: 290px; position: relative;">
+                        <canvas id="statusChartCanvas"></canvas>
                     </div>
                 </div>
             </div>
