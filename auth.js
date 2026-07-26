@@ -2042,7 +2042,7 @@ window.fetchStudents = fetchStudents;
 window.loadCEODashboardData = loadCEODashboardData;
 window.viewStudentDetails = viewStudentDetails;
 window.updateApplicationStatus = async function(studentId, courseNameOrAppId, newStatusParam) {
-    console.log("Updating status:", studentId, courseNameOrAppId, newStatusParam);
+    console.log("Updating status in Firestore:", studentId, courseNameOrAppId, newStatusParam);
     const selectEl = document.getElementById(`appStatusSelect_${courseNameOrAppId}`);
     const newStatus = newStatusParam || (selectEl ? selectEl.value : null);
     if (!newStatus) return;
@@ -2052,13 +2052,28 @@ window.updateApplicationStatus = async function(studentId, courseNameOrAppId, ne
 
     const apps = getStudentApplications(student);
     let updatedCourseName = '';
+    let found = false;
     const updatedApps = apps.map(app => {
         if (app.id === courseNameOrAppId || app.course === courseNameOrAppId) {
-            updatedCourseName = app.course;
+            found = true;
+            updatedCourseName = app.course || courseNameOrAppId;
             return { ...app, status: newStatus, statusUpdatedAt: new Date().toISOString() };
         }
         return app;
     });
+
+    if (!found && apps.length === 0) {
+        updatedApps.push({
+            id: 'app_' + Date.now(),
+            course: courseNameOrAppId || 'General Program',
+            university: 'Target University',
+            country: 'Target Destination',
+            intake: 'September 2026',
+            status: newStatus,
+            createdAt: new Date().toISOString()
+        });
+        updatedCourseName = courseNameOrAppId || 'General Program';
+    }
 
     try {
         const studentRef = doc(db, 'students', studentId);
@@ -2073,15 +2088,17 @@ window.updateApplicationStatus = async function(studentId, courseNameOrAppId, ne
         student.applicationStatus = newStatus;
         student.status = newStatus;
 
+        console.log(`Successfully updated Firestore document for student ${studentId} to status: "${newStatus}"`);
+
         if (typeof Swal !== 'undefined') {
             Swal.fire({
-                title: 'Status Saved!',
-                text: `Status for "${updatedCourseName}" updated to "${newStatus}".`,
+                title: 'Status Updated!',
+                text: `Application status updated to "${newStatus}".`,
                 icon: 'success',
                 confirmButtonColor: '#00ADB5'
             });
         } else {
-            alert(`✅ Status for "${updatedCourseName}" updated to "${newStatus}"!`);
+            alert(`✅ Application status updated to "${newStatus}"!`);
         }
 
         const alertArea = document.getElementById('appManagerAlert');
@@ -2097,11 +2114,11 @@ window.updateApplicationStatus = async function(studentId, courseNameOrAppId, ne
         if (document.getElementById('recentApplicationsTableBody') || document.getElementById('totalStudentsKpi')) loadCEODashboardData();
 
     } catch (error) {
-        console.error("Error updating application status:", error);
+        console.error("Error updating application status in Firestore:", error);
         if (typeof Swal !== 'undefined') {
-            Swal.fire('Error', 'Failed to update status: ' + error.message, 'error');
+            Swal.fire('Error', 'Failed to update status in database: ' + error.message, 'error');
         } else {
-            alert('Failed to update status: ' + error.message);
+            alert('Failed to update status in database: ' + error.message);
         }
     }
 };

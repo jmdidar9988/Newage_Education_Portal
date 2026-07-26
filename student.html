@@ -791,17 +791,26 @@
                         </div>`;
                 } else {
                     const rowsHTML = apps.map((app) => {
-                        const status = app.status || 'Pending';
+                        const status = app.status || 'Pending / Processing';
                         let badgeHTML = '';
-                        const s = status.toLowerCase().trim();
-                        if (s === 'approved') {
-                            badgeHTML = '<span class="badge bg-success px-2 py-1"><i class="bi bi-check-circle-fill me-1"></i>Approved</span>';
-                        } else if (s === 'processing') {
-                            badgeHTML = '<span class="badge bg-info text-dark px-2 py-1"><i class="bi bi-gear-fill me-1"></i>Processing</span>';
-                        } else if (s === 'rejected') {
-                            badgeHTML = '<span class="badge bg-danger px-2 py-1"><i class="bi bi-x-circle-fill me-1"></i>Rejected</span>';
+
+                        if (status === 'Visa Success' || status === 'Approved') {
+                            badgeHTML = '<span class="badge text-bg-success px-2.5 py-1.5 fw-bold"><i class="bi bi-patch-check-fill me-1"></i>Visa Success</span>';
+                        } else if (status === 'Rejected') {
+                            badgeHTML = '<span class="badge text-bg-danger px-2.5 py-1.5 fw-bold"><i class="bi bi-x-circle-fill me-1"></i>Rejected</span>';
+                        } else if ([
+                            'Offer letter received',
+                            'Applied for unconditional offer letter',
+                            'Applied for CAS',
+                            'CAS received',
+                            'VFS Global Appointment',
+                            'Embassy Interview',
+                            'UKVI interview',
+                            'Processing'
+                        ].includes(status)) {
+                            badgeHTML = `<span class="badge text-bg-info text-dark px-2.5 py-1.5 fw-bold"><i class="bi bi-award-fill me-1"></i>${escapeHtml(status)}</span>`;
                         } else {
-                            badgeHTML = '<span class="badge bg-warning text-dark px-2 py-1"><i class="bi bi-clock-history me-1"></i>Pending</span>';
+                            badgeHTML = `<span class="badge text-bg-warning text-dark px-2.5 py-1.5 fw-bold"><i class="bi bi-clock-history me-1"></i>${escapeHtml(status)}</span>`;
                         }
 
                         const linkHTML = app.course_link
