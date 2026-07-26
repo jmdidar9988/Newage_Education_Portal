@@ -1276,7 +1276,18 @@ function buildApplicationsManagementSection(studentId, student) {
                    </a>`
                 : `<span class="text-muted small fst-italic">—</span>`;
 
-            const selectOptionsHTML = statusOptions.map(opt =>
+            const selectOptionsHTML = [
+                "Pending / Processing",
+                "Offer letter received",
+                "Applied for unconditional offer letter",
+                "Applied for CAS",
+                "CAS received",
+                "VFS Global Appointment",
+                "Embassy Interview",
+                "UKVI interview",
+                "Visa Success",
+                "Rejected"
+            ].map(opt =>
                 `<option value="${escapeHtml(opt)}" ${status === opt ? 'selected' : ''}>${escapeHtml(opt)}</option>`
             ).join('');
 
@@ -1308,7 +1319,18 @@ function buildApplicationsManagementSection(studentId, student) {
         }).join('');
     }
 
-    const formOptionsHTML = statusOptions.map(opt =>
+    const formOptionsHTML = [
+        "Pending / Processing",
+        "Offer letter received",
+        "Applied for unconditional offer letter",
+        "Applied for CAS",
+        "CAS received",
+        "VFS Global Appointment",
+        "Embassy Interview",
+        "UKVI interview",
+        "Visa Success",
+        "Rejected"
+    ].map(opt =>
         `<option value="${escapeHtml(opt)}">${escapeHtml(opt)}</option>`
     ).join('');
 
@@ -1380,22 +1402,6 @@ function buildApplicationsManagementSection(studentId, student) {
 }
 
 /**
- * Options array for application status
- */
-const statusOptions = [
-  "Pending / Processing",
-  "Offer letter received",
-  "Applied for unconditional offer letter",
-  "Applied for CAS",
-  "CAS received",
-  "VFS Global Appointment",
-  "Embassy Interview",
-  "UKVI interview",
-  "Visa Success",
-  "Rejected"
-];
-
-/**
  * Updates status for a specific application in a student's applications array
  * @param {string} studentId 
  * @param {string} appId 
@@ -1464,67 +1470,6 @@ export async function updateApplicationStatus(studentId, appId) {
             alert('Failed to update status: ' + error.message);
         }
     }
-}
-
-/**
- * Options list for overall application status
- */
-const OVERALL_STATUS_OPTIONS = [
-    "Pending / Processing",
-    "Offer letter received",
-    "Applied for unconditional offer letter",
-    "Applied for CAS",
-    "CAS received",
-    "VFS Global Appointment",
-    "Embassy Interview",
-    "UKVI interview",
-    "Visa Success",
-    "Rejected"
-];
-
-/**
- * Options array for application status
- */
-const statusOptions = [
-  "Pending / Processing",
-  "Offer letter received",
-  "Applied for unconditional offer letter",
-  "Applied for CAS",
-  "CAS received",
-  "VFS Global Appointment",
-  "Embassy Interview",
-  "UKVI interview",
-  "Visa Success",
-  "Rejected"
-];
-
-/**
- * Builds HTML for Overall Application Status Control Section (Visual Status Button Grid) inside Student Profile Modal
- * @param {string} studentId 
- * @param {Object} student 
- * @returns {string}
- */
-function buildOverallStatusSection(studentId, student) {
-    const currentStatus = student.applicationStatus || student.status || "Pending / Processing";
-
-    const buttonsHTML = statusOptions.map(opt => {
-        const isSelected = (opt === currentStatus);
-        const btnClass = isSelected
-            ? 'btn-warning text-dark fw-bold shadow-sm active-status-btn'
-            : 'btn-outline-secondary text-dark';
-
-        return `<button type="button" class="btn btn-sm status-option-btn ${btnClass}" data-status="${escapeHtml(opt)}">${escapeHtml(opt)}</button>`;
-    }).join('\n    ');
-
-    return `
-      <div class="mt-4 p-3 border rounded bg-light">
-        <label class="form-label fw-bold mb-3" style="color: var(--text-main, #2b3440);">Update Application Status</label>
-        <div id="statusGrid" class="d-flex flex-wrap gap-2 mb-3">
-          ${buttonsHTML}
-        </div>
-        <input type="hidden" id="selectedStatusValue" value="${escapeHtml(currentStatus)}">
-        <button id="saveGridStatusBtn" class="btn btn-sm text-white px-4 fw-bold shadow-sm" style="background-color: var(--accent-primary, #E63946);">Save Selected Status</button>
-      </div>`;
 }
 
 /**
