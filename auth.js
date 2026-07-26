@@ -1394,6 +1394,22 @@ const OVERALL_STATUS_OPTIONS = [
 ];
 
 /**
+ * Options array for application status
+ */
+const statusOptions = [
+  "Pending / Processing",
+  "Offer letter received",
+  "Applied for unconditional offer letter",
+  "Applied for CAS",
+  "CAS received",
+  "VFS Global Appointment",
+  "Embassy Interview",
+  "UKVI interview",
+  "Visa Success",
+  "Rejected"
+];
+
+/**
  * Builds HTML for Overall Application Status Control Section inside Student Profile Modal
  * @param {string} studentId 
  * @param {Object} student 
@@ -1402,32 +1418,14 @@ const OVERALL_STATUS_OPTIONS = [
 function buildOverallStatusSection(studentId, student) {
     const currentStatus = student.applicationStatus || student.status || "Pending / Processing";
 
-    const options = [
-        "Pending / Processing",
-        "Offer letter received",
-        "Applied for unconditional offer letter",
-        "Applied for CAS",
-        "CAS received",
-        "VFS Global Appointment",
-        "Embassy Interview",
-        "UKVI interview",
-        "Visa Success",
-        "Rejected"
-    ];
-
-    const optionsHTML = options.map(opt => 
-        `<option value="${escapeHtml(opt)}" ${opt === currentStatus ? 'selected' : ''}>${escapeHtml(opt)}</option>`
-    ).join('');
-
     return `
-        <!-- APPLICATION STATUS CONTROL SECTION -->
-        <div class="mt-3 mb-3 p-3 bg-light rounded border">
-            <label class="form-label fw-bold text-dark">Application Status</label>
-            <select id="updateStatusSelect" class="form-select bg-white text-dark border-secondary fw-semibold">
-                ${optionsHTML}
-            </select>
-            <button id="saveStatusBtn" class="btn btn-sm text-white mt-2 fw-bold px-4 shadow-sm" style="background-color: var(--accent-primary, #E63946)" onclick="updateOverallApplicationStatus('${studentId}')">Save Status</button>
-        </div>`;
+      <div class="mb-3 p-3 border rounded bg-dark-subtle">
+        <label class="form-label fw-bold text-navy">Application Status</label>
+        <select id="directStatusSelect" class="form-select bg-white text-dark border-secondary">
+          ${statusOptions.map(opt => `<option value="${escapeHtml(opt)}" ${currentStatus === opt ? 'selected' : ''}>${escapeHtml(opt)}</option>`).join('')}
+        </select>
+        <button id="directSaveStatusBtn" class="btn btn-sm text-white mt-2" style="background-color: var(--accent-primary, #E63946)">Update Status</button>
+      </div>`;
 }
 
 /**
@@ -1435,7 +1433,7 @@ function buildOverallStatusSection(studentId, student) {
  * @param {string} studentId 
  */
 export async function updateOverallApplicationStatus(studentId) {
-    const selectEl = document.getElementById('updateStatusSelect');
+    const selectEl = document.getElementById('directStatusSelect') || document.getElementById('updateStatusSelect');
     if (!selectEl) return;
     const newStatus = selectEl.value;
 
@@ -1881,6 +1879,49 @@ export function viewStudentDetails(studentId) {
         const modal = new bootstrap.Modal(modalEl);
         modal.show();
     }
+
+    // Attach click handler for directSaveStatusBtn
+    setTimeout(() => {
+        const directSaveBtn = document.getElementById('directSaveStatusBtn');
+        if (directSaveBtn) {
+            directSaveBtn.addEventListener('click', async () => {
+                const selectEl = document.getElementById('directStatusSelect');
+                if (!selectEl) return;
+                const selectedStatus = selectEl.value;
+
+                try {
+                    const studentRef = doc(db, 'students', studentId);
+                    await updateDoc(studentRef, {
+                        applicationStatus: selectedStatus,
+                        status: selectedStatus,
+                        statusUpdatedAt: new Date().toISOString()
+                    });
+
+                    student.applicationStatus = selectedStatus;
+                    student.status = selectedStatus;
+
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            title: 'Status Updated!',
+                            text: `Application status updated to "${selectedStatus}".`,
+                            icon: 'success',
+                            confirmButtonColor: '#00ADB5'
+                        });
+                    } else {
+                        alert(`✅ Application status updated to "${selectedStatus}"!`);
+                    }
+
+                    viewStudentDetails(studentId);
+                    if (document.getElementById('studentsTableBody')) fetchStudents();
+                    if (document.getElementById('recentApplicationsTableBody') || document.getElementById('totalStudentsKpi')) loadCEODashboardData();
+
+                } catch (err) {
+                    console.error('Error updating status:', err);
+                    alert('Failed to update status: ' + err.message);
+                }
+            });
+        }
+    }, 100);
 }
 
 /**
