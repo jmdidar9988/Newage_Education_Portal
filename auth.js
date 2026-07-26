@@ -550,17 +550,62 @@ export async function markMessagesAsRead(studentId, unreadSender = 'Student') {
 }
 
 /**
- * Opens student chat directly from table action button and marks messages as read
+ * Opens student chat directly from table action button in a dedicated chat modal
  */
 export async function openStudentChat(studentId) {
     await markMessagesAsRead(studentId, 'Student');
-    viewStudentDetails(studentId);
-    setTimeout(() => {
-        const chatBox = document.getElementById(`modalChatHistory_${studentId}`);
-        if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
-        const chatInput = document.getElementById(`modalChatInput_${studentId}`);
-        if (chatInput) chatInput.focus();
-    }, 250);
+    const student = window.loadedStudentsMap ? window.loadedStudentsMap[studentId] : null;
+    if (!student) {
+        alert("Student message record unavailable.");
+        return;
+    }
+
+    let chatModalEl = document.getElementById('studentChatModal');
+    if (!chatModalEl) {
+        const modalHTML = `
+        <div class="modal fade" id="studentChatModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content border-secondary">
+                    <div class="modal-header bg-dark text-white border-bottom border-danger">
+                        <h5 class="modal-title text-white" id="studentChatModalTitle">
+                            <i class="bi bi-chat-left-text-fill text-accent me-2"></i>Direct Chat &amp; Support
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-4" id="studentChatModalBody">
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-secondary btn-sm px-4" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        chatModalEl = document.getElementById('studentChatModal');
+    }
+
+    const titleEl = document.getElementById('studentChatModalTitle');
+    const bodyEl = document.getElementById('studentChatModalBody');
+
+    if (titleEl) {
+        titleEl.innerHTML = `<i class="bi bi-chat-left-text-fill text-accent me-2"></i>Direct Chat with ${escapeHtml(student.personalInfo?.fullName || 'Student')}`;
+    }
+
+    if (bodyEl) {
+        bodyEl.innerHTML = buildMessagesSection(studentId, student);
+    }
+
+    if (chatModalEl && window.bootstrap) {
+        const modal = new bootstrap.Modal(chatModalEl);
+        modal.show();
+
+        setTimeout(() => {
+            const chatBox = document.getElementById(`modalChatHistory_${studentId}`);
+            if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+            const chatInput = document.getElementById(`modalChatInput_${studentId}`);
+            if (chatInput) chatInput.focus();
+        }, 300);
+    }
 }
 
 /**
@@ -1663,7 +1708,6 @@ export function viewStudentDetails(studentId) {
             <div id="profileEditAlert"></div>
 
             ${buildApplicationsManagementSection(studentId, student)}
-            ${buildMessagesSection(studentId, student)}
 
             <div class="row g-3" id="personalInfoSection">
                 <div class="col-md-6">
