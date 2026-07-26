@@ -4,6 +4,7 @@
 [![CSS3](https://img.shields.io/badge/Styling-Custom%20CSS3%20%26%20Bootstrap%205-blue.svg)](https://getbootstrap.com/)
 [![JavaScript](https://img.shields.io/badge/Logic-Vanilla%20ES6%2B%20Modules-yellow.svg)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 [![Firebase](https://img.shields.io/badge/Backend-Firebase%20v10%20%28Firestore%20%26%20Auth%29-FFCA28.svg)](https://firebase.google.com/)
+[![Cloudinary](https://img.shields.io/badge/Storage-Cloudinary%20%2F%20Data%20URL-3B48CC.svg)](https://cloudinary.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 **Newage Education** is a modern, full-featured web portal and candidate management platform designed for international education consultancies. It connects students, educational counselors, and executive management (CEO) through a unified real-time dashboard powered by Firebase Firestore.
@@ -65,8 +66,9 @@ Real-time progress tracking across all ten key visa and application stages:
 - **Backend & Database**:
   - **Firebase v10 SDK**: Modular JavaScript SDK (`firebase/app`, `firebase/auth`, `firebase/firestore`).
   - **Cloud Database**: Real-time Firebase Firestore (`students` collection).
-- **Document & File Handling**:
-  - **HTML5 FileReader API**: Base64 Data URL encoding for PDF and document uploads.
+- **Document & Asset Storage**:
+  - **HTML5 FileReader API**: Base64 Data URL encoding for PDF and image document uploads.
+  - **Cloudinary Integration Ready**: Prepared infrastructure for cloud image/PDF CDN hosting and asset delivery.
   - **Atomic Array Operations**: Firestore `arrayUnion()` for safe sequential document appending.
 - **Dev Tooling**:
   - **PowerShell Local Web Server**: Lightweight PowerShell HTTP server script (`server.ps1`).
@@ -167,3 +169,9 @@ students/{studentId}
 ## 📄 License
 
 Distributed under the MIT License. See `LICENSE` for details.
+
+---
+
+## 👨‍💻 Author & Credits
+
+**Jibran Masum Didar, Metropolitan University**
