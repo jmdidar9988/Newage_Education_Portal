@@ -939,4 +939,23 @@ select.form-select option,
     color: var(--card-header-text) !important;
 }
 
+/* Custom Student Tab Nav Pills Theme Compatibility */
+.custom-student-pills .nav-link {
+    color: var(--text-main) !important;
+    background-color: transparent;
+    transition: var(--ne-transition);
+}
+
+.custom-student-pills .nav-link:hover {
+    color: var(--ne-accent-red) !important;
+}
+
+.custom-student-pills .nav-link.active {
+    background-color: var(--card-bg) !important;
+    color: var(--ne-accent-red) !important;
+    box-shadow: 0 4px 12px var(--shadow-color) !important;
+    border: 1px solid var(--border-color);
+}
+
+
 
