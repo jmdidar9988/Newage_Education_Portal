@@ -160,182 +160,185 @@
                     </div>
                 </section>
 
-                <!-- TABBED INTERFACE: Documents Vault & Interview Materials -->
-                <div class="mb-4">
-                    <ul class="nav nav-pills custom-student-pills p-1.5 bg-light border rounded-4 shadow-sm" id="studentTabNav" role="tablist">
-                        <li class="nav-item flex-fill text-center" role="presentation">
-                            <button class="nav-link fw-bold w-100 py-2.5 rounded-3" id="tab-documents-btn" data-bs-toggle="tab" data-bs-target="#nav-documents" type="button" role="tab" aria-controls="nav-documents" aria-selected="false">
-                                <i class="bi bi-folder2-open me-2 text-danger"></i>📁 My Documents
-                            </button>
-                        </li>
-                        <li class="nav-item flex-fill text-center" role="presentation">
-                            <button class="nav-link fw-bold w-100 py-2.5 rounded-3" id="tab-materials-btn" data-bs-toggle="tab" data-bs-target="#nav-materials" type="button" role="tab" aria-controls="nav-materials" aria-selected="false">
-                                <i class="bi bi-journal-bookmark-fill me-2 text-danger"></i>📚 Interview Materials
-                            </button>
-                        </li>
-                    </ul>
+                <!-- FLOATING ACCORDION TOGGLE BUTTONS -->
+                <div class="d-flex justify-content-center flex-wrap gap-3 mb-4">
+                    <button class="btn btn-outline-danger px-4 py-2.5 fw-bold floating-btn" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDocuments" aria-expanded="false" aria-controls="collapseDocuments">
+                        <i class="bi bi-folder2-open me-2"></i>📁 My Documents
+                    </button>
+                    <button class="btn btn-outline-danger px-4 py-2.5 fw-bold floating-btn" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMaterials" aria-expanded="false" aria-controls="collapseMaterials">
+                        <i class="bi bi-journal-bookmark-fill me-2"></i>📚 Interview Materials
+                    </button>
+                </div>
 
-                    <div class="tab-content mt-3" id="nav-tabContent">
-                        <!-- Pane 1 (Documents Vault): Upload Passport, IELTS, Transcripts, etc. -->
-                        <div class="tab-pane fade" id="nav-documents" role="tabpanel" aria-labelledby="tab-documents-btn">
-                            <section id="section-document-uploads" class="card-newage border-0 shadow-sm rounded-4 mb-0">
-                                <div class="card-header d-flex justify-content-between align-items-center py-3 px-4 rounded-top-4">
-                                    <h5 class="mb-0 dynamic-header-text fw-bold"><i class="bi bi-folder2-open me-2 text-danger"></i>Documents Vault &amp; Verification Checklist</h5>
-                                    <span class="badge bg-danger px-2.5 py-1.5 rounded-pill">Document Storage</span>
-                                </div>
-                                <div class="p-4" id="uploadWorkspaceContent">
-                                    <p class="text-muted small mb-3">Upload clear PDF scans or image files of the required documents below. Uploaded documents automatically enter Pending review status.</p>
-                                    
-                                    <div class="table-responsive rounded-3 border bg-white mb-3" style="max-height: 480px; overflow-y: auto;">
-                                        <table class="table table-hover align-middle mb-0 small">
-                                            <thead class="table-light sticky-top">
-                                                <tr>
-                                                    <th>Document Type</th>
-                                                    <th style="width: 45%;">Select File</th>
-                                                    <th class="text-center" style="width: 30%;">Status &amp; Verification</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <!-- Row 1 -->
-                                                <tr class="doc-upload-row" data-doc-type="ssc_certificate">
-                                                    <td class="small fw-semibold">SSC Certificate</td>
-                                                    <td>
-                                                        <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
-                                                    </td>
-                                                    <td class="text-center status-col">
-                                                        <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
-                                                    </td>
-                                                </tr>
-                                                <!-- Row 2 -->
-                                                <tr class="doc-upload-row" data-doc-type="ssc_marksheet">
-                                                    <td class="small fw-semibold">SSC Marksheet</td>
-                                                    <td>
-                                                        <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
-                                                    </td>
-                                                    <td class="text-center status-col">
-                                                        <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
-                                                    </td>
-                                                </tr>
-                                                <!-- Row 3 -->
-                                                <tr class="doc-upload-row" data-doc-type="hsc_certificate">
-                                                    <td class="small fw-semibold">HSC Certificate</td>
-                                                    <td>
-                                                        <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
-                                                    </td>
-                                                    <td class="text-center status-col">
-                                                        <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
-                                                    </td>
-                                                </tr>
-                                                <!-- Row 4 -->
-                                                <tr class="doc-upload-row" data-doc-type="hsc_marksheet">
-                                                    <td class="small fw-semibold">HSC Marksheet</td>
-                                                    <td>
-                                                        <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
-                                                    </td>
-                                                    <td class="text-center status-col">
-                                                        <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
-                                                    </td>
-                                                </tr>
-                                                <!-- Row 5 -->
-                                                <tr class="doc-upload-row" data-doc-type="recommendation_letter">
-                                                    <td class="small fw-semibold">Recommendation Letter (2 Copies)</td>
-                                                    <td>
-                                                        <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
-                                                    </td>
-                                                    <td class="text-center status-col">
-                                                        <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
-                                                    </td>
-                                                </tr>
-                                                <!-- Row 6 -->
-                                                <tr class="doc-upload-row" data-doc-type="passport">
-                                                    <td class="small fw-semibold">Passport</td>
-                                                    <td>
-                                                        <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
-                                                    </td>
-                                                    <td class="text-center status-col">
-                                                        <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
-                                                    </td>
-                                                </tr>
-                                                <!-- Row 7 -->
-                                                <tr class="doc-upload-row" data-doc-type="student_nid">
-                                                    <td class="small fw-semibold">Student NID</td>
-                                                    <td>
-                                                        <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
-                                                    </td>
-                                                    <td class="text-center status-col">
-                                                        <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
-                                                    </td>
-                                                </tr>
-                                                <!-- Row 8 -->
-                                                <tr class="doc-upload-row" data-doc-type="cv">
-                                                    <td class="small fw-semibold">CV</td>
-                                                    <td>
-                                                        <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
-                                                    </td>
-                                                    <td class="text-center status-col">
-                                                        <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
-                                                    </td>
-                                                </tr>
-                                                <!-- Row 9 -->
-                                                <tr class="doc-upload-row" data-doc-type="sop">
-                                                    <td class="small fw-semibold">SOP</td>
-                                                    <td>
-                                                        <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
-                                                    </td>
-                                                    <td class="text-center status-col">
-                                                        <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
-                                                    </td>
-                                                </tr>
-                                                <!-- Row 10 -->
-                                                <tr class="doc-upload-row" data-doc-type="bank_statement">
-                                                    <td class="small fw-semibold">Bank Statement</td>
-                                                    <td>
-                                                        <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
-                                                    </td>
-                                                    <td class="text-center status-col">
-                                                        <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
-                                                    </td>
-                                                </tr>
-                                                <!-- Row 11 -->
-                                                <tr class="doc-upload-row" data-doc-type="other_documents">
-                                                    <td class="small fw-semibold">Other Documents</td>
-                                                    <td>
-                                                        <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
-                                                    </td>
-                                                    <td class="text-center status-col">
-                                                        <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
-                                                    </td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
+                <!-- ACCORDION PARENT CONTAINER FOR TOGGLE SECTIONS -->
+                <div id="studentFeaturesAccordion" class="mb-4">
+                    <!-- Pane 1: Documents Vault Section -->
+                    <div class="collapse" id="collapseDocuments" data-bs-parent="#studentFeaturesAccordion">
+                        <div class="card floating-panel border-0 mb-4 overflow-hidden">
+                            <div class="card-body p-0">
+                                <section id="section-document-uploads" class="card-newage border-0 mb-0">
+                                    <div class="card-header d-flex justify-content-between align-items-center py-3 px-4 rounded-top-4">
+                                        <h5 class="mb-0 dynamic-header-text fw-bold"><i class="bi bi-folder2-open me-2 text-danger"></i>Documents Vault &amp; Verification Checklist</h5>
+                                        <span class="badge bg-danger px-2.5 py-1.5 rounded-pill">Document Storage</span>
                                     </div>
+                                    <div class="p-4" id="uploadWorkspaceContent">
+                                        <p class="text-muted small mb-3">Upload clear PDF scans or image files of the required documents below. Uploaded documents automatically enter Pending review status.</p>
+                                        
+                                        <div class="table-responsive rounded-3 border bg-white mb-3" style="max-height: 480px; overflow-y: auto;">
+                                            <table class="table table-hover align-middle mb-0 small">
+                                                <thead class="table-light sticky-top">
+                                                    <tr>
+                                                        <th>Document Type</th>
+                                                        <th style="width: 45%;">Select File</th>
+                                                        <th class="text-center" style="width: 30%;">Status &amp; Verification</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <!-- Row 1 -->
+                                                    <tr class="doc-upload-row" data-doc-type="ssc_certificate">
+                                                        <td class="small fw-semibold">SSC Certificate</td>
+                                                        <td>
+                                                            <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
+                                                        </td>
+                                                        <td class="text-center status-col">
+                                                            <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
+                                                        </td>
+                                                    </tr>
+                                                    <!-- Row 2 -->
+                                                    <tr class="doc-upload-row" data-doc-type="ssc_marksheet">
+                                                        <td class="small fw-semibold">SSC Marksheet</td>
+                                                        <td>
+                                                            <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
+                                                        </td>
+                                                        <td class="text-center status-col">
+                                                            <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
+                                                        </td>
+                                                    </tr>
+                                                    <!-- Row 3 -->
+                                                    <tr class="doc-upload-row" data-doc-type="hsc_certificate">
+                                                        <td class="small fw-semibold">HSC Certificate</td>
+                                                        <td>
+                                                            <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
+                                                        </td>
+                                                        <td class="text-center status-col">
+                                                            <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
+                                                        </td>
+                                                    </tr>
+                                                    <!-- Row 4 -->
+                                                    <tr class="doc-upload-row" data-doc-type="hsc_marksheet">
+                                                        <td class="small fw-semibold">HSC Marksheet</td>
+                                                        <td>
+                                                            <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
+                                                        </td>
+                                                        <td class="text-center status-col">
+                                                            <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
+                                                        </td>
+                                                    </tr>
+                                                    <!-- Row 5 -->
+                                                    <tr class="doc-upload-row" data-doc-type="recommendation_letter">
+                                                        <td class="small fw-semibold">Recommendation Letter (2 Copies)</td>
+                                                        <td>
+                                                            <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
+                                                        </td>
+                                                        <td class="text-center status-col">
+                                                            <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
+                                                        </td>
+                                                    </tr>
+                                                    <!-- Row 6 -->
+                                                    <tr class="doc-upload-row" data-doc-type="passport">
+                                                        <td class="small fw-semibold">Passport</td>
+                                                        <td>
+                                                            <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
+                                                        </td>
+                                                        <td class="text-center status-col">
+                                                            <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
+                                                        </td>
+                                                    </tr>
+                                                    <!-- Row 7 -->
+                                                    <tr class="doc-upload-row" data-doc-type="student_nid">
+                                                        <td class="small fw-semibold">Student NID</td>
+                                                        <td>
+                                                            <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
+                                                        </td>
+                                                        <td class="text-center status-col">
+                                                            <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
+                                                        </td>
+                                                    </tr>
+                                                    <!-- Row 8 -->
+                                                    <tr class="doc-upload-row" data-doc-type="cv">
+                                                        <td class="small fw-semibold">CV</td>
+                                                        <td>
+                                                            <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
+                                                        </td>
+                                                        <td class="text-center status-col">
+                                                            <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
+                                                        </td>
+                                                    </tr>
+                                                    <!-- Row 9 -->
+                                                    <tr class="doc-upload-row" data-doc-type="sop">
+                                                        <td class="small fw-semibold">SOP</td>
+                                                        <td>
+                                                            <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
+                                                        </td>
+                                                        <td class="text-center status-col">
+                                                            <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
+                                                        </td>
+                                                    </tr>
+                                                    <!-- Row 10 -->
+                                                    <tr class="doc-upload-row" data-doc-type="bank_statement">
+                                                        <td class="small fw-semibold">Bank Statement</td>
+                                                        <td>
+                                                            <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
+                                                        </td>
+                                                        <td class="text-center status-col">
+                                                            <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
+                                                        </td>
+                                                    </tr>
+                                                    <!-- Row 11 -->
+                                                    <tr class="doc-upload-row" data-doc-type="other_documents">
+                                                        <td class="small fw-semibold">Other Documents</td>
+                                                        <td>
+                                                            <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
+                                                        </td>
+                                                        <td class="text-center status-col">
+                                                            <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
 
-                                    <!-- Footer Action Buttons -->
-                                    <div class="d-flex justify-content-end align-items-center pt-2">
-                                        <button class="btn btn-newage-red btn-sm px-4 py-2 fw-semibold rounded-3 shadow-sm" onclick="submitAllDocs()">
-                                            <i class="bi bi-cloud-arrow-up me-1"></i> Submit All Uploaded Documents
-                                        </button>
+                                        <!-- Footer Action Buttons -->
+                                        <div class="d-flex justify-content-end align-items-center pt-2">
+                                            <button class="btn btn-newage-red btn-sm px-4 py-2 fw-semibold rounded-3 shadow-sm" onclick="submitAllDocs()">
+                                                <i class="bi bi-cloud-arrow-up me-1"></i> Submit All Uploaded Documents
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
-                            </section>
+                                </section>
+                            </div>
                         </div>
+                    </div>
 
-                        <!-- Pane 2 (Materials): View Counselor Uploaded Interview PDFs -->
-                        <div class="tab-pane fade" id="nav-materials" role="tabpanel" aria-labelledby="tab-materials-btn">
-                            <section id="section-prep-materials" class="card-newage border-0 shadow-sm rounded-4 mb-0">
-                                <div class="card-header d-flex align-items-center justify-content-between py-3 px-4 rounded-top-4">
-                                    <h5 class="mb-0 dynamic-header-text fw-bold">
-                                        <i class="bi bi-journal-bookmark-fill text-danger me-2"></i>📚 Interview Preparation Materials
-                                    </h5>
-                                    <span id="prepMaterialsCountBadge" class="badge bg-danger px-2.5 py-1.5 rounded-pill">0 Materials</span>
-                                </div>
-                                <div class="p-4" id="prepMaterialsContent">
-                                    <div class="text-center py-4 text-muted">
-                                        <i class="bi bi-file-earmark-pdf fs-2 text-secondary d-block mb-2"></i>
-                                        <span class="small text-muted">No interview preparation sheets uploaded by your counselor yet.</span>
+                    <!-- Pane 2: Materials Section -->
+                    <div class="collapse" id="collapseMaterials" data-bs-parent="#studentFeaturesAccordion">
+                        <div class="card floating-panel border-0 mb-4 overflow-hidden">
+                            <div class="card-body p-0">
+                                <section id="section-prep-materials" class="card-newage border-0 mb-0">
+                                    <div class="card-header d-flex align-items-center justify-content-between py-3 px-4 rounded-top-4">
+                                        <h5 class="mb-0 dynamic-header-text fw-bold">
+                                            <i class="bi bi-journal-bookmark-fill text-danger me-2"></i>📚 Interview Preparation Materials
+                                        </h5>
+                                        <span id="prepMaterialsCountBadge" class="badge bg-danger px-2.5 py-1.5 rounded-pill">0 Materials</span>
                                     </div>
-                                </div>
-                            </section>
+                                    <div class="p-4" id="prepMaterialsContent">
+                                        <div class="text-center py-4 text-muted">
+                                            <i class="bi bi-file-earmark-pdf fs-2 text-secondary d-block mb-2"></i>
+                                            <span class="small text-muted">No interview preparation sheets uploaded by your counselor yet.</span>
+                                        </div>
+                                    </div>
+                                </section>
+                            </div>
                         </div>
                     </div>
                 </div>
