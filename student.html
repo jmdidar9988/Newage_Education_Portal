@@ -12,6 +12,40 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <!-- Custom CSS -->
     <link rel="stylesheet" href="style.css">
+    <!-- Custom Floating Styles -->
+    <style id="custom-floating-styles">
+      /* Floating Button Effect */
+      .floating-btn {
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+        border-radius: 30px !important;
+      }
+      .floating-btn:hover, .floating-btn[aria-expanded="true"] {
+        transform: translateY(-5px) !important;
+        box-shadow: 0 10px 20px rgba(230, 57, 70, 0.3) !important;
+        background-color: var(--accent-primary, #E63946) !important;
+        color: white !important;
+        border-color: var(--accent-primary, #E63946) !important;
+      }
+
+      /* Floating Panel Effect */
+      .floating-panel {
+        animation: floatUp 0.4s ease-out forwards !important;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.1) !important;
+        border-radius: 12px !important;
+        border: 1px solid rgba(0,0,0,0.05) !important;
+      }
+
+      @keyframes floatUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    </style>
     <!-- Firebase App (modular CDN) -->
     <script type="module" src="auth.js"></script>
 </head>
