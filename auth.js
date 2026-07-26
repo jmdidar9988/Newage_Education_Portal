@@ -1402,33 +1402,31 @@ const OVERALL_STATUS_OPTIONS = [
 function buildOverallStatusSection(studentId, student) {
     const currentStatus = student.applicationStatus || student.status || "Pending / Processing";
 
-    const optionsHTML = OVERALL_STATUS_OPTIONS.map(opt => 
+    const options = [
+        "Pending / Processing",
+        "Offer letter received",
+        "Applied for unconditional offer letter",
+        "Applied for CAS",
+        "CAS received",
+        "VFS Global Appointment",
+        "Embassy Interview",
+        "UKVI interview",
+        "Visa Success",
+        "Rejected"
+    ];
+
+    const optionsHTML = options.map(opt => 
         `<option value="${escapeHtml(opt)}" ${opt === currentStatus ? 'selected' : ''}>${escapeHtml(opt)}</option>`
     ).join('');
 
     return `
-        <!-- OVERALL APPLICATION STATUS CONTROL SECTION -->
-        <div class="card border-0 shadow-sm rounded-3 mb-3 bg-light">
-            <div class="card-body p-3">
-                <div class="row align-items-center g-3">
-                    <div class="col-md-5 col-12">
-                        <h6 class="fw-bold mb-1 text-dark">
-                            <i class="bi bi-flag-fill text-accent me-2"></i>Overall Application Lifecycle Status
-                        </h6>
-                        <small class="text-muted">Current Active Status: <strong class="text-accent">${escapeHtml(currentStatus)}</strong></small>
-                    </div>
-                    <div class="col-md-7 col-12">
-                        <div class="input-group">
-                            <select id="overallStatusSelect_${studentId}" class="form-select form-select-sm fw-semibold border-secondary">
-                                ${optionsHTML}
-                            </select>
-                            <button class="btn btn-sm btn-accent text-white fw-bold px-3 shadow-sm" onclick="updateOverallApplicationStatus('${studentId}')">
-                                <i class="bi bi-check-lg me-1"></i> Save Status
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <!-- APPLICATION STATUS CONTROL SECTION -->
+        <div class="mt-3 mb-3 p-3 bg-light rounded border">
+            <label class="form-label fw-bold text-dark">Application Status</label>
+            <select id="updateStatusSelect" class="form-select bg-white text-dark border-secondary fw-semibold">
+                ${optionsHTML}
+            </select>
+            <button id="saveStatusBtn" class="btn btn-sm text-white mt-2 fw-bold px-4 shadow-sm" style="background-color: var(--accent-primary, #E63946)" onclick="updateOverallApplicationStatus('${studentId}')">Save Status</button>
         </div>`;
 }
 
@@ -1437,15 +1435,16 @@ function buildOverallStatusSection(studentId, student) {
  * @param {string} studentId 
  */
 export async function updateOverallApplicationStatus(studentId) {
-    const selectEl = document.getElementById(`overallStatusSelect_${studentId}`);
+    const selectEl = document.getElementById('updateStatusSelect');
     if (!selectEl) return;
     const newStatus = selectEl.value;
 
-    const student = window.loadedStudentsMap ? window.loadedStudentsMap[studentId] : null;
-    if (!student) return;
+    const targetId = studentId || window._currentEditStudentId;
+    const student = window.loadedStudentsMap ? window.loadedStudentsMap[targetId] : null;
+    if (!student || !targetId) return;
 
     try {
-        const studentRef = doc(db, 'students', studentId);
+        const studentRef = doc(db, 'students', targetId);
         await updateDoc(studentRef, {
             applicationStatus: newStatus,
             status: newStatus,
@@ -1455,32 +1454,32 @@ export async function updateOverallApplicationStatus(studentId) {
         student.applicationStatus = newStatus;
         student.status = newStatus;
 
-        console.log(`Updated applicationStatus to "${newStatus}" for student ${studentId}`);
+        console.log(`Updated applicationStatus to "${newStatus}" for student ${targetId}`);
 
         if (typeof Swal !== 'undefined') {
             Swal.fire({
-                title: 'Status Updated!',
-                text: `Overall application status updated to "${newStatus}".`,
+                title: 'Status Saved!',
+                text: `Application status updated to "${newStatus}".`,
                 icon: 'success',
                 confirmButtonColor: '#00ADB5'
             });
         } else {
-            alert(`✅ Overall application status updated to "${newStatus}"!`);
+            alert(`✅ Application status updated to "${newStatus}"!`);
         }
 
         // Re-render student details modal to reflect updated badge
-        viewStudentDetails(studentId);
+        viewStudentDetails(targetId);
 
         // Refresh tables in background
         if (document.getElementById('studentsTableBody')) fetchStudents();
         if (document.getElementById('recentApplicationsTableBody') || document.getElementById('totalStudentsKpi')) loadCEODashboardData();
 
     } catch (error) {
-        console.error("Error updating overall application status:", error);
+        console.error("Error updating application status:", error);
         if (typeof Swal !== 'undefined') {
-            Swal.fire('Error', 'Failed to update status: ' + error.message, 'error');
+            Swal.fire('Error', 'Failed to save status: ' + error.message, 'error');
         } else {
-            alert('Failed to update status: ' + error.message);
+            alert('Failed to save status: ' + error.message);
         }
     }
 }
