@@ -83,6 +83,24 @@
                     </div>
                 </section>
 
+                <!-- 1.5 SECTION: Prominent Current Application Lifecycle Status Banner -->
+                <section id="section-overall-status-banner" class="card-newage border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
+                    <div class="p-4 bg-navy text-white d-flex flex-wrap align-items-center justify-content-between gap-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="rounded-circle bg-white bg-opacity-10 p-3 fs-2 text-accent d-flex align-items-center justify-content-center" style="width: 56px; height: 56px;">
+                                <i class="bi bi-compass-fill"></i>
+                            </div>
+                            <div>
+                                <small class="text-white-50 text-uppercase tracking-wider fw-semibold d-block">Current Application Status</small>
+                                <h4 class="mb-0 fw-bold text-white" id="overallStatusTitle">Pending / Processing</h4>
+                            </div>
+                        </div>
+                        <span id="overallStatusBadge" class="badge px-3.5 py-2 fs-6 rounded-pill shadow-sm">
+                            <i class="bi bi-clock-history me-1.5"></i> Pending / Processing
+                        </span>
+                    </div>
+                </section>
+
                 <!-- 2. SECTION: My Information & Candidate Record Card -->
                 <section id="section-my-information" class="card-newage border-0 shadow-sm rounded-4 mb-4">
                     <div class="card-header bg-dark text-white d-flex align-items-center justify-content-between py-3 px-4 rounded-top-4">
@@ -479,6 +497,44 @@
             return name.trim().split(/\s+/).map(w => w[0].toUpperCase()).slice(0, 2).join('');
         }
 
+        // ── Helper: Render Overall Application Lifecycle Status Badge ──────
+        function renderStudentOverallStatus(statusStr) {
+            const status = statusStr || 'Pending / Processing';
+            const titleEl = document.getElementById('overallStatusTitle');
+            const badgeEl = document.getElementById('overallStatusBadge');
+
+            if (titleEl) titleEl.textContent = status;
+
+            let badgeStyle = 'background-color: var(--card-header-bg, #0b2447); color: #ffffff;';
+            let iconClass = 'bi bi-compass-fill';
+
+            if (status === 'Visa Success') {
+                badgeStyle = 'background-color: #198754; color: #ffffff; font-weight: bold; box-shadow: 0 4px 12px rgba(25, 135, 84, 0.3);';
+                iconClass = 'bi bi-patch-check-fill';
+            } else if (status === 'Rejected') {
+                badgeStyle = 'background-color: var(--accent-primary, #E63946); color: #ffffff; font-weight: bold; box-shadow: 0 4px 12px rgba(230, 57, 70, 0.3);';
+                iconClass = 'bi bi-x-circle-fill';
+            } else if ([
+                'VFS Global Appointment',
+                'Embassy Interview',
+                'UKVI interview',
+                'Applied for CAS',
+                'CAS received'
+            ].includes(status)) {
+                badgeStyle = 'background-color: var(--accent-secondary, #FFC107); color: #000000; font-weight: bold; box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);';
+                iconClass = 'bi bi-exclamation-triangle-fill';
+            } else {
+                // Normal statuses: Navy Blue
+                badgeStyle = 'background-color: #0b2447; color: #ffffff; border: 1px solid rgba(255,255,255,0.2);';
+                iconClass = 'bi bi-compass-fill';
+            }
+
+            if (badgeEl) {
+                badgeEl.setAttribute('style', badgeStyle);
+                badgeEl.innerHTML = `<i class="${iconClass} me-1.5"></i> ${escapeHtml(status)}`;
+            }
+        }
+
         // ── Helper: derive display name from email ─────────────────────────
         function nameFromEmail(email) {
             if (!email) return 'New Student';
@@ -692,7 +748,8 @@
             else if (edu.bachelor?.major) qual = `B.Sc. in ${edu.bachelor.major}`;
             else if (edu.hsc?.major) qual = `HSC — ${edu.hsc.major}`;
             setText('profileQualification', qual);
-            setText('profileCounselor', 'Newage Counselor');
+            // Overall Application Lifecycle Status Banner
+            renderStudentOverallStatus(data.applicationStatus || data.status || 'Pending / Processing');
 
             // Multi-Application Tracker Status Logic
             const apps = getStudentApplications(data);

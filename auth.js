@@ -1378,6 +1378,114 @@ function buildApplicationsManagementSection(studentId, student) {
 }
 
 /**
+ * Options list for overall application status
+ */
+const OVERALL_STATUS_OPTIONS = [
+    "Pending / Processing",
+    "Offer letter received",
+    "Applied for unconditional offer letter",
+    "Applied for CAS",
+    "CAS received",
+    "VFS Global Appointment",
+    "Embassy Interview",
+    "UKVI interview",
+    "Visa Success",
+    "Rejected"
+];
+
+/**
+ * Builds HTML for Overall Application Status Control Section inside Student Profile Modal
+ * @param {string} studentId 
+ * @param {Object} student 
+ * @returns {string}
+ */
+function buildOverallStatusSection(studentId, student) {
+    const currentStatus = student.applicationStatus || student.status || "Pending / Processing";
+
+    const optionsHTML = OVERALL_STATUS_OPTIONS.map(opt => 
+        `<option value="${escapeHtml(opt)}" ${opt === currentStatus ? 'selected' : ''}>${escapeHtml(opt)}</option>`
+    ).join('');
+
+    return `
+        <!-- OVERALL APPLICATION STATUS CONTROL SECTION -->
+        <div class="card border-0 shadow-sm rounded-3 mb-3 bg-light">
+            <div class="card-body p-3">
+                <div class="row align-items-center g-3">
+                    <div class="col-md-5 col-12">
+                        <h6 class="fw-bold mb-1 text-dark">
+                            <i class="bi bi-flag-fill text-accent me-2"></i>Overall Application Lifecycle Status
+                        </h6>
+                        <small class="text-muted">Current Active Status: <strong class="text-accent">${escapeHtml(currentStatus)}</strong></small>
+                    </div>
+                    <div class="col-md-7 col-12">
+                        <div class="input-group">
+                            <select id="overallStatusSelect_${studentId}" class="form-select form-select-sm fw-semibold border-secondary">
+                                ${optionsHTML}
+                            </select>
+                            <button class="btn btn-sm btn-accent text-white fw-bold px-3 shadow-sm" onclick="updateOverallApplicationStatus('${studentId}')">
+                                <i class="bi bi-check-lg me-1"></i> Save Status
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+}
+
+/**
+ * Updates overall application status for a student in Firestore and memory
+ * @param {string} studentId 
+ */
+export async function updateOverallApplicationStatus(studentId) {
+    const selectEl = document.getElementById(`overallStatusSelect_${studentId}`);
+    if (!selectEl) return;
+    const newStatus = selectEl.value;
+
+    const student = window.loadedStudentsMap ? window.loadedStudentsMap[studentId] : null;
+    if (!student) return;
+
+    try {
+        const studentRef = doc(db, 'students', studentId);
+        await updateDoc(studentRef, {
+            applicationStatus: newStatus,
+            status: newStatus,
+            statusUpdatedAt: new Date().toISOString()
+        });
+
+        student.applicationStatus = newStatus;
+        student.status = newStatus;
+
+        console.log(`Updated applicationStatus to "${newStatus}" for student ${studentId}`);
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Status Updated!',
+                text: `Overall application status updated to "${newStatus}".`,
+                icon: 'success',
+                confirmButtonColor: '#00ADB5'
+            });
+        } else {
+            alert(`✅ Overall application status updated to "${newStatus}"!`);
+        }
+
+        // Re-render student details modal to reflect updated badge
+        viewStudentDetails(studentId);
+
+        // Refresh tables in background
+        if (document.getElementById('studentsTableBody')) fetchStudents();
+        if (document.getElementById('recentApplicationsTableBody') || document.getElementById('totalStudentsKpi')) loadCEODashboardData();
+
+    } catch (error) {
+        console.error("Error updating overall application status:", error);
+        if (typeof Swal !== 'undefined') {
+            Swal.fire('Error', 'Failed to update status: ' + error.message, 'error');
+        } else {
+            alert('Failed to update status: ' + error.message);
+        }
+    }
+}
+
+/**
  * Format timestamps into human readable string
  */
 function formatTimestamp(ts) {
@@ -1707,6 +1815,7 @@ export function viewStudentDetails(studentId) {
             </div>
             <div id="profileEditAlert"></div>
 
+            ${buildOverallStatusSection(studentId, student)}
             ${buildApplicationsManagementSection(studentId, student)}
 
             <div class="row g-3" id="personalInfoSection">
@@ -2131,6 +2240,7 @@ export function filterCEOTable() {
 window.filterCEOTable = filterCEOTable;
 window.confirmAndDeleteStudent = confirmAndDeleteStudent;
 window.deleteStudentRecord = confirmAndDeleteStudent;
+window.updateOverallApplicationStatus = updateOverallApplicationStatus;
 window.handleFirebaseLogin = handleFirebaseLogin;
 window.handleFirebaseSignUp = handleFirebaseSignUp;
 window.handleAddNewEmployee = handleAddNewEmployee;
