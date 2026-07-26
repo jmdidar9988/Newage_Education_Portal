@@ -852,14 +852,18 @@ export async function fetchStudents() {
         tableBody.innerHTML = html;
 
     } catch (error) {
-        console.error("Error fetching students from Firestore:", error);
-        tableBody.innerHTML = `
-            <tr>
-                <td colspan="6" class="text-center py-4 text-danger">
-                    <i class="bi bi-exclamation-triangle-fill me-1"></i>
-                    Failed to fetch students: ${escapeHtml(error.message || 'Database error')}
-                </td>
-            </tr>`;
+        console.error("Firestore Loading Error:", error);
+        const loader = document.getElementById('loadingSpinner') || document.querySelector('.loading-text') || document.querySelector('.spinner-border');
+        if (loader) loader.style.display = 'none';
+        if (tableBody) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center py-4 text-danger">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                        Failed to fetch students: ${escapeHtml(error.message || 'Database error')}
+                    </td>
+                </tr>`;
+        }
     }
 }
 
@@ -2033,10 +2037,70 @@ window.saveStudentApplication = saveStudentApplication;
 window.fetchStudents = fetchStudents;
 window.loadCEODashboardData = loadCEODashboardData;
 window.viewStudentDetails = viewStudentDetails;
-window.viewStudentProfile = viewStudentDetails;
-window.addNewApplication = addNewApplication;
-window.updateApplicationStatus = updateApplicationStatus;
-window.deleteApplication = deleteApplication;
+window.updateApplicationStatus = async function(studentId, courseNameOrAppId, newStatusParam) {
+    console.log("Updating status:", studentId, courseNameOrAppId, newStatusParam);
+    const selectEl = document.getElementById(`appStatusSelect_${courseNameOrAppId}`);
+    const newStatus = newStatusParam || (selectEl ? selectEl.value : null);
+    if (!newStatus) return;
+
+    const student = window.loadedStudentsMap ? window.loadedStudentsMap[studentId] : null;
+    if (!student) return;
+
+    const apps = getStudentApplications(student);
+    let updatedCourseName = '';
+    const updatedApps = apps.map(app => {
+        if (app.id === courseNameOrAppId || app.course === courseNameOrAppId) {
+            updatedCourseName = app.course;
+            return { ...app, status: newStatus, statusUpdatedAt: new Date().toISOString() };
+        }
+        return app;
+    });
+
+    try {
+        const studentRef = doc(db, 'students', studentId);
+        await updateDoc(studentRef, {
+            applications: updatedApps,
+            applicationStatus: newStatus,
+            status: newStatus,
+            statusUpdatedAt: new Date().toISOString()
+        });
+
+        student.applications = updatedApps;
+        student.applicationStatus = newStatus;
+        student.status = newStatus;
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Status Saved!',
+                text: `Status for "${updatedCourseName}" updated to "${newStatus}".`,
+                icon: 'success',
+                confirmButtonColor: '#00ADB5'
+            });
+        } else {
+            alert(`✅ Status for "${updatedCourseName}" updated to "${newStatus}"!`);
+        }
+
+        const alertArea = document.getElementById('appManagerAlert');
+        if (alertArea) {
+            alertArea.innerHTML = `
+                <div class="alert alert-success alert-dismissible fade show py-2 px-3 small mb-3" role="alert">
+                    <i class="bi bi-check-circle-fill me-1"></i> Status for <strong>${escapeHtml(updatedCourseName)}</strong> updated to <strong>${escapeHtml(newStatus)}</strong>!
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>`;
+        }
+
+        if (document.getElementById('studentsTableBody')) fetchStudents();
+        if (document.getElementById('recentApplicationsTableBody') || document.getElementById('totalStudentsKpi')) loadCEODashboardData();
+
+    } catch (error) {
+        console.error("Error updating application status:", error);
+        if (typeof Swal !== 'undefined') {
+            Swal.fire('Error', 'Failed to update status: ' + error.message, 'error');
+        } else {
+            alert('Failed to update status: ' + error.message);
+        }
+    }
+};
 window.toggleEditMode = toggleEditMode;
 window.saveProfileChanges = saveProfileChanges;
 window.approveDocument = approveDocument;
