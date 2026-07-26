@@ -28,6 +28,11 @@ import {
     arrayUnion
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+// Safety fallback for deprecated overall status update
+window.updateOverallApplicationStatus = function() {
+    console.warn("Ignored: Deprecated overall status update called.");
+};
+
 // Firebase configuration provided by user
 const firebaseConfig = {
   apiKey: "AIzaSyDVawQFjahyoHtE1aDzomcO9EsYmJ3c8fw",
@@ -2029,7 +2034,6 @@ export function filterCEOTable() {
 window.filterCEOTable = filterCEOTable;
 window.confirmAndDeleteStudent = confirmAndDeleteStudent;
 window.deleteStudentRecord = confirmAndDeleteStudent;
-window.updateOverallApplicationStatus = updateOverallApplicationStatus;
 window.handleFirebaseLogin = handleFirebaseLogin;
 window.handleFirebaseSignUp = handleFirebaseSignUp;
 window.handleAddNewEmployee = handleAddNewEmployee;
