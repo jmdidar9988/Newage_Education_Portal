@@ -1410,7 +1410,7 @@ const statusOptions = [
 ];
 
 /**
- * Builds HTML for Overall Application Status Control Section inside Student Profile Modal
+ * Builds HTML for Overall Application Status Control Section (Visual Status Button Grid) inside Student Profile Modal
  * @param {string} studentId 
  * @param {Object} student 
  * @returns {string}
@@ -1418,13 +1418,23 @@ const statusOptions = [
 function buildOverallStatusSection(studentId, student) {
     const currentStatus = student.applicationStatus || student.status || "Pending / Processing";
 
+    const buttonsHTML = statusOptions.map(opt => {
+        const isSelected = (opt === currentStatus);
+        const btnClass = isSelected
+            ? 'btn-warning text-dark fw-bold shadow-sm active-status-btn'
+            : 'btn-outline-secondary text-dark';
+
+        return `<button type="button" class="btn btn-sm status-option-btn ${btnClass}" data-status="${escapeHtml(opt)}">${escapeHtml(opt)}</button>`;
+    }).join('\n    ');
+
     return `
-      <div class="mb-3 p-3 border rounded bg-dark-subtle">
-        <label class="form-label fw-bold text-navy">Application Status</label>
-        <select id="directStatusSelect" class="form-select bg-white text-dark border-secondary">
-          ${statusOptions.map(opt => `<option value="${escapeHtml(opt)}" ${currentStatus === opt ? 'selected' : ''}>${escapeHtml(opt)}</option>`).join('')}
-        </select>
-        <button id="directSaveStatusBtn" class="btn btn-sm text-white mt-2" style="background-color: var(--accent-primary, #E63946)">Update Status</button>
+      <div class="mt-4 p-3 border rounded bg-light">
+        <label class="form-label fw-bold mb-3" style="color: var(--text-main, #2b3440);">Update Application Status</label>
+        <div id="statusGrid" class="d-flex flex-wrap gap-2 mb-3">
+          ${buttonsHTML}
+        </div>
+        <input type="hidden" id="selectedStatusValue" value="${escapeHtml(currentStatus)}">
+        <button id="saveGridStatusBtn" class="btn btn-sm text-white px-4 fw-bold shadow-sm" style="background-color: var(--accent-primary, #E63946);">Save Selected Status</button>
       </div>`;
 }
 
@@ -1880,14 +1890,34 @@ export function viewStudentDetails(studentId) {
         modal.show();
     }
 
-    // Attach click handler for directSaveStatusBtn
+    // Attach click handlers for status option grid and save button
     setTimeout(() => {
-        const directSaveBtn = document.getElementById('directSaveStatusBtn');
-        if (directSaveBtn) {
-            directSaveBtn.addEventListener('click', async () => {
-                const selectEl = document.getElementById('directStatusSelect');
-                if (!selectEl) return;
-                const selectedStatus = selectEl.value;
+        const gridBtns = document.querySelectorAll('.status-option-btn');
+        const hiddenInput = document.getElementById('selectedStatusValue');
+        const saveGridBtn = document.getElementById('saveGridStatusBtn');
+
+        gridBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const clickedStatus = btn.getAttribute('data-status');
+                if (hiddenInput) hiddenInput.value = clickedStatus;
+
+                gridBtns.forEach(b => {
+                    b.classList.remove('btn-warning', 'text-dark', 'fw-bold', 'shadow-sm', 'active-status-btn');
+                    b.classList.add('btn-outline-secondary', 'text-dark');
+                });
+
+                btn.classList.remove('btn-outline-secondary');
+                btn.classList.add('btn-warning', 'text-dark', 'fw-bold', 'shadow-sm', 'active-status-btn');
+            });
+        });
+
+        if (saveGridBtn) {
+            saveGridBtn.addEventListener('click', async () => {
+                const selectedStatus = hiddenInput ? hiddenInput.value : '';
+                if (!selectedStatus) {
+                    alert('Please select an application status from the grid.');
+                    return;
+                }
 
                 try {
                     const studentRef = doc(db, 'students', studentId);
@@ -1902,7 +1932,7 @@ export function viewStudentDetails(studentId) {
 
                     if (typeof Swal !== 'undefined') {
                         Swal.fire({
-                            title: 'Status Updated!',
+                            title: 'Status Saved!',
                             text: `Application status updated to "${selectedStatus}".`,
                             icon: 'success',
                             confirmButtonColor: '#00ADB5'
