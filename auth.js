@@ -1384,7 +1384,7 @@ function buildApplicationsManagementSection(studentId, student) {
                 <div id="appManagerAlert"></div>
 
                 <!-- Existing Applications Table -->
-                <div class="table-responsive rounded border bg-white">
+                <div class="table-responsive rounded border bg-white mb-3">
                     <table class="table table-sm table-hover align-middle mb-0 small">
                         <thead class="table-dark">
                             <tr>
@@ -1398,6 +1398,48 @@ function buildApplicationsManagementSection(studentId, student) {
                         <tbody>${rowsHTML}</tbody>
                     </table>
                 </div>
+
+                <!-- Interview Preparation Sheets Section -->
+                ${(() => {
+                    const prepSheets = (student && Array.isArray(student.prepSheets)) ? student.prepSheets : [];
+                    const prepRows = prepSheets.length === 0
+                        ? `<tr><td colspan="3" class="text-center text-muted py-2">No interview preparation materials uploaded yet.</td></tr>`
+                        : prepSheets.map(s => `
+                            <tr>
+                                <td class="fw-bold text-dark"><i class="bi bi-file-earmark-pdf-fill text-danger me-1"></i>${escapeHtml(s.title || 'Prep Sheet')}</td>
+                                <td class="small text-muted">${s.uploadedAt ? new Date(s.uploadedAt).toLocaleDateString() : 'Recent'}</td>
+                                <td class="text-end">
+                                    <a href="${escapeHtml(s.url || '#')}" target="_blank" download="${escapeHtml(s.title || 'Sheet')}.pdf" class="btn btn-xs btn-outline-danger py-0 px-2 small fw-semibold">
+                                        <i class="bi bi-download me-1"></i> View/Download
+                                    </a>
+                                </td>
+                            </tr>
+                        `).join('');
+
+                    return `
+                        <div class="card border-danger-subtle bg-white shadow-sm">
+                            <div class="card-body p-3">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <h6 class="fw-bold text-dark mb-0"><i class="bi bi-journal-bookmark-fill text-danger me-2"></i>Interview Preparation Materials (${prepSheets.length})</h6>
+                                    <button class="btn btn-sm btn-danger fw-bold px-3 py-1" onclick="openPrepSheetModal('${studentId}')">
+                                        <i class="bi bi-cloud-upload-fill me-1"></i> + Upload Prep Material
+                                    </button>
+                                </div>
+                                <div class="table-responsive rounded border bg-light">
+                                    <table class="table table-sm table-hover align-middle mb-0 small">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Sheet Title</th>
+                                                <th>Upload Date</th>
+                                                <th class="text-end">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>${prepRows}</tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>`;
+                })()}
             </div>
         </div>`;
 }
@@ -2183,6 +2225,133 @@ window.openStudentChat = function(studentId) {
 window.markMessagesAsRead = function(studentId) {
     console.log("markMessagesAsRead triggered for student:", studentId);
 };
+
+export function openPrepSheetModal(studentId) {
+    window._currentPrepSheetStudentId = studentId || window._currentEditStudentId;
+    const titleEl = document.getElementById('prepSheetTitle');
+    const fileEl = document.getElementById('prepSheetFile');
+    const alertEl = document.getElementById('prepSheetAlert');
+    if (titleEl) titleEl.value = '';
+    if (fileEl) fileEl.value = '';
+    if (alertEl) alertEl.innerHTML = '';
+
+    const modalEl = document.getElementById('prepSheetPdfModal');
+    if (modalEl && window.bootstrap) {
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+    }
+}
+window.openPrepSheetModal = openPrepSheetModal;
+
+export async function uploadPrepSheet(studentId) {
+    const targetStudentId = studentId || window._currentPrepSheetStudentId || window._currentEditStudentId;
+    const titleInput = document.getElementById('prepSheetTitle');
+    const fileInput = document.getElementById('prepSheetFile');
+    const alertArea = document.getElementById('prepSheetAlert');
+    const uploadBtn = document.getElementById('uploadPrepSheetBtn');
+
+    if (!targetStudentId) {
+        alert('Student ID not specified.');
+        return;
+    }
+
+    if (!titleInput || !fileInput) return;
+
+    const titleVal = titleInput.value.trim();
+    const file = fileInput.files ? fileInput.files[0] : null;
+
+    if (!titleVal) {
+        if (alertArea) {
+            alertArea.innerHTML = `<div class="alert alert-warning py-1.5 px-3 small mb-3"><i class="bi bi-exclamation-triangle-fill me-1"></i> Please enter a document title (e.g. "Sheet 1").</div>`;
+        } else {
+            alert('Please enter a document title (e.g. "Sheet 1").');
+        }
+        return;
+    }
+
+    if (!file) {
+        if (alertArea) {
+            alertArea.innerHTML = `<div class="alert alert-warning py-1.5 px-3 small mb-3"><i class="bi bi-exclamation-triangle-fill me-1"></i> Please select a PDF file to upload.</div>`;
+        } else {
+            alert('Please select a PDF file to upload.');
+        }
+        return;
+    }
+
+    if (uploadBtn) {
+        uploadBtn.disabled = true;
+        uploadBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Uploading...';
+    }
+
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        const fileUrl = e.target.result;
+
+        const newSheetPayload = {
+            id: 'sheet_' + Date.now(),
+            title: titleVal,
+            url: fileUrl,
+            uploadedAt: new Date().toISOString()
+        };
+
+        try {
+            const studentRef = doc(db, 'students', targetStudentId);
+            await updateDoc(studentRef, {
+                prepSheets: arrayUnion(newSheetPayload)
+            });
+
+            // Update local memory map
+            const student = window.loadedStudentsMap ? window.loadedStudentsMap[targetStudentId] : null;
+            if (student) {
+                if (!Array.isArray(student.prepSheets)) student.prepSheets = [];
+                student.prepSheets.push(newSheetPayload);
+            }
+
+            console.log(`Successfully uploaded prep sheet "${titleVal}" for student ${targetStudentId}`);
+
+            titleInput.value = '';
+            fileInput.value = '';
+
+            const modalEl = document.getElementById('prepSheetPdfModal');
+            if (modalEl && window.bootstrap) {
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) modal.hide();
+            }
+
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Sheet Uploaded!',
+                    text: `"${titleVal}" uploaded successfully!`,
+                    icon: 'success',
+                    confirmButtonColor: '#00ADB5'
+                });
+            } else {
+                alert(`✅ Sheet "${titleVal}" uploaded successfully!`);
+            }
+
+            if (targetStudentId) viewStudentDetails(targetStudentId);
+
+            if (document.getElementById('studentsTableBody')) fetchStudents();
+            if (document.getElementById('recentApplicationsTableBody') || document.getElementById('totalStudentsKpi')) loadCEODashboardData();
+
+        } catch (error) {
+            console.error("Error uploading prep sheet to Firestore:", error);
+            if (alertArea) {
+                alertArea.innerHTML = `<div class="alert alert-danger py-1.5 px-3 small mb-3"><i class="bi bi-exclamation-triangle-fill me-1"></i> Upload failed: ${escapeHtml(error.message)}</div>`;
+            } else {
+                alert('Upload failed: ' + error.message);
+            }
+        } finally {
+            if (uploadBtn) {
+                uploadBtn.disabled = false;
+                uploadBtn.innerHTML = '<i class="bi bi-cloud-upload-fill me-1"></i> Upload Material';
+            }
+        }
+    };
+
+    reader.readAsDataURL(file);
+}
+window.uploadPrepSheet = uploadPrepSheet;
 
 window.updateDetectedRoleUI = updateDetectedRoleUI;
 window.setDemoCredentials = function(email) {

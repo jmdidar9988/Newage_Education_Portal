@@ -160,6 +160,22 @@
                     </div>
                 </section>
 
+                <!-- 3B. SECTION: Interview Preparation Materials Card -->
+                <section id="section-prep-materials" class="card-newage border-0 shadow-sm rounded-4 mb-4">
+                    <div class="card-header bg-dark text-white d-flex align-items-center justify-content-between py-3 px-4 rounded-top-4">
+                        <h5 class="mb-0 text-white fw-bold">
+                            <i class="bi bi-journal-bookmark-fill text-danger me-2"></i>📚 Interview Preparation Materials
+                        </h5>
+                        <span id="prepMaterialsCountBadge" class="badge bg-danger px-2.5 py-1.5 rounded-pill">0 Materials</span>
+                    </div>
+                    <div class="p-4" id="prepMaterialsContent">
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-file-earmark-pdf fs-2 text-secondary d-block mb-2"></i>
+                            <span class="small text-muted">No interview preparation sheets uploaded by your counselor yet.</span>
+                        </div>
+                    </div>
+                </section>
+
                 <!-- 4. SECTION: Document Vault & Verification Checklist Card -->
                 <section id="section-document-uploads" class="card-newage border-0 shadow-sm rounded-4 mb-4">
                     <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-3 px-4 rounded-top-4">
@@ -843,6 +859,55 @@
                                 </thead>
                                 <tbody>${rowsHTML}</tbody>
                             </table>
+                        </div>`;
+                }
+            }
+
+            // Populate Section 3B: Interview Preparation Materials
+            const prepSheets = (data && Array.isArray(data.prepSheets)) ? data.prepSheets : [];
+            const prepContent = document.getElementById('prepMaterialsContent');
+            const prepBadge = document.getElementById('prepMaterialsCountBadge');
+
+            if (prepBadge) prepBadge.innerText = `${prepSheets.length} Material${prepSheets.length === 1 ? '' : 's'}`;
+
+            if (prepContent) {
+                if (prepSheets.length === 0) {
+                    prepContent.innerHTML = `
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-file-earmark-pdf text-warning fs-2 d-block mb-2"></i>
+                            <h6 class="fw-bold text-dark mb-1">No preparation materials uploaded yet.</h6>
+                            <span class="small text-muted">Your counselor will upload custom interview preparation sheets (e.g. Sheet 1, Sheet 2) for you.</span>
+                        </div>`;
+                } else {
+                    const listHTML = prepSheets.map((sheet, index) => {
+                        const title = sheet.title || `Sheet ${index + 1}`;
+                        const url = sheet.url || '#';
+                        const dateStr = sheet.uploadedAt 
+                            ? new Date(sheet.uploadedAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
+                            : 'Recently Uploaded';
+
+                        return `
+                            <div class="col-md-6 col-12">
+                                <div class="border rounded-3 p-3 bg-white shadow-sm h-100 d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center me-2">
+                                        <div class="bg-danger-subtle text-danger p-2.5 rounded-3 me-3">
+                                            <i class="bi bi-file-earmark-pdf-fill fs-4"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="fw-bold text-dark mb-0">${escapeHtml(title)}</h6>
+                                            <small class="text-muted" style="font-size: 0.75rem;"><i class="bi bi-clock me-1"></i>${dateStr}</small>
+                                        </div>
+                                    </div>
+                                    <a href="${escapeHtml(url)}" target="_blank" download="${escapeHtml(title)}.pdf" class="btn btn-sm btn-outline-danger px-3 py-1.5 fw-semibold text-nowrap">
+                                        <i class="bi bi-download me-1"></i> Download PDF
+                                    </a>
+                                </div>
+                            </div>`;
+                    }).join('');
+
+                    prepContent.innerHTML = `
+                        <div class="row g-3">
+                            ${listHTML}
                         </div>`;
                 }
             }
