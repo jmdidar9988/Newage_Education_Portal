@@ -1269,12 +1269,16 @@ function buildApplicationsManagementSection(studentId, student) {
             </tr>`;
     } else {
         rowsHTML = apps.map((app) => {
-            const status = app.status || 'Pending';
+            const status = app.status || 'Pending / Processing';
             const linkHTML = app.course_link 
                 ? `<a href="${escapeHtml(app.course_link)}" target="_blank" rel="noopener noreferrer" class="btn btn-xs btn-outline-primary py-0 px-2 small">
                       <i class="bi bi-box-arrow-up-right me-1"></i>Link
                    </a>`
                 : `<span class="text-muted small fst-italic">—</span>`;
+
+            const selectOptionsHTML = statusOptions.map(opt =>
+                `<option value="${escapeHtml(opt)}" ${status === opt ? 'selected' : ''}>${escapeHtml(opt)}</option>`
+            ).join('');
 
             return `
                 <tr>
@@ -1288,11 +1292,8 @@ function buildApplicationsManagementSection(studentId, student) {
                     </td>
                     <td class="align-middle text-center">${linkHTML}</td>
                     <td class="align-middle">
-                        <select id="appStatusSelect_${app.id}" class="form-select form-select-sm small fw-semibold">
-                            <option value="Pending" ${status === 'Pending' ? 'selected' : ''}>Pending</option>
-                            <option value="Processing" ${status === 'Processing' ? 'selected' : ''}>Processing</option>
-                            <option value="Approved" ${status === 'Approved' ? 'selected' : ''}>Approved</option>
-                            <option value="Rejected" ${status === 'Rejected' ? 'selected' : ''}>Rejected</option>
+                        <select id="appStatusSelect_${app.id}" class="form-select form-select-sm status-dropdown bg-white text-dark border-secondary fw-semibold" style="min-width: 180px;">
+                            ${selectOptionsHTML}
                         </select>
                     </td>
                     <td class="align-middle text-end text-nowrap">
@@ -1306,6 +1307,10 @@ function buildApplicationsManagementSection(studentId, student) {
                 </tr>`;
         }).join('');
     }
+
+    const formOptionsHTML = statusOptions.map(opt =>
+        `<option value="${escapeHtml(opt)}">${escapeHtml(opt)}</option>`
+    ).join('');
 
     return `
         <!-- APPLICATIONS MANAGEMENT SECTION -->
@@ -1337,11 +1342,8 @@ function buildApplicationsManagementSection(studentId, student) {
                         </div>
                         <div class="col-md-2 col-6">
                             <label class="form-label text-muted small mb-1 fw-semibold">Initial Status</label>
-                            <select id="newAppStatus" class="form-select form-select-sm fw-semibold">
-                                <option value="Pending">Pending</option>
-                                <option value="Processing">Processing</option>
-                                <option value="Approved">Approved</option>
-                                <option value="Rejected">Rejected</option>
+                            <select id="newAppStatus" class="form-select form-select-sm fw-semibold bg-white text-dark" style="min-width: 160px;">
+                                ${formOptionsHTML}
                             </select>
                         </div>
                         <div class="col-md-9 col-12">
@@ -1375,6 +1377,93 @@ function buildApplicationsManagementSection(studentId, student) {
                 </div>
             </div>
         </div>`;
+}
+
+/**
+ * Options array for application status
+ */
+const statusOptions = [
+  "Pending / Processing",
+  "Offer letter received",
+  "Applied for unconditional offer letter",
+  "Applied for CAS",
+  "CAS received",
+  "VFS Global Appointment",
+  "Embassy Interview",
+  "UKVI interview",
+  "Visa Success",
+  "Rejected"
+];
+
+/**
+ * Updates status for a specific application in a student's applications array
+ * @param {string} studentId 
+ * @param {string} appId 
+ */
+export async function updateApplicationStatus(studentId, appId) {
+    const selectEl = document.getElementById(`appStatusSelect_${appId}`);
+    const alertArea = document.getElementById('appManagerAlert');
+    if (!selectEl) return;
+    const newStatus = selectEl.value;
+
+    const student = window.loadedStudentsMap ? window.loadedStudentsMap[studentId] : null;
+    if (!student) return;
+
+    const apps = getStudentApplications(student);
+    let updatedCourseName = '';
+    const updatedApps = apps.map(app => {
+        if (app.id === appId) {
+            updatedCourseName = app.course;
+            return { ...app, status: newStatus, statusUpdatedAt: new Date().toISOString() };
+        }
+        return app;
+    });
+
+    try {
+        const studentRef = doc(db, 'students', studentId);
+        await updateDoc(studentRef, {
+            applications: updatedApps,
+            applicationStatus: newStatus,
+            status: newStatus,
+            statusUpdatedAt: new Date().toISOString()
+        });
+
+        student.applications = updatedApps;
+        student.applicationStatus = newStatus;
+        student.status = newStatus;
+
+        console.log(`Updated status of application ${appId} to "${newStatus}" for student ${studentId}`);
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Status Saved!',
+                text: `Status for "${updatedCourseName}" updated to "${newStatus}".`,
+                icon: 'success',
+                confirmButtonColor: '#00ADB5'
+            });
+        } else {
+            alert(`✅ Status for "${updatedCourseName}" updated to "${newStatus}"!`);
+        }
+
+        if (alertArea) {
+            alertArea.innerHTML = `
+                <div class="alert alert-success alert-dismissible fade show py-2 px-3 small mb-3" role="alert">
+                    <i class="bi bi-check-circle-fill me-1"></i> Status for <strong>${escapeHtml(updatedCourseName)}</strong> updated to <strong>${escapeHtml(newStatus)}</strong>!
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>`;
+        }
+
+        if (document.getElementById('studentsTableBody')) fetchStudents();
+        if (document.getElementById('recentApplicationsTableBody') || document.getElementById('totalStudentsKpi')) loadCEODashboardData();
+
+    } catch (error) {
+        console.error("Error updating application status:", error);
+        if (typeof Swal !== 'undefined') {
+            Swal.fire('Error', 'Failed to update status: ' + error.message, 'error');
+        } else {
+            alert('Failed to update status: ' + error.message);
+        }
+    }
 }
 
 /**
@@ -1822,7 +1911,6 @@ export function viewStudentDetails(studentId) {
             </div>
             <div id="profileEditAlert"></div>
 
-            ${buildOverallStatusSection(studentId, student)}
             ${buildApplicationsManagementSection(studentId, student)}
 
             <div class="row g-3" id="personalInfoSection">
