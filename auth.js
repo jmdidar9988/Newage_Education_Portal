@@ -1289,10 +1289,10 @@ function buildApplicationsManagementSection(studentId, student) {
                     <td class="align-middle text-center">${linkHTML}</td>
                     <td class="align-middle">
                         <select id="appStatusSelect_${app.id}" class="form-select form-select-sm small fw-semibold">
-                            <option value="Pending" ${status === 'Pending' ? 'selected' : ''}>⏳ Pending</option>
-                            <option value="Processing" ${status === 'Processing' ? 'selected' : ''}>⚙️ Processing</option>
-                            <option value="Approved" ${status === 'Approved' ? 'selected' : ''}>✅ Approved</option>
-                            <option value="Rejected" ${status === 'Rejected' ? 'selected' : ''}>❌ Rejected</option>
+                            <option value="Pending" ${status === 'Pending' ? 'selected' : ''}>Pending</option>
+                            <option value="Processing" ${status === 'Processing' ? 'selected' : ''}>Processing</option>
+                            <option value="Approved" ${status === 'Approved' ? 'selected' : ''}>Approved</option>
+                            <option value="Rejected" ${status === 'Rejected' ? 'selected' : ''}>Rejected</option>
                         </select>
                     </td>
                     <td class="align-middle text-end text-nowrap">
@@ -1338,10 +1338,10 @@ function buildApplicationsManagementSection(studentId, student) {
                         <div class="col-md-2 col-6">
                             <label class="form-label text-muted small mb-1 fw-semibold">Initial Status</label>
                             <select id="newAppStatus" class="form-select form-select-sm fw-semibold">
-                                <option value="Pending">⏳ Pending</option>
-                                <option value="Processing">⚙️ Processing</option>
-                                <option value="Approved">✅ Approved</option>
-                                <option value="Rejected">❌ Rejected</option>
+                                <option value="Pending">Pending</option>
+                                <option value="Processing">Processing</option>
+                                <option value="Approved">Approved</option>
+                                <option value="Rejected">Rejected</option>
                             </select>
                         </div>
                         <div class="col-md-9 col-12">
