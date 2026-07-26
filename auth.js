@@ -1276,21 +1276,6 @@ function buildApplicationsManagementSection(studentId, student) {
                    </a>`
                 : `<span class="text-muted small fst-italic">—</span>`;
 
-            const selectOptionsHTML = [
-                "Pending / Processing",
-                "Offer letter received",
-                "Applied for unconditional offer letter",
-                "Applied for CAS",
-                "CAS received",
-                "VFS Global Appointment",
-                "Embassy Interview",
-                "UKVI interview",
-                "Visa Success",
-                "Rejected"
-            ].map(opt =>
-                `<option value="${escapeHtml(opt)}" ${status === opt ? 'selected' : ''}>${escapeHtml(opt)}</option>`
-            ).join('');
-
             return `
                 <tr>
                     <td class="align-middle">
@@ -1304,7 +1289,18 @@ function buildApplicationsManagementSection(studentId, student) {
                     <td class="align-middle text-center">${linkHTML}</td>
                     <td class="align-middle">
                         <select id="appStatusSelect_${app.id}" class="form-select form-select-sm status-dropdown bg-white text-dark border-secondary fw-semibold" style="min-width: 180px;">
-                            ${selectOptionsHTML}
+                            ${[
+                                "Pending / Processing",
+                                "Offer letter received",
+                                "Applied for unconditional offer letter",
+                                "Applied for CAS",
+                                "CAS received",
+                                "VFS Global Appointment",
+                                "Embassy Interview",
+                                "UKVI interview",
+                                "Visa Success",
+                                "Rejected"
+                            ].map(opt => `<option value="${escapeHtml(opt)}" ${status === opt ? 'selected' : ''}>${escapeHtml(opt)}</option>`).join('')}
                         </select>
                     </td>
                     <td class="align-middle text-end text-nowrap">
@@ -1318,21 +1314,6 @@ function buildApplicationsManagementSection(studentId, student) {
                 </tr>`;
         }).join('');
     }
-
-    const formOptionsHTML = [
-        "Pending / Processing",
-        "Offer letter received",
-        "Applied for unconditional offer letter",
-        "Applied for CAS",
-        "CAS received",
-        "VFS Global Appointment",
-        "Embassy Interview",
-        "UKVI interview",
-        "Visa Success",
-        "Rejected"
-    ].map(opt =>
-        `<option value="${escapeHtml(opt)}">${escapeHtml(opt)}</option>`
-    ).join('');
 
     return `
         <!-- APPLICATIONS MANAGEMENT SECTION -->
@@ -1365,7 +1346,18 @@ function buildApplicationsManagementSection(studentId, student) {
                         <div class="col-md-2 col-6">
                             <label class="form-label text-muted small mb-1 fw-semibold">Initial Status</label>
                             <select id="newAppStatus" class="form-select form-select-sm fw-semibold bg-white text-dark" style="min-width: 160px;">
-                                ${formOptionsHTML}
+                                ${[
+                                    "Pending / Processing",
+                                    "Offer letter received",
+                                    "Applied for unconditional offer letter",
+                                    "Applied for CAS",
+                                    "CAS received",
+                                    "VFS Global Appointment",
+                                    "Embassy Interview",
+                                    "UKVI interview",
+                                    "Visa Success",
+                                    "Rejected"
+                                ].map(opt => `<option value="${escapeHtml(opt)}">${escapeHtml(opt)}</option>`).join('')}
                             </select>
                         </div>
                         <div class="col-md-9 col-12">
