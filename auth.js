@@ -2297,7 +2297,8 @@ export async function uploadPrepSheet(studentId) {
         try {
             const studentRef = doc(db, 'students', targetStudentId);
             await updateDoc(studentRef, {
-                prepSheets: arrayUnion(newSheetPayload)
+                prepSheets: arrayUnion(newSheetPayload),
+                hasUnreadMaterials: true
             });
 
             // Update local memory map
@@ -2305,6 +2306,7 @@ export async function uploadPrepSheet(studentId) {
             if (student) {
                 if (!Array.isArray(student.prepSheets)) student.prepSheets = [];
                 student.prepSheets.push(newSheetPayload);
+                student.hasUnreadMaterials = true;
             }
 
             console.log(`Successfully uploaded prep sheet "${titleVal}" for student ${targetStudentId}`);

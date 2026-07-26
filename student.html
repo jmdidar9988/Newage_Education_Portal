@@ -165,8 +165,12 @@
                     <button class="btn btn-outline-danger px-4 py-2.5 fw-bold floating-btn" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDocuments" aria-expanded="false" aria-controls="collapseDocuments">
                         <i class="bi bi-folder2-open me-2"></i>📁 My Documents
                     </button>
-                    <button class="btn btn-outline-danger px-4 py-2.5 fw-bold floating-btn" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMaterials" aria-expanded="false" aria-controls="collapseMaterials">
+                    <button class="btn btn-outline-danger px-4 py-2.5 fw-bold floating-btn position-relative" id="btnInterviewMaterials" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMaterials" aria-expanded="false" aria-controls="collapseMaterials" onclick="clearUnreadMaterialsNotification()">
                         <i class="bi bi-journal-bookmark-fill me-2"></i>📚 Interview Materials
+                        <span id="materialsBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none" style="font-size: 0.65rem; z-index: 5;">
+                            New
+                            <span class="visually-hidden">unread materials</span>
+                        </span>
                     </button>
                 </div>
 
@@ -655,6 +659,24 @@
             }
         };
 
+        // ── Handler: Clear Unread Interview Materials Notification ─────────
+        window.clearUnreadMaterialsNotification = async function() {
+            const badge = document.getElementById('materialsBadge');
+            if (badge && !badge.classList.contains('d-none')) {
+                badge.classList.add('d-none');
+                if (studentDocId) {
+                    try {
+                        const studentRef = doc(db, 'students', studentDocId);
+                        await updateDoc(studentRef, { hasUnreadMaterials: false });
+                        if (currentStudentData) currentStudentData.hasUnreadMaterials = false;
+                        console.log("Cleared hasUnreadMaterials notification flag for student:", studentDocId);
+                    } catch (e) {
+                        console.warn("Notice clearing hasUnreadMaterials flag:", e);
+                    }
+                }
+            }
+        };
+
         // ── Helper: Render Student Messages & Support Chat ─────────────────
         function renderStudentChat(messages) {
             const chatBox = document.getElementById('studentChatHistory');
@@ -894,6 +916,14 @@
             const prepBadge = document.getElementById('prepMaterialsCountBadge');
 
             if (prepBadge) prepBadge.innerText = `${prepSheets.length} Material${prepSheets.length === 1 ? '' : 's'}`;
+
+            // Check unread interview materials notification flag
+            const materialsBadge = document.getElementById('materialsBadge');
+            if (data?.hasUnreadMaterials) {
+                if (materialsBadge) materialsBadge.classList.remove('d-none');
+            } else {
+                if (materialsBadge) materialsBadge.classList.add('d-none');
+            }
 
             if (prepContent) {
                 if (prepSheets.length === 0) {
