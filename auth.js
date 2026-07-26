@@ -3,19 +3,19 @@
 
 import { initializeApp, getApp, getApps } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
-import { 
-    getAuth, 
-    createUserWithEmailAndPassword, 
+import {
+    getAuth,
+    createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
     onAuthStateChanged,
     signOut,
     sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-import { 
-    getFirestore, 
-    collection, 
-    addDoc, 
+import {
+    getFirestore,
+    collection,
+    addDoc,
     getDocs,
     getDoc,
     query,
@@ -29,19 +29,19 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 // Safety fallback for deprecated overall status update
-window.updateOverallApplicationStatus = function() {
+window.updateOverallApplicationStatus = function () {
     console.warn("Ignored: Deprecated overall status update called.");
 };
 
 // Firebase configuration provided by user
 const firebaseConfig = {
-  apiKey: "AIzaSyDVawQFjahyoHtE1aDzomcO9EsYmJ3c8fw",
-  authDomain: "newage-web.firebaseapp.com",
-  projectId: "newage-web",
-  storageBucket: "newage-web.firebasestorage.app",
-  messagingSenderId: "970795032563",
-  appId: "1:970795032563:web:1fa36e6b6ea4c943ebbc86",
-  measurementId: "G-17R34MNL2Q"
+    apiKey: "AIzaSyDVawQFjahyoHtE1aDzomcO9EsYmJ3c8fw",
+    authDomain: "newage-web.firebaseapp.com",
+    projectId: "newage-web",
+    storageBucket: "newage-web.firebasestorage.app",
+    messagingSenderId: "970795032563",
+    appId: "1:970795032563:web:1fa36e6b6ea4c943ebbc86",
+    measurementId: "G-17R34MNL2Q"
 };
 
 // Initialize Firebase App
@@ -57,17 +57,17 @@ try {
 // Initialize Auth and Firestore
 export const auth = getAuth(app);
 export const db = getFirestore(app);
-export { 
-    onAuthStateChanged, 
-    signOut, 
-    collection, 
-    addDoc, 
-    getDocs, 
-    query, 
-    where, 
-    orderBy, 
-    doc, 
-    updateDoc, 
+export {
+    onAuthStateChanged,
+    signOut,
+    collection,
+    addDoc,
+    getDocs,
+    query,
+    where,
+    orderBy,
+    doc,
+    updateDoc,
     serverTimestamp,
     arrayUnion
 };
@@ -124,7 +124,7 @@ export function updateDetectedRoleUI() {
     const email = document.getElementById('emailInput')?.value || '';
     const role = getRoleFromEmail(email);
     const badge = document.getElementById('detectedRoleBadge');
-    
+
     if (badge) {
         if (role === 'CEO') {
             badge.className = 'badge bg-danger fs-6 px-3 py-1';
@@ -814,11 +814,11 @@ export async function fetchStudents() {
             const fullName = data.personalInfo?.fullName || 'N/A';
             const email = data.personalInfo?.email || 'N/A';
             const phone = data.personalInfo?.contactNo || 'N/A';
-            const primaryCountry = (data.preferences?.countryChoices && data.preferences.countryChoices.length > 0) 
-                ? data.preferences.countryChoices[0] 
+            const primaryCountry = (data.preferences?.countryChoices && data.preferences.countryChoices.length > 0)
+                ? data.preferences.countryChoices[0]
                 : 'N/A';
-            const primaryCourse = (data.preferences?.courseChoices && data.preferences.courseChoices.length > 0) 
-                ? data.preferences.courseChoices[0] 
+            const primaryCourse = (data.preferences?.courseChoices && data.preferences.courseChoices.length > 0)
+                ? data.preferences.courseChoices[0]
                 : 'N/A';
 
             const unread = hasUnreadStudentMessages(data);
@@ -1074,17 +1074,17 @@ function buildDocumentsSection(studentData, studentId) {
     console.log("Building Documents Section for studentData:", studentData);
 
     const DOC_TYPES = [
-        { key: 'ssc_certificate',       label: 'SSC Certificate' },
-        { key: 'ssc_marksheet',         label: 'SSC Marksheet / Transcript' },
-        { key: 'hsc_certificate',       label: 'HSC Certificate' },
-        { key: 'hsc_marksheet',         label: 'HSC Marksheet / Transcript' },
+        { key: 'ssc_certificate', label: 'SSC Certificate' },
+        { key: 'ssc_marksheet', label: 'SSC Marksheet / Transcript' },
+        { key: 'hsc_certificate', label: 'HSC Certificate' },
+        { key: 'hsc_marksheet', label: 'HSC Marksheet / Transcript' },
         { key: 'recommendation_letter', label: 'Recommendation Letter' },
-        { key: 'passport',              label: 'Passport' },
-        { key: 'student_nid',           label: 'Student NID' },
-        { key: 'cv',                    label: 'CV / Resume' },
-        { key: 'sop',                   label: 'SOP (Statement of Purpose)' },
-        { key: 'bank_statement',        label: 'Bank Statement' },
-        { key: 'other_documents',       label: 'Other Documents' },
+        { key: 'passport', label: 'Passport' },
+        { key: 'student_nid', label: 'Student NID' },
+        { key: 'cv', label: 'CV / Resume' },
+        { key: 'sop', label: 'SOP (Statement of Purpose)' },
+        { key: 'bank_statement', label: 'Bank Statement' },
+        { key: 'other_documents', label: 'Other Documents' },
     ];
 
     const docs = studentData ? (studentData.documents || {}) : {};
@@ -1227,12 +1227,12 @@ export async function approveDocument(studentId, docKey) {
  */
 function getStudentApplications(student) {
     if (!student) return [];
-    
+
     // 1. Return explicit applications array if present
     if (Array.isArray(student.applications) && student.applications.length > 0) {
         return student.applications;
     }
-    
+
     // 2. Fallback: Generate initial application objects from legacy preferences
     const apps = [];
     const courses = student.preferences?.courseChoices || [];
@@ -1279,7 +1279,7 @@ function buildApplicationsManagementSection(studentId, student) {
     } else {
         rowsHTML = apps.map((app) => {
             const status = app.status || 'Pending / Processing';
-            const linkHTML = app.course_link 
+            const linkHTML = app.course_link
                 ? `<a href="${escapeHtml(app.course_link)}" target="_blank" rel="noopener noreferrer" class="btn btn-xs btn-outline-primary py-0 px-2 small">
                       <i class="bi bi-box-arrow-up-right me-1"></i>Link
                    </a>`
@@ -1299,17 +1299,17 @@ function buildApplicationsManagementSection(studentId, student) {
                     <td class="align-middle">
                         <select id="appStatusSelect_${app.id}" class="form-select form-select-sm status-dropdown bg-white text-dark border-secondary fw-semibold" style="min-width: 180px;">
                             ${[
-                                "Pending / Processing",
-                                "Offer letter received",
-                                "Applied for unconditional offer letter",
-                                "Applied for CAS",
-                                "CAS received",
-                                "VFS Global Appointment",
-                                "Embassy Interview",
-                                "UKVI interview",
-                                "Visa Success",
-                                "Rejected"
-                            ].map(opt => `<option value="${escapeHtml(opt)}" ${status === opt ? 'selected' : ''}>${escapeHtml(opt)}</option>`).join('')}
+                    "Pending / Processing",
+                    "Offer letter received",
+                    "Applied for unconditional offer letter",
+                    "Applied for CAS",
+                    "CAS received",
+                    "VFS Global Appointment",
+                    "Embassy Interview",
+                    "UKVI interview",
+                    "Visa Success",
+                    "Rejected"
+                ].map(opt => `<option value="${escapeHtml(opt)}" ${status === opt ? 'selected' : ''}>${escapeHtml(opt)}</option>`).join('')}
                         </select>
                     </td>
                     <td class="align-middle text-end text-nowrap">
@@ -1356,17 +1356,17 @@ function buildApplicationsManagementSection(studentId, student) {
                             <label class="form-label text-muted small mb-1 fw-semibold">Initial Status</label>
                             <select id="newAppStatus" class="form-select form-select-sm fw-semibold bg-white text-dark" style="min-width: 160px;">
                                 ${[
-                                    "Pending / Processing",
-                                    "Offer letter received",
-                                    "Applied for unconditional offer letter",
-                                    "Applied for CAS",
-                                    "CAS received",
-                                    "VFS Global Appointment",
-                                    "Embassy Interview",
-                                    "UKVI interview",
-                                    "Visa Success",
-                                    "Rejected"
-                                ].map(opt => `<option value="${escapeHtml(opt)}">${escapeHtml(opt)}</option>`).join('')}
+            "Pending / Processing",
+            "Offer letter received",
+            "Applied for unconditional offer letter",
+            "Applied for CAS",
+            "CAS received",
+            "VFS Global Appointment",
+            "Embassy Interview",
+            "UKVI interview",
+            "Visa Success",
+            "Rejected"
+        ].map(opt => `<option value="${escapeHtml(opt)}">${escapeHtml(opt)}</option>`).join('')}
                             </select>
                         </div>
                         <div class="col-md-9 col-12">
@@ -1401,10 +1401,10 @@ function buildApplicationsManagementSection(studentId, student) {
 
                 <!-- Interview Preparation Sheets Section -->
                 ${(() => {
-                    const prepSheets = (student && Array.isArray(student.prepSheets)) ? student.prepSheets : [];
-                    const prepRows = prepSheets.length === 0
-                        ? `<tr><td colspan="3" class="text-center text-muted py-2">No interview preparation materials uploaded yet.</td></tr>`
-                        : prepSheets.map(s => `
+            const prepSheets = (student && Array.isArray(student.prepSheets)) ? student.prepSheets : [];
+            const prepRows = prepSheets.length === 0
+                ? `<tr><td colspan="3" class="text-center text-muted py-2">No interview preparation materials uploaded yet.</td></tr>`
+                : prepSheets.map(s => `
                             <tr>
                                 <td class="fw-bold text-dark"><i class="bi bi-file-earmark-pdf-fill text-danger me-1"></i>${escapeHtml(s.title || 'Prep Sheet')}</td>
                                 <td class="small text-muted">${s.uploadedAt ? new Date(s.uploadedAt).toLocaleDateString() : 'Recent'}</td>
@@ -1416,7 +1416,7 @@ function buildApplicationsManagementSection(studentId, student) {
                             </tr>
                         `).join('');
 
-                    return `
+            return `
                         <div class="card border-danger-subtle bg-white shadow-sm">
                             <div class="card-body p-3">
                                 <div class="d-flex align-items-center justify-content-between mb-2">
@@ -1439,7 +1439,7 @@ function buildApplicationsManagementSection(studentId, student) {
                                 </div>
                             </div>
                         </div>`;
-                })()}
+        })()}
             </div>
         </div>`;
 }
@@ -1573,7 +1573,7 @@ export function viewStudentDetails(studentId) {
     const modalBody = document.getElementById('studentDetailModalBody');
 
     if (modalTitle) modalTitle.innerText = `Record: ${student.personalInfo?.fullName || 'Student Details'}`;
-    
+
     if (modalBody) {
         modalBody.innerHTML = `
             <div class="d-flex justify-content-between align-items-center mb-3" id="editProfileBar">
@@ -1796,7 +1796,7 @@ export async function saveProfileChanges(studentId) {
 
     const saveBtn = document.getElementById('saveProfileBtn');
     const alertArea = document.getElementById('profileEditAlert');
-    
+
     if (saveBtn) {
         saveBtn.disabled = true;
         saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
@@ -2083,7 +2083,7 @@ window.saveStudentApplication = saveStudentApplication;
 window.fetchStudents = fetchStudents;
 window.loadCEODashboardData = loadCEODashboardData;
 window.viewStudentDetails = viewStudentDetails;
-window.updateApplicationStatus = async function(studentId, courseNameOrAppId, newStatusParam) {
+window.updateApplicationStatus = async function (studentId, courseNameOrAppId, newStatusParam) {
     console.log("Updating status in Firestore:", studentId, courseNameOrAppId, newStatusParam);
     const selectEl = document.getElementById(`appStatusSelect_${courseNameOrAppId}`);
     const newStatus = newStatusParam || (selectEl ? selectEl.value : null);
@@ -2168,7 +2168,7 @@ window.toggleEditMode = toggleEditMode;
 window.saveProfileChanges = saveProfileChanges;
 window.approveDocument = approveDocument;
 
-window.sendConsultantReply = async function(studentId) {
+window.sendConsultantReply = async function (studentId) {
     console.log("sendConsultantReply triggered for student:", studentId);
     const inputEl = document.getElementById(`modalChatInput_${studentId}`);
     const alertEl = document.getElementById(`modalChatAlert_${studentId}`);
@@ -2215,14 +2215,14 @@ window.sendConsultantReply = async function(studentId) {
     }
 };
 
-window.openStudentChat = function(studentId) {
+window.openStudentChat = function (studentId) {
     console.log("openStudentChat triggered for student:", studentId);
     if (typeof viewStudentDetails === 'function') {
         viewStudentDetails(studentId);
     }
 };
 
-window.markMessagesAsRead = function(studentId) {
+window.markMessagesAsRead = function (studentId) {
     console.log("markMessagesAsRead triggered for student:", studentId);
 };
 
@@ -2284,7 +2284,7 @@ export async function uploadPrepSheet(studentId) {
     }
 
     const reader = new FileReader();
-    reader.onload = async function(e) {
+    reader.onload = async function (e) {
         const fileUrl = e.target.result;
 
         const newSheetPayload = {
@@ -2356,7 +2356,7 @@ export async function uploadPrepSheet(studentId) {
 window.uploadPrepSheet = uploadPrepSheet;
 
 window.updateDetectedRoleUI = updateDetectedRoleUI;
-window.setDemoCredentials = function(email) {
+window.setDemoCredentials = function (email) {
     const emailInput = document.getElementById('emailInput');
     if (emailInput) {
         emailInput.value = email;
