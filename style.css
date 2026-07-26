@@ -926,3 +926,17 @@ select.form-select option,
     font-weight: 500 !important;
 }
 
+/* Dynamic Text Contrast Helper Classes */
+.dynamic-text {
+    color: var(--text-main) !important;
+}
+
+.dynamic-text-muted {
+    color: var(--text-muted) !important;
+}
+
+.dynamic-header-text {
+    color: var(--card-header-text) !important;
+}
+
+

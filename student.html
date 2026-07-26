@@ -85,14 +85,14 @@
 
                 <!-- 1.5 SECTION: Prominent Current Application Lifecycle Status Banner -->
                 <section id="section-overall-status-banner" class="card-newage border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
-                    <div class="p-4 bg-navy text-white d-flex flex-wrap align-items-center justify-content-between gap-3">
+                    <div class="p-4 bg-navy d-flex flex-wrap align-items-center justify-content-between gap-3">
                         <div class="d-flex align-items-center gap-3">
-                            <div class="rounded-circle bg-white bg-opacity-10 p-3 fs-2 text-accent d-flex align-items-center justify-content-center" style="width: 56px; height: 56px;">
+                            <div class="rounded-circle bg-danger bg-opacity-10 p-3 fs-2 text-danger d-flex align-items-center justify-content-center" style="width: 56px; height: 56px;">
                                 <i class="bi bi-compass-fill"></i>
                             </div>
                             <div>
-                                <small class="text-white-50 text-uppercase tracking-wider fw-semibold d-block">Current Application Status</small>
-                                <h4 class="mb-0 fw-bold text-white" id="overallStatusTitle">Pending / Processing</h4>
+                                <small class="dynamic-text-muted text-uppercase tracking-wider fw-semibold d-block">Current Application Status</small>
+                                <h4 class="mb-0 fw-bold dynamic-text" id="overallStatusTitle">Pending / Processing</h4>
                             </div>
                         </div>
                         <span id="overallStatusBadge" class="badge px-3.5 py-2 fs-6 rounded-pill shadow-sm">
@@ -103,8 +103,8 @@
 
                 <!-- 2. SECTION: My Information & Candidate Record Card -->
                 <section id="section-my-information" class="card-newage border-0 shadow-sm rounded-4 mb-4">
-                    <div class="card-header bg-dark text-white d-flex align-items-center justify-content-between py-3 px-4 rounded-top-4">
-                        <h5 class="mb-0 text-white fw-bold">
+                    <div class="card-header d-flex align-items-center justify-content-between py-3 px-4 rounded-top-4">
+                        <h5 class="mb-0 dynamic-header-text fw-bold">
                             <i class="bi bi-person-badge-fill text-danger me-2"></i>My Information &amp; Candidate Record
                         </h5>
                         <span class="badge bg-danger px-2.5 py-1.5 rounded-pill">Candidate Profile</span>
@@ -115,27 +115,27 @@
                                 <div class="bg-danger text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3 shadow-sm" style="width: 84px; height: 84px; font-size: 2.2rem;" id="profileAvatar">
                                     <span class="spinner-border spinner-border-sm"></span>
                                 </div>
-                                <h5 class="mb-1 fw-bold text-dark" id="profileName">Loading...</h5>
-                                <p class="text-muted small mb-2"><i class="bi bi-envelope me-1"></i> <span id="profileEmail">...</span></p>
+                                <h5 class="mb-1 fw-bold dynamic-text" id="profileName">Loading...</h5>
+                                <p class="dynamic-text-muted small mb-2"><i class="bi bi-envelope me-1"></i> <span id="profileEmail" class="dynamic-text-muted">...</span></p>
                                 <span id="profileStatusBadge" class="badge bg-warning text-dark px-3 py-1.5 rounded-pill mb-2"><i class="bi bi-clock-history me-1"></i>Pending</span>
                             </div>
                             <div class="col-md-8 ps-md-4">
                                 <div class="row g-3">
                                     <div class="col-sm-6">
                                         <div class="p-3 bg-light rounded-3 border">
-                                            <small class="text-muted d-block mb-1">Highest Qualification</small>
-                                            <strong class="text-dark" id="profileQualification">—</strong>
+                                            <small class="dynamic-text-muted d-block mb-1">Highest Qualification</small>
+                                            <strong class="dynamic-text" id="profileQualification">—</strong>
                                         </div>
                                     </div>
                                     <div class="col-sm-6">
                                         <div class="p-3 bg-light rounded-3 border">
-                                            <small class="text-muted d-block mb-1">Assigned Counselor</small>
+                                            <small class="dynamic-text-muted d-block mb-1">Assigned Counselor</small>
                                             <strong class="text-danger" id="profileCounselor">—</strong>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="d-flex flex-wrap gap-2 mt-4">
-                                    <button class="btn btn-dark btn-sm py-2 px-3 fw-semibold rounded-3" data-bs-toggle="modal" data-bs-target="#viewInfoModal">
+                                    <button class="btn btn-outline-danger btn-sm py-2 px-3 fw-semibold rounded-3" data-bs-toggle="modal" data-bs-target="#viewInfoModal">
                                         <i class="bi bi-file-person me-1"></i> View Detailed Record
                                     </button>
                                 </div>
@@ -146,8 +146,8 @@
 
                 <!-- 3. SECTION: Applied Courses & Application Trackers Card -->
                 <section id="section-added-applications" class="card-newage border-0 shadow-sm rounded-4 mb-4">
-                    <div class="card-header bg-dark text-white d-flex align-items-center justify-content-between py-3 px-4 rounded-top-4">
-                        <h5 class="mb-0 text-white fw-bold">
+                    <div class="card-header d-flex align-items-center justify-content-between py-3 px-4 rounded-top-4">
+                        <h5 class="mb-0 dynamic-header-text fw-bold">
                             <i class="bi bi-mortarboard-fill text-danger me-2"></i>My Applied Courses &amp; Trackers
                         </h5>
                         <span class="badge bg-danger px-2.5 py-1.5 rounded-pill">Real-time Tracker</span>
@@ -162,8 +162,8 @@
 
                 <!-- 3B. SECTION: Interview Preparation Materials Card -->
                 <section id="section-prep-materials" class="card-newage border-0 shadow-sm rounded-4 mb-4">
-                    <div class="card-header bg-dark text-white d-flex align-items-center justify-content-between py-3 px-4 rounded-top-4">
-                        <h5 class="mb-0 text-white fw-bold">
+                    <div class="card-header d-flex align-items-center justify-content-between py-3 px-4 rounded-top-4">
+                        <h5 class="mb-0 dynamic-header-text fw-bold">
                             <i class="bi bi-journal-bookmark-fill text-danger me-2"></i>📚 Interview Preparation Materials
                         </h5>
                         <span id="prepMaterialsCountBadge" class="badge bg-danger px-2.5 py-1.5 rounded-pill">0 Materials</span>
@@ -178,8 +178,8 @@
 
                 <!-- 4. SECTION: Document Vault & Verification Checklist Card -->
                 <section id="section-document-uploads" class="card-newage border-0 shadow-sm rounded-4 mb-4">
-                    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-3 px-4 rounded-top-4">
-                        <h5 class="mb-0 text-white fw-bold"><i class="bi bi-folder2-open me-2 text-danger"></i>Documents</h5>
+                    <div class="card-header d-flex justify-content-between align-items-center py-3 px-4 rounded-top-4">
+                        <h5 class="mb-0 dynamic-header-text fw-bold"><i class="bi bi-folder2-open me-2 text-danger"></i>Documents</h5>
                         <span class="badge bg-danger px-2.5 py-1.5 rounded-pill">Document Storage</span>
                     </div>
                     <div class="p-4" id="uploadWorkspaceContent">
@@ -328,8 +328,8 @@
 
                 <!-- Dedicated Chat Widget Card -->
                 <div class="card-newage border-0 shadow-sm rounded-4 mb-4 sticky-lg-top" style="top: 1.5rem; z-index: 100;">
-                    <div class="card-header bg-dark text-white d-flex align-items-center justify-content-between py-3 px-4 rounded-top-4">
-                        <h5 class="mb-0 text-white fw-bold">
+                    <div class="card-header d-flex align-items-center justify-content-between py-3 px-4 rounded-top-4">
+                        <h5 class="mb-0 dynamic-header-text fw-bold">
                             <i class="bi bi-chat-left-text-fill text-danger me-2"></i>Chat Support
                             <span id="studentChatUnreadBadge" class="badge bg-danger rounded-pill d-none ms-1">New</span>
                         </h5>
