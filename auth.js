@@ -2108,9 +2108,65 @@ window.updateApplicationStatus = async function(studentId, courseNameOrAppId, ne
 window.toggleEditMode = toggleEditMode;
 window.saveProfileChanges = saveProfileChanges;
 window.approveDocument = approveDocument;
-window.sendConsultantReply = sendConsultantReply;
-window.openStudentChat = openStudentChat;
-window.markMessagesAsRead = markMessagesAsRead;
+
+window.sendConsultantReply = async function(studentId) {
+    console.log("sendConsultantReply triggered for student:", studentId);
+    const inputEl = document.getElementById(`modalChatInput_${studentId}`);
+    const alertEl = document.getElementById(`modalChatAlert_${studentId}`);
+    if (!inputEl) return;
+    const text = inputEl.value.trim();
+    if (!text) {
+        alert('Please enter a message before replying.');
+        return;
+    }
+
+    const student = window.loadedStudentsMap ? window.loadedStudentsMap[studentId] : null;
+    if (!student) return;
+
+    const newMsg = {
+        id: 'msg_' + Date.now(),
+        sender: 'Consultant',
+        text: text,
+        timestamp: new Date().toISOString(),
+        isRead: false
+    };
+
+    try {
+        const studentRef = doc(db, 'students', studentId);
+        await updateDoc(studentRef, {
+            messages: arrayUnion(newMsg)
+        });
+
+        if (!Array.isArray(student.messages)) student.messages = [];
+        student.messages.push(newMsg);
+
+        console.log(`Consultant reply sent to student ${studentId}:`, newMsg);
+        viewStudentDetails(studentId);
+
+        setTimeout(() => {
+            const chatBox = document.getElementById(`modalChatHistory_${studentId}`);
+            if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+        }, 100);
+
+    } catch (error) {
+        console.error("Error sending consultant reply:", error);
+        if (alertEl) {
+            alertEl.innerHTML = `<div class="alert alert-danger py-1 px-2 small mb-2"><i class="bi bi-exclamation-triangle-fill me-1"></i> Failed to send: ${escapeHtml(error.message)}</div>`;
+        }
+    }
+};
+
+window.openStudentChat = function(studentId) {
+    console.log("openStudentChat triggered for student:", studentId);
+    if (typeof viewStudentDetails === 'function') {
+        viewStudentDetails(studentId);
+    }
+};
+
+window.markMessagesAsRead = function(studentId) {
+    console.log("markMessagesAsRead triggered for student:", studentId);
+};
+
 window.updateDetectedRoleUI = updateDetectedRoleUI;
 window.setDemoCredentials = function(email) {
     const emailInput = document.getElementById('emailInput');
