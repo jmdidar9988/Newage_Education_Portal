@@ -12,54 +12,74 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <!-- Custom CSS -->
     <link rel="stylesheet" href="style.css">
-    <!-- Floating Overlay Panel Styles -->
+    <!-- Pop-Out Overlay Panel Styles -->
     <style id="neo-floating-styles">
-      /* Floating Buttons */
+      /* Base Buttons */
       .neo-btn {
-        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+        transition: all 0.3s ease !important;
         border-radius: 30px !important;
       }
-      .neo-btn.active-btn {
-        transform: translateY(-5px) !important;
-        box-shadow: 0 10px 20px rgba(230, 57, 70, 0.4) !important;
-        background-color: var(--accent-primary, #E63946) !important;
-        color: white !important;
-        border-color: var(--accent-primary, #E63946) !important;
-      }
       
-      /* The Overlay Wrapper */
-      .neo-overlay-wrapper {
+      /* Master Wrapper to hold both buttons and overlay panels */
+      .neo-master-wrapper {
         position: relative;
         width: 100%;
-        z-index: 1050; /* Ensures it floats ABOVE the trackers/footer */
       }
-      
-      /* The Panels (Hidden state - sunk down) */
+
+      /* The Panels */
       .neo-panel-container {
         position: absolute;
-        top: 10px;
+        top: -20px; /* Pulls the panel UP to cover the buttons */
         left: 0;
         width: 100%;
+        z-index: 1100; /* High z-index to cover everything */
         opacity: 0;
         visibility: hidden;
-        transform: translateY(40px); /* Starts 40px below */
+        /* Starts small and slightly higher up to look like it's inside the button */
+        transform: scale(0.8) translateY(-30px); 
+        transform-origin: top center;
         transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
       }
       
-      /* The Panels (Active state - floated up) */
+      /* Active Panel - Zooms out and covers */
       .neo-panel-container.active-panel {
         opacity: 1;
         visibility: visible;
-        transform: translateY(0); /* Floats UP to position */
+        transform: scale(1) translateY(0);
       }
       
       .neo-card {
-        box-shadow: 0 25px 50px rgba(0,0,0,0.15) !important;
+        box-shadow: 0 25px 50px rgba(0,0,0,0.2) !important;
         border-radius: 16px !important;
         border: 1px solid rgba(0,0,0,0.05) !important;
         background: #ffffff;
-        max-height: 70vh;
-        overflow-y: auto; /* Allows scrolling inside the floating panel if content is long */
+        max-height: 75vh;
+        overflow-y: auto;
+      }
+
+      /* Close Button Custom CSS */
+      .btn-close-neo {
+        position: absolute;
+        top: 15px;
+        right: 20px;
+        background-color: rgba(230, 57, 70, 0.1);
+        color: #E63946;
+        border: none;
+        border-radius: 50%;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        cursor: pointer;
+        z-index: 1200;
+        transition: all 0.2s;
+      }
+      .btn-close-neo:hover {
+        background-color: #E63946;
+        color: white;
+        transform: rotate(90deg);
       }
     </style>
     <!-- Firebase App (modular CDN) -->
@@ -194,188 +214,192 @@
                     </div>
                 </section>
 
-                <!-- Floating Buttons -->
-                <div class="d-flex justify-content-center gap-3 mb-4">
-                  <button class="btn btn-outline-danger px-4 py-2 neo-btn" id="btnDocs" onclick="switchNeoPanel('docs')">
-                    📁 My Documents
-                  </button>
-                  <button class="btn btn-outline-danger px-4 py-2 neo-btn position-relative" id="btnMats" onclick="switchNeoPanel('mats'); clearUnreadMaterialsNotification();">
-                    📚 Interview Materials
-                    <span id="materialsBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none" style="font-size: 0.65rem; z-index: 5;">
-                      New
-                      <span class="visually-hidden">unread materials</span>
-                    </span>
-                  </button>
-                </div>
+                <!-- MASTER WRAPPER -->
+                <div class="neo-master-wrapper mb-4">
 
-                <!-- Overlay Wrapper (Crucial for floating above content) -->
-                <div class="neo-overlay-wrapper">
+                  <!-- Trigger Buttons -->
+                  <div class="d-flex justify-content-center gap-3 mb-4">
+                    <button class="btn btn-outline-danger px-4 py-2 neo-btn" id="btnDocs" onclick="openNeoPanel('docs')">
+                      📁 My Documents
+                    </button>
+                    <button class="btn btn-outline-danger px-4 py-2 neo-btn position-relative" id="btnMats" onclick="openNeoPanel('mats'); clearUnreadMaterialsNotification();">
+                      📚 Interview Materials
+                      <span id="materialsBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none" style="font-size: 0.65rem; z-index: 5;">
+                        New
+                        <span class="visually-hidden">unread materials</span>
+                      </span>
+                    </button>
+                  </div>
 
+                  <!-- Overlay Panels -->
                   <div id="panelDocs" class="neo-panel-container">
-                     <div class="card neo-card card-body p-0 overflow-hidden mb-4">
-                         <section id="section-document-uploads" class="card-newage border-0 mb-0">
-                             <div class="card-header d-flex justify-content-between align-items-center py-3 px-4 rounded-top-4">
-                                 <h5 class="mb-0 dynamic-header-text fw-bold"><i class="bi bi-folder2-open me-2 text-danger"></i>Documents Vault &amp; Verification Checklist</h5>
-                                 <span class="badge bg-danger px-2.5 py-1.5 rounded-pill">Document Storage</span>
-                             </div>
-                             <div class="p-4" id="uploadWorkspaceContent">
-                                 <p class="text-muted small mb-3">Upload clear PDF scans or image files of the required documents below. Uploaded documents automatically enter Pending review status.</p>
-                                 
-                                 <div class="table-responsive rounded-3 border bg-white mb-3" style="max-height: 480px; overflow-y: auto;">
-                                     <table class="table table-hover align-middle mb-0 small">
-                                         <thead class="table-light sticky-top">
-                                             <tr>
-                                                 <th>Document Type</th>
-                                                 <th style="width: 45%;">Select File</th>
-                                                 <th class="text-center" style="width: 30%;">Status &amp; Verification</th>
-                                             </tr>
-                                         </thead>
-                                         <tbody>
-                                             <!-- Row 1 -->
-                                             <tr class="doc-upload-row" data-doc-type="ssc_certificate">
-                                                 <td class="small fw-semibold">SSC Certificate</td>
-                                                 <td>
-                                                     <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
-                                                 </td>
-                                                 <td class="text-center status-col">
-                                                     <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
-                                                 </td>
-                                             </tr>
-                                             <!-- Row 2 -->
-                                             <tr class="doc-upload-row" data-doc-type="ssc_marksheet">
-                                                 <td class="small fw-semibold">SSC Marksheet</td>
-                                                 <td>
-                                                     <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
-                                                 </td>
-                                                 <td class="text-center status-col">
-                                                     <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
-                                                 </td>
-                                             </tr>
-                                             <!-- Row 3 -->
-                                             <tr class="doc-upload-row" data-doc-type="hsc_certificate">
-                                                 <td class="small fw-semibold">HSC Certificate</td>
-                                                 <td>
-                                                     <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
-                                                 </td>
-                                                 <td class="text-center status-col">
-                                                     <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
-                                                 </td>
-                                             </tr>
-                                             <!-- Row 4 -->
-                                             <tr class="doc-upload-row" data-doc-type="hsc_marksheet">
-                                                 <td class="small fw-semibold">HSC Marksheet</td>
-                                                 <td>
-                                                     <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
-                                                 </td>
-                                                 <td class="text-center status-col">
-                                                     <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
-                                                 </td>
-                                             </tr>
-                                             <!-- Row 5 -->
-                                             <tr class="doc-upload-row" data-doc-type="recommendation_letter">
-                                                 <td class="small fw-semibold">Recommendation Letter (2 Copies)</td>
-                                                 <td>
-                                                     <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
-                                                 </td>
-                                                 <td class="text-center status-col">
-                                                     <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
-                                                 </td>
-                                             </tr>
-                                             <!-- Row 6 -->
-                                             <tr class="doc-upload-row" data-doc-type="passport">
-                                                 <td class="small fw-semibold">Passport</td>
-                                                 <td>
-                                                     <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
-                                                 </td>
-                                                 <td class="text-center status-col">
-                                                     <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
-                                                 </td>
-                                             </tr>
-                                             <!-- Row 7 -->
-                                             <tr class="doc-upload-row" data-doc-type="student_nid">
-                                                 <td class="small fw-semibold">Student NID</td>
-                                                 <td>
-                                                     <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
-                                                 </td>
-                                                 <td class="text-center status-col">
-                                                     <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
-                                                 </td>
-                                             </tr>
-                                             <!-- Row 8 -->
-                                             <tr class="doc-upload-row" data-doc-type="cv">
-                                                 <td class="small fw-semibold">CV</td>
-                                                 <td>
-                                                     <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
-                                                 </td>
-                                                 <td class="text-center status-col">
-                                                     <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
-                                                 </td>
-                                             </tr>
-                                             <!-- Row 9 -->
-                                             <tr class="doc-upload-row" data-doc-type="sop">
-                                                 <td class="small fw-semibold">SOP</td>
-                                                 <td>
-                                                     <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
-                                                 </td>
-                                                 <td class="text-center status-col">
-                                                     <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
-                                                 </td>
-                                             </tr>
-                                             <!-- Row 10 -->
-                                             <tr class="doc-upload-row" data-doc-type="bank_statement">
-                                                 <td class="small fw-semibold">Bank Statement</td>
-                                                 <td>
-                                                     <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
-                                                 </td>
-                                                 <td class="text-center status-col">
-                                                     <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
-                                                 </td>
-                                             </tr>
-                                             <!-- Row 11 -->
-                                             <tr class="doc-upload-row" data-doc-type="other_documents">
-                                                 <td class="small fw-semibold">Other Documents</td>
-                                                 <td>
-                                                     <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
-                                                 </td>
-                                                 <td class="text-center status-col">
-                                                     <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
-                                                 </td>
-                                             </tr>
-                                         </tbody>
-                                     </table>
-                                 </div>
+                     <div class="card neo-card card-body position-relative p-0 overflow-hidden">
+                        <button class="btn-close-neo" onclick="closeNeoPanels()" title="Close Panel"><i class="bi bi-x-lg"></i></button>
+                        <section id="section-document-uploads" class="card-newage border-0 mb-0">
+                            <div class="card-header d-flex justify-content-between align-items-center py-3 px-4 rounded-top-4 pe-5">
+                                <h5 class="mb-0 dynamic-header-text fw-bold"><i class="bi bi-folder2-open me-2 text-danger"></i>Documents Vault &amp; Verification Checklist</h5>
+                                <span class="badge bg-danger px-2.5 py-1.5 rounded-pill">Document Storage</span>
+                            </div>
+                            <div class="p-4" id="uploadWorkspaceContent">
+                                <p class="text-muted small mb-3">Upload clear PDF scans or image files of the required documents below. Uploaded documents automatically enter Pending review status.</p>
+                                
+                                <div class="table-responsive rounded-3 border bg-white mb-3" style="max-height: 480px; overflow-y: auto;">
+                                    <table class="table table-hover align-middle mb-0 small">
+                                        <thead class="table-light sticky-top">
+                                            <tr>
+                                                <th>Document Type</th>
+                                                <th style="width: 45%;">Select File</th>
+                                                <th class="text-center" style="width: 30%;">Status &amp; Verification</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <!-- Row 1 -->
+                                            <tr class="doc-upload-row" data-doc-type="ssc_certificate">
+                                                <td class="small fw-semibold">SSC Certificate</td>
+                                                <td>
+                                                    <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
+                                                </td>
+                                                <td class="text-center status-col">
+                                                    <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
+                                                </td>
+                                            </tr>
+                                            <!-- Row 2 -->
+                                            <tr class="doc-upload-row" data-doc-type="ssc_marksheet">
+                                                <td class="small fw-semibold">SSC Marksheet</td>
+                                                <td>
+                                                    <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
+                                                </td>
+                                                <td class="text-center status-col">
+                                                    <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
+                                                </td>
+                                            </tr>
+                                            <!-- Row 3 -->
+                                            <tr class="doc-upload-row" data-doc-type="hsc_certificate">
+                                                <td class="small fw-semibold">HSC Certificate</td>
+                                                <td>
+                                                    <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
+                                                </td>
+                                                <td class="text-center status-col">
+                                                    <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
+                                                </td>
+                                            </tr>
+                                            <!-- Row 4 -->
+                                            <tr class="doc-upload-row" data-doc-type="hsc_marksheet">
+                                                <td class="small fw-semibold">HSC Marksheet</td>
+                                                <td>
+                                                    <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
+                                                </td>
+                                                <td class="text-center status-col">
+                                                    <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
+                                                </td>
+                                            </tr>
+                                            <!-- Row 5 -->
+                                            <tr class="doc-upload-row" data-doc-type="recommendation_letter">
+                                                <td class="small fw-semibold">Recommendation Letter (2 Copies)</td>
+                                                <td>
+                                                    <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
+                                                </td>
+                                                <td class="text-center status-col">
+                                                    <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
+                                                </td>
+                                            </tr>
+                                            <!-- Row 6 -->
+                                            <tr class="doc-upload-row" data-doc-type="passport">
+                                                <td class="small fw-semibold">Passport</td>
+                                                <td>
+                                                    <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
+                                                </td>
+                                                <td class="text-center status-col">
+                                                    <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
+                                                </td>
+                                            </tr>
+                                            <!-- Row 7 -->
+                                            <tr class="doc-upload-row" data-doc-type="student_nid">
+                                                <td class="small fw-semibold">Student NID</td>
+                                                <td>
+                                                    <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
+                                                </td>
+                                                <td class="text-center status-col">
+                                                    <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
+                                                </td>
+                                            </tr>
+                                            <!-- Row 8 -->
+                                            <tr class="doc-upload-row" data-doc-type="cv">
+                                                <td class="small fw-semibold">CV</td>
+                                                <td>
+                                                    <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
+                                                </td>
+                                                <td class="text-center status-col">
+                                                    <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
+                                                </td>
+                                            </tr>
+                                            <!-- Row 9 -->
+                                            <tr class="doc-upload-row" data-doc-type="sop">
+                                                <td class="small fw-semibold">SOP</td>
+                                                <td>
+                                                    <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
+                                                </td>
+                                                <td class="text-center status-col">
+                                                    <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
+                                                </td>
+                                            </tr>
+                                            <!-- Row 10 -->
+                                            <tr class="doc-upload-row" data-doc-type="bank_statement">
+                                                <td class="small fw-semibold">Bank Statement</td>
+                                                <td>
+                                                    <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
+                                                </td>
+                                                <td class="text-center status-col">
+                                                    <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
+                                                </td>
+                                            </tr>
+                                            <!-- Row 11 -->
+                                            <tr class="doc-upload-row" data-doc-type="other_documents">
+                                                <td class="small fw-semibold">Other Documents</td>
+                                                <td>
+                                                    <input type="file" class="form-control form-control-sm doc-file-input" accept=".pdf,.jpg,.jpeg,.png">
+                                                </td>
+                                                <td class="text-center status-col">
+                                                    <span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
 
-                                 <!-- Footer Action Buttons -->
-                                 <div class="d-flex justify-content-end align-items-center pt-2">
-                                     <button class="btn btn-newage-red btn-sm px-4 py-2 fw-semibold rounded-3 shadow-sm" onclick="submitAllDocs()">
-                                         <i class="bi bi-cloud-arrow-up me-1"></i> Submit All Uploaded Documents
-                                     </button>
-                                 </div>
-                             </div>
-                         </section>
+                                <!-- Footer Action Buttons -->
+                                <div class="d-flex justify-content-end align-items-center pt-2">
+                                    <button class="btn btn-newage-red btn-sm px-4 py-2 fw-semibold rounded-3 shadow-sm" onclick="submitAllDocs()">
+                                        <i class="bi bi-cloud-arrow-up me-1"></i> Submit All Uploaded Documents
+                                    </button>
+                                </div>
+                            </div>
+                        </section>
                      </div>
                   </div>
 
                   <div id="panelMats" class="neo-panel-container">
-                     <div class="card neo-card card-body p-0 overflow-hidden mb-4">
-                         <section id="section-prep-materials" class="card-newage border-0 mb-0">
-                             <div class="card-header d-flex align-items-center justify-content-between py-3 px-4 rounded-top-4">
-                                 <h5 class="mb-0 dynamic-header-text fw-bold">
-                                     <i class="bi bi-journal-bookmark-fill text-danger me-2"></i>📚 Interview Preparation Materials
-                                 </h5>
-                                 <span id="prepMaterialsCountBadge" class="badge bg-danger px-2.5 py-1.5 rounded-pill">0 Materials</span>
-                             </div>
-                             <div class="p-4" id="prepMaterialsContent">
-                                 <div class="text-center py-4 text-muted">
-                                     <i class="bi bi-file-earmark-pdf fs-2 text-secondary d-block mb-2"></i>
-                                     <span class="small text-muted">No interview preparation sheets uploaded by your counselor yet.</span>
-                                 </div>
-                             </div>
-                         </section>
+                     <div class="card neo-card card-body position-relative p-0 overflow-hidden">
+                        <button class="btn-close-neo" onclick="closeNeoPanels()" title="Close Panel"><i class="bi bi-x-lg"></i></button>
+                        <section id="section-prep-materials" class="card-newage border-0 mb-0">
+                            <div class="card-header d-flex align-items-center justify-content-between py-3 px-4 rounded-top-4 pe-5">
+                                <h5 class="mb-0 dynamic-header-text fw-bold">
+                                    <i class="bi bi-journal-bookmark-fill text-danger me-2"></i>📚 Interview Preparation Materials
+                                </h5>
+                                <span id="prepMaterialsCountBadge" class="badge bg-danger px-2.5 py-1.5 rounded-pill">0 Materials</span>
+                            </div>
+                            <div class="p-4" id="prepMaterialsContent">
+                                <div class="text-center py-4 text-muted">
+                                    <i class="bi bi-file-earmark-pdf fs-2 text-secondary d-block mb-2"></i>
+                                    <span class="small text-muted">No interview preparation sheets uploaded by your counselor yet.</span>
+                                </div>
+                            </div>
+                        </section>
                      </div>
                   </div>
 
                 </div>
+                <!-- END MASTER WRAPPER -->
 
                 <!-- 3. SECTION: Applied Courses & Application Trackers Card -->
                 <section id="section-added-applications" class="card-newage border-0 shadow-sm rounded-4 mb-4">
@@ -1418,35 +1442,23 @@
         }
     </script>
 
-    <!-- Bulletproof Toggle Logic -->
+    <!-- Zoom In/Out Logic -->
     <script>
-      function switchNeoPanel(target) {
-        const btnDocs = document.getElementById('btnDocs');
-        const btnMats = document.getElementById('btnMats');
-        const panelDocs = document.getElementById('panelDocs');
-        const panelMats = document.getElementById('panelMats');
-
+      function openNeoPanel(target) {
+        closeNeoPanels(); // Ensure everything is closed first
+        
         if (target === 'docs') {
-          if (panelDocs.classList.contains('active-panel')) {
-            panelDocs.classList.remove('active-panel');
-            btnDocs.classList.remove('active-btn');
-          } else {
-            panelDocs.classList.add('active-panel');
-            btnDocs.classList.add('active-btn');
-            panelMats.classList.remove('active-panel');
-            btnMats.classList.remove('active-btn');
-          }
+          document.getElementById('panelDocs').classList.add('active-panel');
         } else if (target === 'mats') {
-          if (panelMats.classList.contains('active-panel')) {
-            panelMats.classList.remove('active-panel');
-            btnMats.classList.remove('active-btn');
-          } else {
-            panelMats.classList.add('active-panel');
-            btnMats.classList.add('active-btn');
-            panelDocs.classList.remove('active-panel');
-            btnDocs.classList.remove('active-btn');
-          }
+          document.getElementById('panelMats').classList.add('active-panel');
         }
+      }
+
+      function closeNeoPanels() {
+        const pnlDocs = document.getElementById('panelDocs');
+        const pnlMats = document.getElementById('panelMats');
+        if (pnlDocs) pnlDocs.classList.remove('active-panel');
+        if (pnlMats) pnlMats.classList.remove('active-panel');
       }
     </script>
 </body>
