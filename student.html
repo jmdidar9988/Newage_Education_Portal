@@ -14,31 +14,28 @@
     <link rel="stylesheet" href="style.css">
     <!-- Custom Floating Styles -->
     <style id="custom-floating-styles">
-      /* Button Active & Hover State */
-      .floating-btn {
-        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
-        border-radius: 30px !important;
+      .custom-hide { display: none !important; }
+
+      .floating-btn { 
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important; 
+        border-radius: 30px !important; 
       }
 
-      /* Trigger when hovered OR when aria-expanded is true (Bootstrap's active state) */
-      .floating-btn:hover,
-      .floating-btn[aria-expanded="true"] {
+      .floating-btn:hover, .floating-btn.active-float {
         transform: translateY(-5px) !important;
-        box-shadow: 0 10px 20px rgba(230, 57, 70, 0.3) !important;
+        box-shadow: 0 8px 20px rgba(230, 57, 70, 0.3) !important;
         background-color: var(--accent-primary, #E63946) !important;
         color: white !important;
         border-color: var(--accent-primary, #E63946) !important;
       }
 
-      /* Panel Animation - Triggers ONLY when Bootstrap adds the .show class */
-      .collapse.show .floating-panel {
-        animation: popAndFloat 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+      .floating-panel {
+        animation: floatUp 0.5s ease-out forwards !important;
         box-shadow: 0 15px 35px rgba(0,0,0,0.1) !important;
         border-radius: 12px !important;
-        border: 1px solid rgba(0,0,0,0.05) !important;
       }
 
-      @keyframes popAndFloat {
+      @keyframes floatUp {
         0% { opacity: 0; transform: translateY(30px); }
         100% { opacity: 1; transform: translateY(0); }
       }
@@ -193,10 +190,10 @@
 
                 <!-- FLOATING ACCORDION TOGGLE BUTTONS -->
                 <div class="d-flex justify-content-center flex-wrap gap-3 mb-4">
-                    <button class="btn btn-outline-danger px-4 py-2.5 fw-bold floating-btn" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDocuments" aria-expanded="false" aria-controls="collapseDocuments">
+                    <button class="btn btn-outline-danger px-4 py-2.5 fw-bold floating-btn" id="btn-docs" type="button">
                         <i class="bi bi-folder2-open me-2"></i>📁 My Documents
                     </button>
-                    <button class="btn btn-outline-danger px-4 py-2.5 fw-bold floating-btn position-relative" id="btnInterviewMaterials" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMaterials" aria-expanded="false" aria-controls="collapseMaterials" onclick="clearUnreadMaterialsNotification()">
+                    <button class="btn btn-outline-danger px-4 py-2.5 fw-bold floating-btn position-relative" id="btn-materials" type="button" onclick="clearUnreadMaterialsNotification()">
                         <i class="bi bi-journal-bookmark-fill me-2"></i>📚 Interview Materials
                         <span id="materialsBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none" style="font-size: 0.65rem; z-index: 5;">
                             New
@@ -208,7 +205,7 @@
                 <!-- ACCORDION PARENT CONTAINER FOR TOGGLE SECTIONS -->
                 <div id="studentFeaturesAccordion" class="mb-4">
                     <!-- Pane 1: Documents Vault Section -->
-                    <div class="collapse" id="collapseDocuments" data-bs-parent="#studentFeaturesAccordion">
+                    <div class="custom-hide" id="panel-docs">
                         <div class="card floating-panel border-0 mb-4 overflow-hidden">
                             <div class="card-body p-0">
                                 <section id="section-document-uploads" class="card-newage border-0 mb-0">
@@ -356,7 +353,7 @@
                     </div>
 
                     <!-- Pane 2: Materials Section -->
-                    <div class="collapse" id="collapseMaterials" data-bs-parent="#studentFeaturesAccordion">
+                    <div class="custom-hide" id="panel-materials">
                         <div class="card floating-panel border-0 mb-4 overflow-hidden">
                             <div class="card-body p-0">
                                 <section id="section-prep-materials" class="card-newage border-0 mb-0">
@@ -1401,6 +1398,38 @@
                 modal.hide();
             }
         }
+    </script>
+
+    <!-- Custom Vanilla JS Toggler for Documents & Materials floating panels -->
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        const btnDocs = document.getElementById('btn-docs');
+        const btnMats = document.getElementById('btn-materials');
+        const pnlDocs = document.getElementById('panel-docs');
+        const pnlMats = document.getElementById('panel-materials');
+
+        function togglePanel(activeBtn, activePnl, otherBtn, otherPnl) {
+            // Ensure the other panel is closed
+            if(otherBtn) otherBtn.classList.remove('active-float');
+            if(otherPnl) otherPnl.classList.add('custom-hide');
+
+            // Toggle the clicked panel
+            if (activePnl.classList.contains('custom-hide')) {
+                activePnl.classList.remove('custom-hide');
+                activeBtn.classList.add('active-float');
+            } else {
+                activePnl.classList.add('custom-hide');
+                activeBtn.classList.remove('active-float');
+            }
+        }
+
+        if(btnDocs && pnlDocs) {
+          btnDocs.addEventListener('click', () => togglePanel(btnDocs, pnlDocs, btnMats, pnlMats));
+        }
+        if(btnMats && pnlMats) {
+          btnMats.addEventListener('click', () => togglePanel(btnMats, pnlMats, btnDocs, pnlDocs));
+        }
+      });
     </script>
 </body>
 </html>
