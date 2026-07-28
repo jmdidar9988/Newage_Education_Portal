@@ -2362,16 +2362,43 @@ window.setDemoCredentials = function (email) {
         emailInput.value = email;
         updateDetectedRoleUI();
     }
-};
+// Global Scroll Reveal Observer
+function initScrollReveal() {
+    if (typeof IntersectionObserver === 'undefined') {
+        document.querySelectorAll('.reveal-on-scroll').forEach(el => el.classList.add('active-reveal'));
+        return;
+    }
+
+    const observerOptions = {
+        root: null,
+        rootMargin: '0px 0px -50px 0px',
+        threshold: 0.1
+    };
+
+    const observer = new IntersectionObserver((entries, obs) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('active-reveal');
+                obs.unobserve(entry.target);
+            }
+        });
+    }, observerOptions);
+
+    document.querySelectorAll('.reveal-on-scroll').forEach(el => {
+        observer.observe(el);
+    });
+}
 
 window.initThemeToggle = initThemeToggle;
 window.toggleTheme = toggleTheme;
+window.initScrollReveal = initScrollReveal;
 
-// Automatically fetch data & initialize theme depending on active dashboard
+// Automatically fetch data, initialize theme & scroll reveal animations depending on active page
 if (typeof window !== 'undefined') {
     initThemeToggle();
     window.addEventListener('DOMContentLoaded', () => {
         initThemeToggle();
+        initScrollReveal();
         if (document.getElementById('studentsTableBody')) {
             fetchStudents();
         }

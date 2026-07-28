@@ -51,6 +51,63 @@
     --ne-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* ==========================================================================
+   GLOBAL DYNAMIC ANIMATIONS & SMOOTH TRANSITIONS
+   ========================================================================== */
+
+html {
+    scroll-behavior: smooth;
+}
+
+/* Global Smooth Transitions for Interactive Elements */
+a, button, input, select, textarea, .nav-link, .btn {
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* Page Load Smooth Fade Up Animation */
+@keyframes pageFadeUp {
+    0% {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+body > main,
+body > .container,
+body > .container-fluid,
+.main-content {
+    animation: pageFadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) ease-out;
+}
+
+/* Global Cards Hover Dynamic Lift Effect (Excluding Neo-Lightbox Modals) */
+.card:not(.neo-card):not(.neo-panel-container),
+.card-newage:not(.neo-card):not(.neo-panel-container) {
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease !important;
+}
+
+.card:not(.neo-card):not(.neo-panel-container):hover,
+.card-newage:not(.neo-card):not(.neo-panel-container):hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* Scroll-Triggered Reveal Animations Utility */
+.reveal-on-scroll {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275), transform 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+    will-change: opacity, transform;
+}
+
+.reveal-on-scroll.active-reveal {
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+}
+
 [data-bs-theme="dark"],
 [data-theme="dark"] {
     --page-bg: #041124;
