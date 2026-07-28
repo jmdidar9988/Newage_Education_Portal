@@ -2350,12 +2350,157 @@ window.setDemoCredentials = function (email) {
    ========================================================================== */
 
 let activeChatUnsubscribe = null;
+let studentChatUnsubscribe = null;
+
+/**
+ * Initializes real-time Student Chat on candidate portal (student.html)
+ */
+export async function initStudentChat(targetStudentId) {
+    const studentId = targetStudentId || window._currentStudentId || 'std_sakib_01';
+    window._currentStudentId = studentId;
+
+    const chatPath = `students/${studentId}`;
+    console.log("🟢 [Student Chat] Listening to chat path:", chatPath);
+
+    const historyEl = document.getElementById('studentChatHistory');
+    if (!historyEl) return;
+
+    try {
+        const studentRef = doc(db, "students", studentId);
+
+        // Unsubscribe previous if any
+        if (studentChatUnsubscribe) {
+            studentChatUnsubscribe();
+            studentChatUnsubscribe = null;
+        }
+
+        studentChatUnsubscribe = onSnapshot(studentRef, (docSnap) => {
+            if (!docSnap.exists()) {
+                console.warn("⚠️ [Student Chat] Document not found at path:", chatPath);
+                renderStudentChatMessages(historyEl, []);
+                return;
+            }
+
+            const data = docSnap.data();
+            const messages = Array.isArray(data.messages) ? data.messages : [];
+            console.log(`💬 [Student Chat] Snapshot received from ${chatPath}. Messages count: ${messages.length}`);
+            renderStudentChatMessages(historyEl, messages);
+
+            // Clear unread counselor badge when student reads chat
+            if (data.hasUnreadCounselorMessage) {
+                updateDoc(studentRef, { hasUnreadCounselorMessage: false }).catch(() => {});
+            }
+        }, (error) => {
+            console.error("❌ [Student Chat] Firestore subscription error for path " + chatPath + ":", error);
+            renderStudentChatMessages(historyEl, getFallbackChatMessages(studentId));
+        });
+
+    } catch (err) {
+        console.error("❌ [Student Chat] Error setting up listener for path " + chatPath + ":", err);
+        renderStudentChatMessages(historyEl, getFallbackChatMessages(studentId));
+    }
+}
+
+function renderStudentChatMessages(historyEl, messages) {
+    if (!historyEl) return;
+
+    if (!messages || messages.length === 0) {
+        historyEl.innerHTML = `
+            <div class="d-flex flex-column gap-2" id="studentChatMessages">
+                <div class="p-2.5 rounded-3 bg-light text-dark border small align-self-start shadow-sm" style="max-width: 85%;">
+                    <div class="fw-bold text-danger mb-0.5" style="font-size: 0.75rem;"><i class="bi bi-person-badge-fill me-1"></i> Kabir Hossain (Senior Counselor)</div>
+                    Hello! Welcome to Newage Education. How can I assist you with your university application and visa documents today?
+                    <div class="text-muted text-end mt-1" style="font-size: 0.65rem;">10:00 AM</div>
+                </div>
+            </div>`;
+        return;
+    }
+
+    let html = '<div class="d-flex flex-column gap-2" id="studentChatMessages">';
+    messages.forEach(msg => {
+        const isStudent = msg.sender === 'Student';
+        const bgClass = isStudent ? 'bg-danger text-white align-self-end shadow-sm' : 'bg-light text-dark border align-self-start shadow-sm';
+        const senderLabel = isStudent ? 'You (Student Candidate)' : (msg.senderName || 'Kabir Hossain (Senior Counselor)');
+        const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+
+        html += `
+            <div class="p-2.5 rounded-3 ${bgClass}" style="max-width: 85%;">
+                <div class="fw-bold mb-0.5" style="font-size: 0.75rem; color: ${isStudent ? '#ffffff' : '#e63946'};">
+                    <i class="bi ${isStudent ? 'bi-person-fill' : 'bi-person-badge-fill'} me-1"></i>${escapeHtml(senderLabel)}
+                </div>
+                <div style="font-size: 0.875rem;">${escapeHtml(msg.text || '')}</div>
+                <div class="${isStudent ? 'text-white-50' : 'text-muted'} text-end mt-1" style="font-size: 0.65rem;">${timeStr}</div>
+            </div>`;
+    });
+    html += '</div>';
+
+    historyEl.innerHTML = html;
+    historyEl.scrollTop = historyEl.scrollHeight;
+}
+
+/**
+ * Student Candidate sends message to Counselor via Firestore
+ */
+export async function sendStudentMessage(event) {
+    if (event) event.preventDefault();
+    const msgInput = document.getElementById('counselorMessage');
+    const sendBtn = document.getElementById('sendMsgBtn');
+
+    if (!msgInput) return;
+    const text = msgInput.value.trim();
+    if (!text) return;
+
+    const studentId = window._currentStudentId || 'std_sakib_01';
+    const chatPath = `students/${studentId}`;
+    console.log(`📤 [Student Chat] Sending candidate message to path ${chatPath}: "${text}"`);
+
+    if (sendBtn) sendBtn.disabled = true;
+
+    const newMsgPayload = {
+        id: 'msg_' + Date.now(),
+        sender: 'Student',
+        senderName: 'Sakib Rahman (Candidate)',
+        text: text,
+        timestamp: new Date().toISOString()
+    };
+
+    try {
+        const studentRef = doc(db, "students", studentId);
+        await updateDoc(studentRef, {
+            messages: arrayUnion(newMsgPayload),
+            hasUnreadStudentMessage: true
+        });
+
+        console.log(`✅ [Student Chat] Candidate message successfully written to Firestore path ${chatPath}`);
+        msgInput.value = '';
+
+    } catch (error) {
+        console.error(`❌ [Student Chat] Firestore write error for path ${chatPath}:`, error);
+        const historyEl = document.getElementById('studentChatHistory');
+        if (historyEl) {
+            let msgList = document.getElementById('studentChatMessages') || historyEl;
+            const bubble = document.createElement('div');
+            bubble.className = 'p-2.5 rounded-3 bg-danger text-white small align-self-end shadow-sm mb-2';
+            bubble.style.maxWidth = '85%';
+            bubble.innerHTML = `
+                <div class="fw-bold mb-0.5" style="font-size: 0.75rem;">You (Student Candidate)</div>
+                <div>${escapeHtml(text)}</div>
+                <div class="text-white-50 text-end mt-1" style="font-size: 0.65rem;">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>`;
+            msgList.appendChild(bubble);
+            historyEl.scrollTop = historyEl.scrollHeight;
+        }
+        msgInput.value = '';
+    } finally {
+        if (sendBtn) sendBtn.disabled = false;
+    }
+}
 
 /**
  * Opens Counselor Employee Chat Modal for a student candidate and listens to Firestore updates
  */
 export async function openStudentChat(studentId) {
-    console.log("🟢 [Employee Chat] Opening chat for student candidate ID:", studentId);
+    const chatPath = `students/${studentId}`;
+    console.log("🟢 [Employee Chat] Listening to chat path:", chatPath);
     if (!studentId) return;
 
     window._activeChatStudentId = studentId;
@@ -2391,7 +2536,7 @@ export async function openStudentChat(studentId) {
         // Attach real-time Firestore listener
         activeChatUnsubscribe = onSnapshot(studentRef, (docSnap) => {
             if (!docSnap.exists()) {
-                console.warn("⚠️ [Employee Chat] Student document not found in Firestore:", studentId);
+                console.warn("⚠️ [Employee Chat] Student document not found at path:", chatPath);
                 renderEmployeeChatMessages(studentId, historyEl, titleEl, getFallbackChatMessages(studentId), 'Student Candidate');
                 return;
             }
@@ -2400,15 +2545,15 @@ export async function openStudentChat(studentId) {
             const messages = Array.isArray(data.messages) ? data.messages : [];
             const fullName = data.personalInfo?.fullName || 'Student Candidate';
 
-            console.log(`💬 [Employee Chat] Real-time sync: ${messages.length} messages loaded for ${fullName}`);
+            console.log(`💬 [Employee Chat] Snapshot received from ${chatPath}. Messages count: ${messages.length}`);
             renderEmployeeChatMessages(studentId, historyEl, titleEl, messages, fullName);
         }, (error) => {
-            console.error("❌ [Employee Chat] Firestore chat subscription error:", error);
+            console.error("❌ [Employee Chat] Firestore chat subscription error for path " + chatPath + ":", error);
             renderEmployeeChatMessages(studentId, historyEl, titleEl, getFallbackChatMessages(studentId), 'Student Candidate');
         });
 
     } catch (err) {
-        console.error("❌ [Employee Chat] Error opening student chat:", err);
+        console.error("❌ [Employee Chat] Error opening student chat for path " + chatPath + ":", err);
         renderEmployeeChatMessages(studentId, historyEl, titleEl, getFallbackChatMessages(studentId), 'Student Candidate');
     }
 }
@@ -2464,7 +2609,8 @@ export async function sendEmployeeReply(event) {
     const text = inputEl.value.trim();
     if (!text) return;
 
-    console.log(`📤 [Employee Chat] Sending counselor reply to student ${studentId}: "${text}"`);
+    const chatPath = `students/${studentId}`;
+    console.log(`📤 [Employee Chat] Counselor sending reply to path ${chatPath}: "${text}"`);
 
     if (sendBtn) sendBtn.disabled = true;
 
@@ -2483,11 +2629,11 @@ export async function sendEmployeeReply(event) {
             hasUnreadCounselorMessage: true
         });
 
-        console.log(`✅ [Employee Chat] Counselor reply saved to Firestore for student ${studentId}`);
+        console.log(`✅ [Employee Chat] Counselor reply successfully written to Firestore path ${chatPath}`);
         inputEl.value = '';
 
     } catch (error) {
-        console.error("❌ [Employee Chat] Error sending counselor reply to Firestore:", error);
+        console.error(`❌ [Employee Chat] Error sending counselor reply to Firestore path ${chatPath}:`, error);
         const historyEl = document.getElementById('employeeChatHistory');
         if (historyEl) {
             const listEl = historyEl.querySelector('.d-flex.flex-column') || historyEl;
@@ -2526,6 +2672,8 @@ function getFallbackChatMessages(studentId) {
     ];
 }
 
+window.initStudentChat = initStudentChat;
+window.sendStudentMessage = sendStudentMessage;
 window.openStudentChat = openStudentChat;
 window.sendEmployeeReply = sendEmployeeReply;
 
@@ -2569,6 +2717,9 @@ function runInit() {
     }
     if (document.getElementById('recentApplicationsTableBody') || document.getElementById('totalStudentsKpi')) {
         loadCEODashboardData();
+    }
+    if (document.getElementById('studentChatHistory')) {
+        initStudentChat();
     }
 }
 

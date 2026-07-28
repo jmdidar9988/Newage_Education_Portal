@@ -1449,50 +1449,10 @@
 
         function sendStudentMessage(event) {
             if (event) event.preventDefault();
-            const msgInput = document.getElementById('counselorMessage');
-            if (!msgInput) return;
-            const text = msgInput.value.trim();
-            if (!text) return;
-
-            const chatHistory = document.getElementById('studentChatHistory');
-            let msgList = document.getElementById('studentChatMessages');
-            if (!msgList && chatHistory) {
-                chatHistory.innerHTML = '<div class="d-flex flex-column gap-2" id="studentChatMessages"></div>';
-                msgList = document.getElementById('studentChatMessages');
-            }
-
-            if (msgList) {
-                const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                
-                // Candidate message bubble
-                const userBubble = document.createElement('div');
-                userBubble.className = 'p-2.5 rounded-3 bg-danger text-white small align-self-end shadow-sm';
-                userBubble.style.maxWidth = '85%';
-                userBubble.innerHTML = `
-                    <div class="fw-bold mb-0.5" style="font-size: 0.75rem;">You (Student Candidate)</div>
-                    ${escapeHtml(text)}
-                    <div class="text-white-50 text-end mt-1" style="font-size: 0.65rem;">${now}</div>
-                `;
-                msgList.appendChild(userBubble);
-                msgInput.value = '';
-                if (chatHistory) chatHistory.scrollTop = chatHistory.scrollHeight;
-
-                // Counselor automated reply simulation
-                setTimeout(() => {
-                    const counselorBubble = document.createElement('div');
-                    counselorBubble.className = 'p-2.5 rounded-3 bg-light text-dark border small align-self-start shadow-sm';
-                    counselorBubble.style.maxWidth = '85%';
-                    counselorBubble.innerHTML = `
-                        <div class="fw-bold text-danger mb-0.5" style="font-size: 0.75rem;"><i class="bi bi-person-badge-fill me-1"></i> Kabir Hossain (Counselor)</div>
-                        Thank you for reaching out! I have received your note regarding "${escapeHtml(text.substring(0, 30))}${text.length > 30 ? '...' : ''}" and will review it immediately.
-                        <div class="text-muted text-end mt-1" style="font-size: 0.65rem;">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                    `;
-                    msgList.appendChild(counselorBubble);
-                    if (chatHistory) chatHistory.scrollTop = chatHistory.scrollHeight;
-                }, 1000);
+            if (typeof window.sendStudentMessage === 'function' && window.sendStudentMessage !== sendStudentMessage) {
+                return window.sendStudentMessage(event);
             }
         }
-        window.sendStudentMessage = sendStudentMessage;
         window.sendMessage = sendStudentMessage;
     </script>
 
