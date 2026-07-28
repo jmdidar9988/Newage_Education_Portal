@@ -2568,6 +2568,34 @@ export async function openStudentChat(studentId) {
 
             console.log("Snapshot received. Total messages:", messages.length);
             console.log(`💬 [Employee Chat] Snapshot received from ${chatPath}. Messages count: ${messages.length}`);
+
+            // ==========================================
+            // 🚨 EMERGENCY CHAT VIEW DEBUGGER INJECTION
+            // ==========================================
+            // 1. Remove any old emergency box to prevent duplicates
+            const oldBox = document.getElementById('emergencyChatDebugger');
+            if (oldBox) oldBox.remove();
+
+            // 2. Create a new forced container attached directly to the BODY
+            const emergencyBox = document.createElement('div');
+            emergencyBox.id = 'emergencyChatDebugger';
+            emergencyBox.style.cssText = 'position: fixed; top: 10px; right: 10px; width: 350px; height: 500px; background: #ffcccc; border: 5px solid red; z-index: 2147483647; overflow-y: scroll; padding: 15px; color: black; font-weight: bold; font-family: sans-serif;';
+            document.body.appendChild(emergencyBox);
+
+            emergencyBox.innerHTML = `<h3 style="color: red; margin-top: 0;">🚨 Emergency Chat View 🚨</h3><div style="font-size: 11px; margin-bottom: 8px;">Candidate: ${escapeHtml(fullName)} (${studentId})</div><hr>`;
+
+            // 3. Inject the messages directly into this red box
+            if (messages.length === 0) {
+                emergencyBox.innerHTML += `<div style="margin-bottom: 10px; padding: 10px; background: white; border: 1px solid black;">No messages found in document</div>`;
+            } else {
+                messages.forEach(msg => {
+                    const txt = typeof msg === 'string' ? msg : (msg.text || msg.message || msg.msg || JSON.stringify(msg));
+                    const sender = typeof msg === 'object' && msg.sender ? msg.sender : 'Student';
+                    emergencyBox.innerHTML += `<div style="margin-bottom: 10px; padding: 10px; background: white; border: 1px solid black;"><span style="color: ${sender === 'Counselor' ? 'red' : 'blue'}">[${sender}]</span> ${escapeHtml(txt)}</div>`;
+                });
+            }
+            emergencyBox.scrollTop = emergencyBox.scrollHeight;
+
             renderEmployeeChatMessages(studentId, chatBox, titleEl, messages, fullName);
         }, (error) => {
             console.error("Firebase Chat Sync Error (Check Security Rules):", error.message);
