@@ -2500,20 +2500,27 @@ export async function sendStudentMessage(event) {
  */
 export async function openStudentChat(studentId) {
     const chatPath = `students/${studentId}`;
+    console.log("Attempting to fetch chat for student:", studentId);
     console.log("🟢 [Employee Chat] Listening to chat path:", chatPath);
-    if (!studentId) return;
+    if (!studentId) {
+        console.warn("⚠️ [Employee Chat] Aborted: studentId is undefined or empty!");
+        return;
+    }
 
     window._activeChatStudentId = studentId;
 
-    // Show Employee Chat Modal
+    // Verify DOM Targets
     const modalEl = document.getElementById('employeeChatModal');
+    const titleEl = document.getElementById('employeeChatModalTitle');
+    const historyEl = document.getElementById('employeeChatHistory');
+
+    console.log("🔍 [Employee Chat] DOM Check -> Modal:", !!modalEl, "Title:", !!titleEl, "HistoryContainer:", !!historyEl);
+
     if (modalEl && window.bootstrap) {
         const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
         modal.show();
     }
 
-    const titleEl = document.getElementById('employeeChatModalTitle');
-    const historyEl = document.getElementById('employeeChatHistory');
     if (historyEl) {
         historyEl.innerHTML = `
             <div class="text-center text-muted py-4 small">
@@ -2533,7 +2540,7 @@ export async function openStudentChat(studentId) {
             activeChatUnsubscribe = null;
         }
 
-        // Attach real-time Firestore listener
+        // Attach real-time Firestore listener with explicit Security Rules error handler
         activeChatUnsubscribe = onSnapshot(studentRef, (docSnap) => {
             if (!docSnap.exists()) {
                 console.warn("⚠️ [Employee Chat] Student document not found at path:", chatPath);
@@ -2542,12 +2549,14 @@ export async function openStudentChat(studentId) {
             }
 
             const data = docSnap.data();
-            const messages = Array.isArray(data.messages) ? data.messages : [];
-            const fullName = data.personalInfo?.fullName || 'Student Candidate';
+            const messages = Array.isArray(data.messages) ? data.messages : (data.chatHistory || []);
+            const fullName = data.personalInfo?.fullName || data.fullName || 'Student Candidate';
 
+            console.log("Snapshot received. Total messages:", messages.length);
             console.log(`💬 [Employee Chat] Snapshot received from ${chatPath}. Messages count: ${messages.length}`);
             renderEmployeeChatMessages(studentId, historyEl, titleEl, messages, fullName);
         }, (error) => {
+            console.error("Firebase Chat Sync Error (Check Security Rules):", error.message);
             console.error("❌ [Employee Chat] Firestore chat subscription error for path " + chatPath + ":", error);
             renderEmployeeChatMessages(studentId, historyEl, titleEl, getFallbackChatMessages(studentId), 'Student Candidate');
         });
@@ -2560,10 +2569,13 @@ export async function openStudentChat(studentId) {
 
 function renderEmployeeChatMessages(studentId, historyEl, titleEl, messages, studentName) {
     if (titleEl) {
-        titleEl.innerHTML = `<i class="bi bi-chat-left-text-fill text-danger me-2"></i>Chat with ${escapeHtml(studentName || 'Candidate')} <span class="badge bg-secondary rounded-pill ms-2" style="font-size: 0.7rem;">ID: #${studentId.substring(0, 8)}</span>`;
+        titleEl.innerHTML = `<i class="bi bi-chat-left-text-fill text-danger me-2"></i>Chat with ${escapeHtml(studentName || 'Candidate')} <span class="badge bg-secondary rounded-pill ms-2" style="font-size: 0.7rem;">ID: #${studentId ? studentId.substring(0, 8) : 'CLIENT'}</span>`;
     }
 
-    if (!historyEl) return;
+    if (!historyEl) {
+        console.error("❌ [Employee Chat] Render failed: #employeeChatHistory element is missing from DOM!");
+        return;
+    }
 
     if (!messages || messages.length === 0) {
         historyEl.innerHTML = `
@@ -2576,17 +2588,21 @@ function renderEmployeeChatMessages(studentId, historyEl, titleEl, messages, stu
 
     let html = '<div class="d-flex flex-column gap-2.5">';
     messages.forEach(msg => {
-        const isCounselor = msg.sender === 'Counselor';
+        // Safe field normalization (handles msg.text, msg.message, msg.content)
+        const sender = msg.sender || msg.role || msg.senderRole || 'Student';
+        const isCounselor = sender === 'Counselor' || sender === 'Employee' || sender === 'Consultant';
         const bgClass = isCounselor ? 'bg-danger text-white align-self-end' : 'bg-white text-dark border align-self-start';
-        const senderLabel = isCounselor ? (msg.senderName || 'Kabir Hossain (Counselor)') : (msg.senderName || studentName || 'Student Candidate');
-        const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+        const senderLabel = isCounselor ? (msg.senderName || msg.author || 'Kabir Hossain (Counselor)') : (msg.senderName || studentName || 'Student Candidate');
+        const textContent = msg.text || msg.message || msg.content || '';
+        const rawTime = msg.timestamp || msg.createdAt || msg.time;
+        const timeStr = rawTime ? new Date(rawTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
 
         html += `
             <div class="p-2.5 rounded-3 ${bgClass} shadow-sm" style="max-width: 85%;">
                 <div class="fw-bold mb-1" style="font-size: 0.75rem; color: ${isCounselor ? '#ffffff' : '#e63946'};">
                     <i class="bi ${isCounselor ? 'bi-person-badge-fill' : 'bi-person-fill'} me-1"></i>${escapeHtml(senderLabel)}
                 </div>
-                <div style="font-size: 0.875rem;">${escapeHtml(msg.text || '')}</div>
+                <div style="font-size: 0.875rem;">${escapeHtml(textContent)}</div>
                 <div class="mt-1 text-end" style="font-size: 0.65rem; opacity: 0.8;">${timeStr}</div>
             </div>`;
     });
