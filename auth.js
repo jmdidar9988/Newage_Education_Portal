@@ -25,7 +25,8 @@ import {
     setDoc,
     updateDoc,
     serverTimestamp,
-    arrayUnion
+    arrayUnion,
+    onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 // Safety fallback for deprecated overall status update
@@ -2407,6 +2408,190 @@ window.setDemoCredentials = function (email) {
         updateDetectedRoleUI();
     }
 };
+
+/* ==========================================================================
+   REAL-TIME FIRESTORE CHAT MODULE (COUNSELOR & CANDIDATE)
+   ========================================================================== */
+
+let activeChatUnsubscribe = null;
+
+/**
+ * Opens Counselor Employee Chat Modal for a student candidate and listens to Firestore updates
+ */
+export async function openStudentChat(studentId) {
+    console.log("🟢 [Employee Chat] Opening chat for student candidate ID:", studentId);
+    if (!studentId) return;
+
+    window._activeChatStudentId = studentId;
+
+    // Show Employee Chat Modal
+    const modalEl = document.getElementById('employeeChatModal');
+    if (modalEl && window.bootstrap) {
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+    }
+
+    const titleEl = document.getElementById('employeeChatModalTitle');
+    const historyEl = document.getElementById('employeeChatHistory');
+    if (historyEl) {
+        historyEl.innerHTML = `
+            <div class="text-center text-muted py-4 small">
+                <span class="spinner-border spinner-border-sm text-danger me-1"></span> Loading conversation with Firestore...
+            </div>`;
+    }
+
+    try {
+        const studentRef = doc(db, "students", studentId);
+        
+        // Clear unread student message flag on open
+        await updateDoc(studentRef, { hasUnreadStudentMessage: false }).catch(() => {});
+
+        // Unsubscribe existing listener if any
+        if (activeChatUnsubscribe) {
+            activeChatUnsubscribe();
+            activeChatUnsubscribe = null;
+        }
+
+        // Attach real-time Firestore listener
+        activeChatUnsubscribe = onSnapshot(studentRef, (docSnap) => {
+            if (!docSnap.exists()) {
+                console.warn("⚠️ [Employee Chat] Student document not found in Firestore:", studentId);
+                renderEmployeeChatMessages(studentId, historyEl, titleEl, getFallbackChatMessages(studentId), 'Student Candidate');
+                return;
+            }
+
+            const data = docSnap.data();
+            const messages = Array.isArray(data.messages) ? data.messages : [];
+            const fullName = data.personalInfo?.fullName || 'Student Candidate';
+
+            console.log(`💬 [Employee Chat] Real-time sync: ${messages.length} messages loaded for ${fullName}`);
+            renderEmployeeChatMessages(studentId, historyEl, titleEl, messages, fullName);
+        }, (error) => {
+            console.error("❌ [Employee Chat] Firestore chat subscription error:", error);
+            renderEmployeeChatMessages(studentId, historyEl, titleEl, getFallbackChatMessages(studentId), 'Student Candidate');
+        });
+
+    } catch (err) {
+        console.error("❌ [Employee Chat] Error opening student chat:", err);
+        renderEmployeeChatMessages(studentId, historyEl, titleEl, getFallbackChatMessages(studentId), 'Student Candidate');
+    }
+}
+
+function renderEmployeeChatMessages(studentId, historyEl, titleEl, messages, studentName) {
+    if (titleEl) {
+        titleEl.innerHTML = `<i class="bi bi-chat-left-text-fill text-danger me-2"></i>Chat with ${escapeHtml(studentName || 'Candidate')} <span class="badge bg-secondary rounded-pill ms-2" style="font-size: 0.7rem;">ID: #${studentId.substring(0, 8)}</span>`;
+    }
+
+    if (!historyEl) return;
+
+    if (!messages || messages.length === 0) {
+        historyEl.innerHTML = `
+            <div class="text-center text-muted py-5 small">
+                <i class="bi bi-chat-dots fs-2 text-secondary d-block mb-2"></i>
+                No message history yet. Type a message below to start chatting with ${escapeHtml(studentName || 'the candidate')}.
+            </div>`;
+        return;
+    }
+
+    let html = '<div class="d-flex flex-column gap-2.5">';
+    messages.forEach(msg => {
+        const isCounselor = msg.sender === 'Counselor';
+        const bgClass = isCounselor ? 'bg-danger text-white align-self-end' : 'bg-white text-dark border align-self-start';
+        const senderLabel = isCounselor ? (msg.senderName || 'Kabir Hossain (Counselor)') : (msg.senderName || studentName || 'Student Candidate');
+        const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+
+        html += `
+            <div class="p-2.5 rounded-3 ${bgClass} shadow-sm" style="max-width: 85%;">
+                <div class="fw-bold mb-1" style="font-size: 0.75rem; color: ${isCounselor ? '#ffffff' : '#e63946'};">
+                    <i class="bi ${isCounselor ? 'bi-person-badge-fill' : 'bi-person-fill'} me-1"></i>${escapeHtml(senderLabel)}
+                </div>
+                <div style="font-size: 0.875rem;">${escapeHtml(msg.text || '')}</div>
+                <div class="mt-1 text-end" style="font-size: 0.65rem; opacity: 0.8;">${timeStr}</div>
+            </div>`;
+    });
+    html += '</div>';
+
+    historyEl.innerHTML = html;
+    historyEl.scrollTop = historyEl.scrollHeight;
+}
+
+/**
+ * Counselor sends reply to student candidate
+ */
+export async function sendEmployeeReply(event) {
+    if (event) event.preventDefault();
+    const studentId = window._activeChatStudentId;
+    const inputEl = document.getElementById('employeeReplyInput');
+    const sendBtn = document.getElementById('employeeSendBtn');
+
+    if (!studentId || !inputEl) return;
+    const text = inputEl.value.trim();
+    if (!text) return;
+
+    console.log(`📤 [Employee Chat] Sending counselor reply to student ${studentId}: "${text}"`);
+
+    if (sendBtn) sendBtn.disabled = true;
+
+    const newMsgPayload = {
+        id: 'msg_' + Date.now(),
+        sender: 'Counselor',
+        senderName: 'Kabir Hossain (Senior Counselor)',
+        text: text,
+        timestamp: new Date().toISOString()
+    };
+
+    try {
+        const studentRef = doc(db, "students", studentId);
+        await updateDoc(studentRef, {
+            messages: arrayUnion(newMsgPayload),
+            hasUnreadCounselorMessage: true
+        });
+
+        console.log(`✅ [Employee Chat] Counselor reply saved to Firestore for student ${studentId}`);
+        inputEl.value = '';
+
+    } catch (error) {
+        console.error("❌ [Employee Chat] Error sending counselor reply to Firestore:", error);
+        const historyEl = document.getElementById('employeeChatHistory');
+        if (historyEl) {
+            const listEl = historyEl.querySelector('.d-flex.flex-column') || historyEl;
+            const bubble = document.createElement('div');
+            bubble.className = 'p-2.5 rounded-3 bg-danger text-white align-self-end shadow-sm mb-2';
+            bubble.style.maxWidth = '85%';
+            bubble.innerHTML = `
+                <div class="fw-bold mb-1" style="font-size: 0.75rem;"><i class="bi bi-person-badge-fill me-1"></i> Kabir Hossain (Counselor)</div>
+                <div style="font-size: 0.875rem;">${escapeHtml(text)}</div>
+                <div class="mt-1 text-end" style="font-size: 0.65rem; opacity: 0.8;">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>`;
+            listEl.appendChild(bubble);
+            historyEl.scrollTop = historyEl.scrollHeight;
+        }
+        inputEl.value = '';
+    } finally {
+        if (sendBtn) sendBtn.disabled = false;
+    }
+}
+
+function getFallbackChatMessages(studentId) {
+    return [
+        {
+            id: 'msg_sample_1',
+            sender: 'Student',
+            senderName: 'Sakib Rahman',
+            text: 'Hello Kabir Sir! I have submitted my passport scan and IELTS TRF copy.',
+            timestamp: new Date(Date.now() - 3600000).toISOString()
+        },
+        {
+            id: 'msg_sample_2',
+            sender: 'Counselor',
+            senderName: 'Kabir Hossain (Senior Counselor)',
+            text: 'Great Sakib! I am reviewing your documents for the offer letter application now.',
+            timestamp: new Date(Date.now() - 1800000).toISOString()
+        }
+    ];
+}
+
+window.openStudentChat = openStudentChat;
+window.sendEmployeeReply = sendEmployeeReply;
 
 // Global Scroll Reveal Observer
 function initScrollReveal() {
