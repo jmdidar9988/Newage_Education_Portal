@@ -2512,17 +2512,19 @@ export async function openStudentChat(studentId) {
     // Verify DOM Targets
     const modalEl = document.getElementById('employeeChatModal');
     const titleEl = document.getElementById('employeeChatModalTitle');
-    const historyEl = document.getElementById('employeeChatHistory');
+    const chatBox = document.getElementById('employeeChatBox') || document.getElementById('employeeChatHistory');
 
-    console.log("🔍 [Employee Chat] DOM Check -> Modal:", !!modalEl, "Title:", !!titleEl, "HistoryContainer:", !!historyEl);
+    console.log("🔍 [Employee Chat] DOM Check -> Modal:", !!modalEl, "Title:", !!titleEl, "ChatBox:", !!chatBox);
 
     if (modalEl && window.bootstrap) {
         const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
         modal.show();
     }
 
-    if (historyEl) {
-        historyEl.innerHTML = `
+    if (chatBox) {
+        chatBox.style.display = 'block';
+        chatBox.style.zIndex = '9999';
+        chatBox.innerHTML = `
             <div class="text-center text-muted py-4 small">
                 <span class="spinner-border spinner-border-sm text-danger me-1"></span> Loading conversation with Firestore...
             </div>`;
@@ -2544,44 +2546,60 @@ export async function openStudentChat(studentId) {
         activeChatUnsubscribe = onSnapshot(studentRef, (docSnap) => {
             if (!docSnap.exists()) {
                 console.warn("⚠️ [Employee Chat] Student document not found at path:", chatPath);
-                renderEmployeeChatMessages(studentId, historyEl, titleEl, getFallbackChatMessages(studentId), 'Student Candidate');
+                renderEmployeeChatMessages(studentId, chatBox, titleEl, getFallbackChatMessages(studentId), 'Student Candidate');
                 return;
             }
 
             const data = docSnap.data();
-            const messages = Array.isArray(data.messages) ? data.messages : (data.chatHistory || []);
+            console.log("Data keys:", Object.keys(data));
+
+            let messages = [];
+            if (Array.isArray(data.messages)) {
+                messages = data.messages;
+            } else if (Array.isArray(data.chatHistory)) {
+                messages = data.chatHistory;
+            } else if (Array.isArray(data.chat)) {
+                messages = data.chat;
+            } else if (data.text || data.message || data.msg) {
+                messages = [data];
+            }
+
             const fullName = data.personalInfo?.fullName || data.fullName || 'Student Candidate';
 
             console.log("Snapshot received. Total messages:", messages.length);
             console.log(`💬 [Employee Chat] Snapshot received from ${chatPath}. Messages count: ${messages.length}`);
-            renderEmployeeChatMessages(studentId, historyEl, titleEl, messages, fullName);
+            renderEmployeeChatMessages(studentId, chatBox, titleEl, messages, fullName);
         }, (error) => {
             console.error("Firebase Chat Sync Error (Check Security Rules):", error.message);
             console.error("❌ [Employee Chat] Firestore chat subscription error for path " + chatPath + ":", error);
-            renderEmployeeChatMessages(studentId, historyEl, titleEl, getFallbackChatMessages(studentId), 'Student Candidate');
+            renderEmployeeChatMessages(studentId, chatBox, titleEl, getFallbackChatMessages(studentId), 'Student Candidate');
         });
 
     } catch (err) {
         console.error("❌ [Employee Chat] Error opening student chat for path " + chatPath + ":", err);
-        renderEmployeeChatMessages(studentId, historyEl, titleEl, getFallbackChatMessages(studentId), 'Student Candidate');
+        renderEmployeeChatMessages(studentId, chatBox, titleEl, getFallbackChatMessages(studentId), 'Student Candidate');
     }
 }
 
 function renderEmployeeChatMessages(studentId, historyEl, titleEl, messages, studentName) {
-    const targetBox = document.getElementById('employeeChatHistory') || historyEl;
+    const chatBox = document.getElementById('employeeChatBox') || document.getElementById('employeeChatHistory') || historyEl;
     const targetTitle = document.getElementById('employeeChatModalTitle') || titleEl;
 
     if (targetTitle) {
         targetTitle.innerHTML = `<i class="bi bi-chat-left-text-fill text-danger me-2"></i>Chat with ${escapeHtml(studentName || 'Candidate')} <span class="badge bg-secondary rounded-pill ms-2" style="font-size: 0.7rem;">ID: #${studentId ? studentId.substring(0, 8) : 'CLIENT'}</span>`;
     }
 
-    if (!targetBox) {
-        console.error("❌ [Employee Chat] Render failed: #employeeChatHistory element is missing from DOM!");
+    if (!chatBox) {
+        console.error("CRITICAL: Chat box HTML element is still missing!");
         return;
     }
 
+    // Force Visibility (CSS)
+    chatBox.style.display = 'block';
+    chatBox.style.zIndex = '9999';
+
     if (!messages || messages.length === 0) {
-        targetBox.innerHTML = `
+        chatBox.innerHTML = `
             <div class="text-center text-muted py-5 small">
                 <i class="bi bi-chat-dots fs-2 text-secondary d-block mb-2"></i>
                 No message history yet. Type a message below to start chatting with ${escapeHtml(studentName || 'the candidate')}.
@@ -2589,14 +2607,25 @@ function renderEmployeeChatMessages(studentId, historyEl, titleEl, messages, stu
         return;
     }
 
+    chatBox.innerHTML = ""; // Clear old contents
+
     let html = '<div class="d-flex flex-column gap-2.5 p-1" id="employeeChatBubbleWrapper">';
     messages.forEach(msg => {
-        // Safe field normalization (handles msg.text, msg.message, msg.content, strings)
-        const textContent = typeof msg === 'string' ? msg : (msg.text || msg.message || msg.content || msg.msg || '');
-        const sender = msg.sender || msg.role || msg.senderRole || 'Student';
+        // Hard-wired Field Normalization & Fallbacks
+        const textContent = (typeof msg === 'string')
+            ? msg
+            : (msg.text || msg.message || msg.msg || msg.content || "Empty message");
+
+        const sender = (typeof msg === 'object' && (msg.sender || msg.role || msg.senderRole))
+            ? (msg.sender || msg.role || msg.senderRole)
+            : 'Student';
+
         const isCounselor = sender === 'Counselor' || sender === 'Employee' || sender === 'Consultant';
         const bgClass = isCounselor ? 'bg-danger text-white align-self-end shadow-sm' : 'bg-white text-dark border align-self-start shadow-sm';
-        const senderLabel = isCounselor ? (msg.senderName || msg.author || 'Kabir Hossain (Counselor)') : (msg.senderName || studentName || 'Student Candidate');
+        const senderLabel = isCounselor
+            ? (msg.senderName || msg.author || 'Kabir Hossain (Counselor)')
+            : (msg.senderName || studentName || 'Student Candidate');
+
         const rawTime = msg.timestamp || msg.createdAt || msg.time;
         const timeStr = rawTime ? new Date(rawTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
 
@@ -2611,12 +2640,10 @@ function renderEmployeeChatMessages(studentId, historyEl, titleEl, messages, stu
     });
     html += '</div>';
 
-    targetBox.innerHTML = html;
-    
+    chatBox.insertAdjacentHTML('beforeend', html);
+
     // Auto-scroll to bottom of chat container
-    setTimeout(() => {
-        targetBox.scrollTop = targetBox.scrollHeight;
-    }, 50);
+    chatBox.scrollTop = chatBox.scrollHeight;
 }
 
 /**
