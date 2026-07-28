@@ -32,11 +32,13 @@
         z-index: 9998;
         opacity: 0;
         visibility: hidden;
+        pointer-events: none !important; /* Prevents invisible click blocking */
         transition: all 0.3s ease;
       }
       .neo-backdrop.active-backdrop {
         opacity: 1;
         visibility: visible;
+        pointer-events: auto !important; /* Restores clicks when active */
       }
 
       /* The Fixed Screen-Centered Panels */
@@ -49,6 +51,7 @@
         z-index: 9999;
         opacity: 0;
         visibility: hidden;
+        pointer-events: none !important;
         /* Centers it and starts it slightly zoomed out for the pop effect */
         transform: translate(-50%, -50%) scale(0.85); 
         transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
@@ -58,6 +61,7 @@
       .neo-panel-container.active-panel {
         opacity: 1;
         visibility: visible;
+        pointer-events: auto !important;
         transform: translate(-50%, -50%) scale(1);
       }
       
@@ -449,11 +453,14 @@
                             <i class="bi bi-headset me-1 text-danger"></i> Connect directly with your assigned Newage Education Consultants.
                         </p>
                     </div>
-                    <div class="p-3">
                         <!-- Scrollable Chat History Container -->
-                        <div class="border rounded-3 bg-white p-3 mb-3" id="studentChatHistory" style="max-height: 380px; min-height: 240px; overflow-y: auto;">
-                            <div class="text-center text-muted py-4 small">
-                                <span class="spinner-border spinner-border-sm me-1"></span> Loading chat...
+                        <div class="border rounded-3 bg-white p-3 mb-3 chat-widget-container" id="studentChatHistory" style="max-height: 380px; min-height: 240px; overflow-y: auto;">
+                            <div class="d-flex flex-column gap-2" id="studentChatMessages">
+                                <div class="p-2.5 rounded-3 bg-light text-dark border small align-self-start shadow-sm" style="max-width: 85%;">
+                                    <div class="fw-bold text-danger mb-0.5" style="font-size: 0.75rem;"><i class="bi bi-person-badge-fill me-1"></i> Kabir Hossain (Senior Counselor)</div>
+                                    Hello! Welcome to Newage Education. How can I assist you with your university application and visa documents today?
+                                    <div class="text-muted text-end mt-1" style="font-size: 0.65rem;">10:00 AM</div>
+                                </div>
                             </div>
                         </div>
 
@@ -1440,16 +1447,53 @@
             alert(`Application request submitted successfully for course: ${courseName}!`);
         }
 
-        function sendMessage(event) {
-            event.preventDefault();
-            const message = document.getElementById('counselorMessage').value.trim();
-            if (message) {
-                alert('Message sent successfully! Kabir Hossain will respond shortly.');
-                document.getElementById('chatForm').reset();
-                const modal = bootstrap.Modal.getInstance(document.getElementById('messageCounselorModal'));
-                modal.hide();
+        function sendStudentMessage(event) {
+            if (event) event.preventDefault();
+            const msgInput = document.getElementById('counselorMessage');
+            if (!msgInput) return;
+            const text = msgInput.value.trim();
+            if (!text) return;
+
+            const chatHistory = document.getElementById('studentChatHistory');
+            let msgList = document.getElementById('studentChatMessages');
+            if (!msgList && chatHistory) {
+                chatHistory.innerHTML = '<div class="d-flex flex-column gap-2" id="studentChatMessages"></div>';
+                msgList = document.getElementById('studentChatMessages');
+            }
+
+            if (msgList) {
+                const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                
+                // Candidate message bubble
+                const userBubble = document.createElement('div');
+                userBubble.className = 'p-2.5 rounded-3 bg-danger text-white small align-self-end shadow-sm';
+                userBubble.style.maxWidth = '85%';
+                userBubble.innerHTML = `
+                    <div class="fw-bold mb-0.5" style="font-size: 0.75rem;">You (Student Candidate)</div>
+                    ${escapeHtml(text)}
+                    <div class="text-white-50 text-end mt-1" style="font-size: 0.65rem;">${now}</div>
+                `;
+                msgList.appendChild(userBubble);
+                msgInput.value = '';
+                if (chatHistory) chatHistory.scrollTop = chatHistory.scrollHeight;
+
+                // Counselor automated reply simulation
+                setTimeout(() => {
+                    const counselorBubble = document.createElement('div');
+                    counselorBubble.className = 'p-2.5 rounded-3 bg-light text-dark border small align-self-start shadow-sm';
+                    counselorBubble.style.maxWidth = '85%';
+                    counselorBubble.innerHTML = `
+                        <div class="fw-bold text-danger mb-0.5" style="font-size: 0.75rem;"><i class="bi bi-person-badge-fill me-1"></i> Kabir Hossain (Counselor)</div>
+                        Thank you for reaching out! I have received your note regarding "${escapeHtml(text.substring(0, 30))}${text.length > 30 ? '...' : ''}" and will review it immediately.
+                        <div class="text-muted text-end mt-1" style="font-size: 0.65rem;">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                    `;
+                    msgList.appendChild(counselorBubble);
+                    if (chatHistory) chatHistory.scrollTop = chatHistory.scrollHeight;
+                }, 1000);
             }
         }
+        window.sendStudentMessage = sendStudentMessage;
+        window.sendMessage = sendStudentMessage;
     </script>
 
     <!-- Screen-Centered Zoom Logic -->

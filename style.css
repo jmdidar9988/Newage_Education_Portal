@@ -108,6 +108,34 @@ body > .container-fluid,
     transform: translateY(0) !important;
 }
 
+/* Crucial Stacking & Click-Through Controls for Backdrop Overlays */
+.neo-backdrop {
+    pointer-events: none !important; /* Prevents invisible click blocking */
+}
+
+.neo-backdrop.active-backdrop {
+    pointer-events: auto !important; /* Restores clicks when active */
+}
+
+.neo-panel-container {
+    pointer-events: none !important;
+}
+
+.neo-panel-container.active-panel {
+    pointer-events: auto !important;
+}
+
+/* Maximum Priority Stacking Context for Chat Widget */
+.chat-widget-container,
+#chatForm,
+#counselorMessage,
+#sendMsgBtn,
+#studentChatHistory,
+iframe[title*="chat"] {
+    z-index: 2147483647 !important;
+    pointer-events: auto !important;
+}
+
 [data-bs-theme="dark"],
 [data-theme="dark"] {
     --page-bg: #041124;
