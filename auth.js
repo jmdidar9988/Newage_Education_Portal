@@ -2568,17 +2568,20 @@ export async function openStudentChat(studentId) {
 }
 
 function renderEmployeeChatMessages(studentId, historyEl, titleEl, messages, studentName) {
-    if (titleEl) {
-        titleEl.innerHTML = `<i class="bi bi-chat-left-text-fill text-danger me-2"></i>Chat with ${escapeHtml(studentName || 'Candidate')} <span class="badge bg-secondary rounded-pill ms-2" style="font-size: 0.7rem;">ID: #${studentId ? studentId.substring(0, 8) : 'CLIENT'}</span>`;
+    const targetBox = document.getElementById('employeeChatHistory') || historyEl;
+    const targetTitle = document.getElementById('employeeChatModalTitle') || titleEl;
+
+    if (targetTitle) {
+        targetTitle.innerHTML = `<i class="bi bi-chat-left-text-fill text-danger me-2"></i>Chat with ${escapeHtml(studentName || 'Candidate')} <span class="badge bg-secondary rounded-pill ms-2" style="font-size: 0.7rem;">ID: #${studentId ? studentId.substring(0, 8) : 'CLIENT'}</span>`;
     }
 
-    if (!historyEl) {
+    if (!targetBox) {
         console.error("❌ [Employee Chat] Render failed: #employeeChatHistory element is missing from DOM!");
         return;
     }
 
     if (!messages || messages.length === 0) {
-        historyEl.innerHTML = `
+        targetBox.innerHTML = `
             <div class="text-center text-muted py-5 small">
                 <i class="bi bi-chat-dots fs-2 text-secondary d-block mb-2"></i>
                 No message history yet. Type a message below to start chatting with ${escapeHtml(studentName || 'the candidate')}.
@@ -2586,30 +2589,34 @@ function renderEmployeeChatMessages(studentId, historyEl, titleEl, messages, stu
         return;
     }
 
-    let html = '<div class="d-flex flex-column gap-2.5">';
+    let html = '<div class="d-flex flex-column gap-2.5 p-1" id="employeeChatBubbleWrapper">';
     messages.forEach(msg => {
-        // Safe field normalization (handles msg.text, msg.message, msg.content)
+        // Safe field normalization (handles msg.text, msg.message, msg.content, strings)
+        const textContent = typeof msg === 'string' ? msg : (msg.text || msg.message || msg.content || msg.msg || '');
         const sender = msg.sender || msg.role || msg.senderRole || 'Student';
         const isCounselor = sender === 'Counselor' || sender === 'Employee' || sender === 'Consultant';
-        const bgClass = isCounselor ? 'bg-danger text-white align-self-end' : 'bg-white text-dark border align-self-start';
+        const bgClass = isCounselor ? 'bg-danger text-white align-self-end shadow-sm' : 'bg-white text-dark border align-self-start shadow-sm';
         const senderLabel = isCounselor ? (msg.senderName || msg.author || 'Kabir Hossain (Counselor)') : (msg.senderName || studentName || 'Student Candidate');
-        const textContent = msg.text || msg.message || msg.content || '';
         const rawTime = msg.timestamp || msg.createdAt || msg.time;
         const timeStr = rawTime ? new Date(rawTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
 
         html += `
-            <div class="p-2.5 rounded-3 ${bgClass} shadow-sm" style="max-width: 85%;">
+            <div class="p-2.5 rounded-3 ${bgClass}" style="max-width: 85%;">
                 <div class="fw-bold mb-1" style="font-size: 0.75rem; color: ${isCounselor ? '#ffffff' : '#e63946'};">
                     <i class="bi ${isCounselor ? 'bi-person-badge-fill' : 'bi-person-fill'} me-1"></i>${escapeHtml(senderLabel)}
                 </div>
-                <div style="font-size: 0.875rem;">${escapeHtml(textContent)}</div>
+                <div style="font-size: 0.875rem; word-break: break-word;">${escapeHtml(textContent)}</div>
                 <div class="mt-1 text-end" style="font-size: 0.65rem; opacity: 0.8;">${timeStr}</div>
             </div>`;
     });
     html += '</div>';
 
-    historyEl.innerHTML = html;
-    historyEl.scrollTop = historyEl.scrollHeight;
+    targetBox.innerHTML = html;
+    
+    // Auto-scroll to bottom of chat container
+    setTimeout(() => {
+        targetBox.scrollTop = targetBox.scrollHeight;
+    }, 50);
 }
 
 /**
@@ -2650,18 +2657,22 @@ export async function sendEmployeeReply(event) {
 
     } catch (error) {
         console.error(`❌ [Employee Chat] Error sending counselor reply to Firestore path ${chatPath}:`, error);
-        const historyEl = document.getElementById('employeeChatHistory');
-        if (historyEl) {
-            const listEl = historyEl.querySelector('.d-flex.flex-column') || historyEl;
+        const targetBox = document.getElementById('employeeChatHistory');
+        if (targetBox) {
+            let listEl = document.getElementById('employeeChatBubbleWrapper');
+            if (!listEl) {
+                targetBox.innerHTML = '<div class="d-flex flex-column gap-2.5 p-1" id="employeeChatBubbleWrapper"></div>';
+                listEl = document.getElementById('employeeChatBubbleWrapper');
+            }
             const bubble = document.createElement('div');
             bubble.className = 'p-2.5 rounded-3 bg-danger text-white align-self-end shadow-sm mb-2';
             bubble.style.maxWidth = '85%';
             bubble.innerHTML = `
                 <div class="fw-bold mb-1" style="font-size: 0.75rem;"><i class="bi bi-person-badge-fill me-1"></i> Kabir Hossain (Counselor)</div>
-                <div style="font-size: 0.875rem;">${escapeHtml(text)}</div>
+                <div style="font-size: 0.875rem; word-break: break-word;">${escapeHtml(text)}</div>
                 <div class="mt-1 text-end" style="font-size: 0.65rem; opacity: 0.8;">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>`;
             listEl.appendChild(bubble);
-            historyEl.scrollTop = historyEl.scrollHeight;
+            targetBox.scrollTop = targetBox.scrollHeight;
         }
         inputEl.value = '';
     } finally {
