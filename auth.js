@@ -2396,16 +2396,22 @@ window.toggleTheme = toggleTheme;
 window.initScrollReveal = initScrollReveal;
 
 // Automatically fetch data, initialize theme & scroll reveal animations depending on active page
+function runInit() {
+    initThemeToggle();
+    initScrollReveal();
+    if (document.getElementById('studentsTableBody')) {
+        fetchStudents();
+    }
+    if (document.getElementById('recentApplicationsTableBody') || document.getElementById('totalStudentsKpi')) {
+        loadCEODashboardData();
+    }
+}
+
 if (typeof window !== 'undefined') {
     initThemeToggle();
-    window.addEventListener('DOMContentLoaded', () => {
-        initThemeToggle();
-        initScrollReveal();
-        if (document.getElementById('studentsTableBody')) {
-            fetchStudents();
-        }
-        if (document.getElementById('recentApplicationsTableBody') || document.getElementById('totalStudentsKpi')) {
-            loadCEODashboardData();
-        }
-    });
+    if (document.readyState === 'loading') {
+        window.addEventListener('DOMContentLoaded', runInit);
+    } else {
+        runInit();
+    }
 }
