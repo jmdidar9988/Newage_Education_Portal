@@ -2362,6 +2362,8 @@ window.setDemoCredentials = function (email) {
         emailInput.value = email;
         updateDetectedRoleUI();
     }
+};
+
 // Global Scroll Reveal Observer
 function initScrollReveal() {
     if (typeof IntersectionObserver === 'undefined') {
