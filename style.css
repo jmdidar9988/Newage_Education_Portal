@@ -280,11 +280,38 @@ iframe[title*="chat"] {
     background: var(--accent-primary) !important;
     color: #ffffff !important;
     border: none !important;
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(230, 57, 70, 0.35) !important;
 }
 
 .btn-apply-now:hover {
     background: var(--accent-hover) !important;
     color: #ffffff !important;
+    box-shadow: 0 6px 20px rgba(230, 57, 70, 0.5) !important;
+    transform: translateY(-2px);
+}
+
+.btn-signin-now {
+    background: linear-gradient(135deg, #0b2447 0%, #16325b 100%) !important;
+    color: #ffffff !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.4) !important;
+    box-shadow: 0 4px 15px rgba(11, 36, 71, 0.45) !important;
+    font-weight: 600;
+    transition: var(--ne-transition) !important;
+}
+
+.btn-signin-now:hover {
+    background: linear-gradient(135deg, #16325b 0%, #0b2447 100%) !important;
+    color: #ffffff !important;
+    border-color: #ffffff !important;
+    box-shadow: 0 6px 20px rgba(11, 36, 71, 0.6) !important;
+    transform: translateY(-2px);
+}
+
+[data-bs-theme="dark"] .btn-signin-now,
+[data-theme="dark"] .btn-signin-now {
+    background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%) !important;
+    border-color: rgba(255, 255, 255, 0.4) !important;
 }
 
 .logo-top-red {
