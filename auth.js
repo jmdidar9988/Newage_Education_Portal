@@ -5,6 +5,8 @@ import { initializeApp, getApp, getApps } from "https://www.gstatic.com/firebase
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
 import {
     getAuth,
+    setPersistence,
+    browserSessionPersistence,
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
     onAuthStateChanged,
@@ -24,8 +26,10 @@ import {
     doc,
     setDoc,
     updateDoc,
+    deleteDoc,
     serverTimestamp,
     arrayUnion,
+    increment,
     onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
@@ -41,12 +45,11 @@ const firebaseConfig = {
     projectId: "newage-web",
     storageBucket: "newage-web.firebasestorage.app",
     messagingSenderId: "970795032563",
-    appId: "1:970795032563:web:1fa36e6b6ea4c943ebbc86",
-    measurementId: "G-17R34MNL2Q"
+    appId: "1:970795032563:web:1fa36e6b6ea4c943ebbc86"
 };
 
 // Initialize Firebase App
-const app = initializeApp(firebaseConfig);
+const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
 let analytics = null;
 try {
@@ -58,9 +61,22 @@ try {
 // Initialize Auth and Firestore
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+
+// 🔒 Set Tab-Scoped Session Persistence
+// Ensures each browser tab can have its own independent login (Student, Employee, CEO) without overriding each other
+try {
+    setPersistence(auth, browserSessionPersistence).catch((pErr) => {
+        console.warn("Session persistence initialization notice:", pErr);
+    });
+} catch (pInitErr) {
+    console.warn("Could not set browserSessionPersistence:", pInitErr);
+}
+
+// Export instances and helpers for other modules
 export {
     onAuthStateChanged,
     signOut,
+    sendPasswordResetEmail,
     collection,
     addDoc,
     getDoc,
@@ -71,8 +87,10 @@ export {
     orderBy,
     doc,
     updateDoc,
+    deleteDoc,
     serverTimestamp,
     arrayUnion,
+    increment,
     onSnapshot
 };
 
@@ -166,6 +184,12 @@ export async function handleFirebaseLogin(event) {
     }
 
     try {
+        try {
+            await setPersistence(auth, browserSessionPersistence);
+        } catch (persErr) {
+            console.warn("setPersistence notice:", persErr);
+        }
+
         let userCredential;
         try {
             userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -186,11 +210,34 @@ export async function handleFirebaseLogin(event) {
         }
 
         // 🔍 Firestore Role Check & Automatic Routing
-        try {
-            const userDocRef = doc(db, "users", user.uid);
-            const userDocSnap = await getDoc(userDocRef);
+        const emailClean = (user.email || email).toLowerCase().trim();
 
-            if (userDocSnap.exists()) {
+        // 1. Check employees collection first (by email or UID)
+        try {
+            let empSnap = await getDoc(doc(db, 'employees', emailClean));
+            if (!empSnap.exists() && user.uid) {
+                empSnap = await getDoc(doc(db, 'employees', user.uid));
+            }
+            if (empSnap.exists()) {
+                console.log("Found record in 'employees' collection for:", emailClean, "Routing to employee.html");
+                window.location.href = 'employee.html';
+                return;
+            }
+        } catch(e) {
+            console.warn("Notice checking employees collection on login:", e);
+        }
+
+        // 2. Check users collection (by UID or email)
+        try {
+            let userDocSnap;
+            if (user.uid) {
+                userDocSnap = await getDoc(doc(db, "users", user.uid));
+            }
+            if ((!userDocSnap || !userDocSnap.exists()) && emailClean) {
+                userDocSnap = await getDoc(doc(db, "users", emailClean));
+            }
+
+            if (userDocSnap && userDocSnap.exists()) {
                 const userData = userDocSnap.data();
                 const role = (userData.role || '').toLowerCase().trim();
                 console.log("Found user document in Firestore 'users' collection with role:", role);
@@ -205,18 +252,15 @@ export async function handleFirebaseLogin(event) {
                     window.location.href = 'student.html';
                     return;
                 }
-            } else {
-                console.log("User doc not found in 'users' collection for UID:", user.uid, "- Defaulting to fallback routing...");
             }
         } catch (docErr) {
             console.warn("Error fetching user document from 'users' collection:", docErr);
         }
 
-        // Fallback for Student / Legacy role check by email domain
-        const emailLower = (user.email || email).toLowerCase().trim();
-        if (emailLower === 'ceo@newage.com' || emailLower.startsWith('ceo.')) {
+        // 3. Fallback string check by email keywords
+        if (emailClean.includes('ceo') || emailClean.includes('admin') || emailClean.includes('chief') || emailClean.includes('boss')) {
             window.location.href = 'index.html';
-        } else if (emailLower.includes('employee') || emailLower.includes('counselor')) {
+        } else if (emailClean.includes('employee') || emailClean.includes('emp') || emailClean.includes('counselor') || emailClean.includes('counsellor') || emailClean.includes('staff') || emailClean.includes('agent')) {
             window.location.href = 'employee.html';
         } else {
             window.location.href = 'student.html';
@@ -243,7 +287,7 @@ export async function handleFirebaseLogin(event) {
 }
 
 /**
- * Handles Firebase Sign Up
+ * Handles Firebase Sign Up (Public Registration - Strictly Student Candidates Only)
  * @param {Event} event 
  */
 export async function handleFirebaseSignUp(event) {
@@ -259,14 +303,33 @@ export async function handleFirebaseSignUp(event) {
 
     if (alertArea) alertArea.innerHTML = '';
 
+    // Enforce that Counselor / Employee / CEO accounts CANNOT be created via public sign up
+    const lower = email.toLowerCase();
+    if (lower.includes('employee') || lower.includes('emp') || lower.includes('counselor') || lower.includes('counsellor') || lower.includes('staff') || lower.includes('agent') || lower.includes('ceo') || lower.includes('admin')) {
+        if (alertArea) {
+            alertArea.innerHTML = `
+                <div class="alert alert-danger alert-dismissible fade show py-2 small mb-3" role="alert">
+                    <i class="bi bi-shield-lock-fill me-1"></i> <strong>Access Restricted:</strong> Employee and Counselor accounts can only be created by the CEO from the Executive Portal. Public registration is for Student candidates only.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>`;
+        }
+        return;
+    }
+
     if (submitBtn) {
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Creating Account...';
     }
 
     try {
+        try {
+            await setPersistence(auth, browserSessionPersistence);
+        } catch (persErr) {
+            console.warn("setPersistence notice on signup:", persErr);
+        }
+
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        console.log("Firebase Sign Up Success:", userCredential.user);
+        console.log("Firebase Student Sign Up Success:", userCredential.user);
         routeByRole(userCredential.user.email || email);
     } catch (error) {
         console.error("Firebase Sign Up Error:", error);
@@ -289,6 +352,388 @@ export async function handleFirebaseSignUp(event) {
         }
     }
 }
+
+/**
+ * Verifies CEO authentication credentials before authorizing privileged operations
+ * @param {string} ceoEmail 
+ * @param {string} ceoPassword 
+ */
+export async function verifyCEOCredentials(ceoEmail, ceoPassword) {
+    if (!ceoEmail || !ceoPassword) {
+        throw new Error("CEO Email and Password are required for authorization.");
+    }
+    const cleanEmail = ceoEmail.toLowerCase().trim();
+    
+    // Check if the email role qualifies as CEO
+    const role = getRoleFromEmail(cleanEmail);
+    if (role !== 'CEO') {
+        let isCeoInFirestore = false;
+        try {
+            const snap = await getDoc(doc(db, 'users', cleanEmail));
+            if (snap.exists() && (snap.data().role === 'ceo' || snap.data().role === 'admin')) {
+                isCeoInFirestore = true;
+            }
+        } catch(e) {}
+        if (!isCeoInFirestore) {
+            throw new Error("Access Denied: The provided email does not possess CEO / Executive authorization.");
+        }
+    }
+
+    // Authenticate credentials against Firebase Auth using isolated secondary instance
+    const authVerifyAppName = 'CEOAuthVerificationApp_' + Date.now();
+    const verifyApp = initializeApp(firebaseConfig, authVerifyAppName);
+    const verifyAuth = getAuth(verifyApp);
+    try {
+        await signInWithEmailAndPassword(verifyAuth, cleanEmail, ceoPassword);
+        await signOut(verifyAuth);
+        return true;
+    } catch (authErr) {
+        console.error("CEO credentials verification failed:", authErr);
+        if (authErr.code === 'auth/wrong-password' || authErr.code === 'auth/invalid-credential') {
+            throw new Error("Invalid CEO Master Password. Authorization rejected.");
+        } else if (authErr.code === 'auth/user-not-found' || authErr.code === 'auth/invalid-email') {
+            throw new Error("CEO account not found. Please verify the CEO email address.");
+        } else {
+            throw new Error(authErr.message ? authErr.message.replace("Firebase: ", "") : "CEO Authentication failed.");
+        }
+    }
+}
+window.verifyCEOCredentials = verifyCEOCredentials;
+
+/**
+ * Allows CEO to create a new Counselor / Employee account with mandatory CEO email & password verification
+ * @param {Event} event 
+ */
+export async function createEmployeeAccountByCEO(event) {
+    if (event && event.preventDefault) event.preventDefault();
+
+    const nameInput = document.getElementById('newEmpName');
+    const emailInput = document.getElementById('newEmpEmail');
+    const passwordInput = document.getElementById('newEmpPassword');
+    const designationInput = document.getElementById('newEmpDesignation');
+    const phoneInput = document.getElementById('newEmpPhone');
+    const departmentInput = document.getElementById('newEmpDepartment');
+    const ceoEmailInput = document.getElementById('ceoAuthEmail');
+    const ceoPasswordInput = document.getElementById('ceoAuthPassword');
+    const submitBtn = document.getElementById('createEmpSubmitBtn');
+    const alertArea = document.getElementById('createEmpAlert');
+
+    if (!nameInput || !emailInput || !passwordInput) return;
+
+    const name = nameInput.value.trim();
+    let email = emailInput.value.trim().toLowerCase();
+    const password = passwordInput.value;
+    const designation = designationInput ? designationInput.value.trim() : 'Admission Counselor';
+    const phone = phoneInput ? phoneInput.value.trim() : '';
+    const department = departmentInput ? departmentInput.value.trim() : 'General Admissions';
+
+    const ceoEmail = ceoEmailInput ? ceoEmailInput.value.trim() : (auth.currentUser?.email || '');
+    const ceoPassword = ceoPasswordInput ? ceoPasswordInput.value : '';
+
+    if (!ceoEmail || !ceoPassword) {
+        if (alertArea) {
+            alertArea.innerHTML = `<div class="alert alert-warning py-2 small"><i class="bi bi-shield-lock-fill me-1"></i> <strong>CEO Authorization Required:</strong> Please enter your CEO Email and Password to authorize employee creation.</div>`;
+        }
+        return;
+    }
+
+    if (!email.includes('@')) {
+        if (alertArea) {
+            alertArea.innerHTML = `<div class="alert alert-warning py-2 small"><i class="bi bi-exclamation-triangle-fill me-1"></i> Please provide a valid employee email address.</div>`;
+        }
+        return;
+    }
+
+    if (alertArea) alertArea.innerHTML = '';
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Verifying CEO &amp; Creating...';
+    }
+
+    try {
+        // 1. Verify CEO Credentials first
+        await verifyCEOCredentials(ceoEmail, ceoPassword);
+
+        // 2. Initialize secondary Firebase App instance so CEO stays logged in
+        const secondaryAppName = 'EmployeeProvisioningApp_' + Date.now();
+        const secondaryApp = initializeApp(firebaseConfig, secondaryAppName);
+        const secondaryAuth = getAuth(secondaryApp);
+
+        // 3. Create the user credential in Firebase Authentication
+        const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
+        const newUid = userCredential.user.uid;
+
+        // Clean up secondary auth
+        await signOut(secondaryAuth);
+
+        // 4. Save the employee record in Firestore 'employees' collection
+        const employeeData = {
+            uid: newUid,
+            fullName: name,
+            email: email,
+            role: 'employee',
+            designation: designation,
+            phone: phone,
+            department: department,
+            status: 'active',
+            createdBy: ceoEmail,
+            createdAt: serverTimestamp(),
+            createdAtDate: new Date().toISOString()
+        };
+
+        // Save employee record in Firestore 'employees' and 'users' collections (by both email and UID)
+        await setDoc(doc(db, 'employees', email), employeeData, { merge: true });
+        if (newUid) {
+            await setDoc(doc(db, 'employees', newUid), employeeData, { merge: true });
+            await setDoc(doc(db, 'users', newUid), {
+                uid: newUid,
+                fullName: name,
+                displayName: name,
+                email: email,
+                role: 'employee',
+                designation: designation,
+                department: department,
+                phone: phone,
+                createdAt: serverTimestamp()
+            }, { merge: true });
+        }
+        await setDoc(doc(db, 'users', email), {
+            uid: newUid,
+            fullName: name,
+            displayName: name,
+            email: email,
+            role: 'employee',
+            designation: designation,
+            department: department,
+            phone: phone,
+            createdAt: serverTimestamp()
+        }, { merge: true });
+
+        if (alertArea) {
+            alertArea.innerHTML = `
+                <div class="alert alert-success alert-dismissible fade show py-2 small" role="alert">
+                    <i class="bi bi-check-circle-fill me-1"></i> <strong>Authorized &amp; Created!</strong> Employee account created successfully for <strong>${escapeHtml(name)}</strong> (${escapeHtml(email)}).
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>`;
+        }
+
+        // Reset form inputs
+        if (nameInput) nameInput.value = '';
+        if (emailInput) emailInput.value = '';
+        if (passwordInput) passwordInput.value = '';
+        if (phoneInput) phoneInput.value = '';
+        if (ceoPasswordInput) ceoPasswordInput.value = '';
+
+        // Trigger SweetAlert if available
+        if (window.Swal) {
+            window.Swal.fire({
+                icon: 'success',
+                title: 'Authorized by CEO',
+                html: `Employee <b>${escapeHtml(name)}</b> (${escapeHtml(email)}) has been successfully created.<br><br><span class="text-muted small">Employee can now log in at login.html.</span>`,
+                confirmButtonColor: '#0b2447'
+            });
+        }
+
+        // Refresh employee list
+        if (window.fetchEmployeesList) {
+            window.fetchEmployeesList();
+        }
+    } catch (error) {
+        console.error("Error creating employee account:", error);
+        let msg = "Failed to create employee account.";
+        if (error.message && (error.message.includes("CEO") || error.message.includes("Access Denied"))) {
+            msg = error.message;
+        } else if (error.code === 'auth/email-already-in-use') {
+            msg = "This email address is already in use by another account.";
+        } else if (error.code === 'auth/weak-password') {
+            msg = "Password should be at least 6 characters.";
+        } else if (error.code === 'auth/invalid-email') {
+            msg = "Invalid email format.";
+        } else if (error.message) {
+            msg = error.message.replace("Firebase: ", "");
+        }
+        if (alertArea) {
+            alertArea.innerHTML = `<div class="alert alert-danger alert-dismissible fade show py-2 small" role="alert"><i class="bi bi-shield-x me-1"></i> <strong>Authorization/Creation Failed:</strong> ${escapeHtml(msg)} <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`;
+        }
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-person-plus-fill me-1"></i> Create Employee Account';
+        }
+    }
+}
+window.createEmployeeAccountByCEO = createEmployeeAccountByCEO;
+
+let employeesSnapshotUnsubscribe = null;
+
+/**
+ * Fetches and renders live employees list on CEO Dashboard
+ */
+export function fetchEmployeesList() {
+    const tableBody = document.getElementById('ceoEmployeesTableBody');
+    const badgeEl = document.getElementById('ceoEmployeeCountBadge');
+    const kpiEl = document.getElementById('activeCounselorsKpi');
+
+    if (!tableBody) return;
+
+    if (employeesSnapshotUnsubscribe) {
+        employeesSnapshotUnsubscribe();
+        employeesSnapshotUnsubscribe = null;
+    }
+
+    try {
+        employeesSnapshotUnsubscribe = onSnapshot(collection(db, 'employees'), (snapshot) => {
+            const count = snapshot.size;
+            if (badgeEl) badgeEl.innerText = `${count} Members`;
+            const topBadgeEl = document.getElementById('topEmployeeCountBadge');
+            if (topBadgeEl) topBadgeEl.innerText = count.toString();
+            if (kpiEl) kpiEl.innerText = count > 0 ? count.toString() : '12';
+
+            if (snapshot.empty) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted small">
+                            <i class="bi bi-people fs-4 d-block mb-1 opacity-50"></i>
+                            No employees created yet. Click <strong>+ Create Employee Account</strong> above to add counselors.
+                        </td>
+                    </tr>`;
+                return;
+            }
+
+            let html = '';
+            snapshot.forEach((docSnap) => {
+                const data = docSnap.data();
+                const id = docSnap.id;
+                const name = data.fullName || 'Counselor';
+                const email = data.email || id;
+                const designation = data.designation || 'Admission Counselor';
+                const department = data.department || 'Admissions';
+                const phone = data.phone || 'N/A';
+                const status = data.status || 'active';
+
+                html += `
+                    <tr>
+                        <td class="py-2.5 ps-3">
+                            <div class="fw-bold text-dark">${escapeHtml(name)}</div>
+                            <small class="text-muted" style="font-size: 0.72rem;">${escapeHtml(email)}</small>
+                        </td>
+                        <td class="py-2.5 small fw-semibold text-secondary">${escapeHtml(designation)}</td>
+                        <td class="py-2.5 small"><span class="badge bg-primary-subtle text-primary px-2.5 py-1 rounded-pill">${escapeHtml(department)}</span></td>
+                        <td class="py-2.5 small text-muted">${escapeHtml(phone)}</td>
+                        <td class="py-2.5"><span class="badge bg-success-subtle text-success border border-success px-2 py-0.5 rounded-pill small"><i class="bi bi-circle-fill me-1" style="font-size: 0.45rem;"></i>${escapeHtml(status)}</span></td>
+                        <td class="py-2.5 text-center pe-3">
+                            <button class="btn btn-sm btn-outline-danger p-1 px-2.5 rounded-3" title="Revoke / Delete Employee" onclick="window.deleteEmployeeAccount && window.deleteEmployeeAccount('${escapeHtml(id)}', '${escapeHtml(name)}')">
+                                <i class="bi bi-trash3-fill me-1"></i> Delete
+                            </button>
+                        </td>
+                    </tr>`;
+            });
+            tableBody.innerHTML = html;
+        }, (err) => {
+            console.warn("Notice loading employees list:", err);
+        });
+    } catch (e) {
+        console.error("fetchEmployeesList error:", e);
+    }
+}
+window.fetchEmployeesList = fetchEmployeesList;
+
+/**
+ * Removes an employee from the directory with mandatory CEO verification
+ */
+export async function deleteEmployeeAccount(empId, empName) {
+    if (!empId) return;
+
+    let ceoEmail = '';
+    let ceoPassword = '';
+
+    if (window.Swal) {
+        const { value: formValues, isConfirmed } = await window.Swal.fire({
+            title: 'CEO Authorization Required',
+            html: `
+                <div class="text-start small mb-3 text-muted">
+                    <span class="text-danger fw-bold"><i class="bi bi-shield-lock-fill me-1"></i> Security Verification:</span><br>
+                    You are revoking access for employee <strong>${escapeHtml(empName || empId)}</strong>. Please provide CEO credentials to confirm this deletion.
+                </div>
+                <div class="text-start mb-2">
+                    <label class="form-label fw-bold small text-dark mb-1">CEO Email Address <span class="text-danger">*</span></label>
+                    <input id="swal-ceo-email" type="email" class="form-control" placeholder="e.g. didar.ceo@gmail.com" value="${escapeHtml(auth.currentUser?.email || '')}">
+                </div>
+                <div class="text-start">
+                    <label class="form-label fw-bold small text-dark mb-1">CEO Master Password <span class="text-danger">*</span></label>
+                    <input id="swal-ceo-password" type="password" class="form-control" placeholder="Enter CEO Password">
+                </div>
+            `,
+            focusConfirm: false,
+            showCancelButton: true,
+            confirmButtonText: '<i class="bi bi-trash3-fill me-1"></i> Verify &amp; Delete',
+            confirmButtonColor: '#dc3545',
+            cancelButtonText: 'Cancel',
+            preConfirm: () => {
+                const email = document.getElementById('swal-ceo-email')?.value?.trim();
+                const pass = document.getElementById('swal-ceo-password')?.value;
+                if (!email || !pass) {
+                    window.Swal.showValidationMessage('Both CEO Email and Password are required to delete an employee.');
+                    return false;
+                }
+                return { email, pass };
+            }
+        });
+
+        if (!isConfirmed || !formValues) return;
+        ceoEmail = formValues.email;
+        ceoPassword = formValues.pass;
+    } else {
+        ceoEmail = prompt(`[CEO Security Check]\nEnter CEO Email to delete ${empName || empId}:`, auth.currentUser?.email || '');
+        if (!ceoEmail) return;
+        ceoPassword = prompt(`[CEO Security Check]\nEnter CEO Password for ${ceoEmail}:`);
+        if (!ceoPassword) return;
+    }
+
+    try {
+        if (window.Swal) {
+            window.Swal.fire({
+                title: 'Verifying CEO Credentials...',
+                text: 'Authorizing employee deletion...',
+                didOpen: () => window.Swal.showLoading(),
+                allowOutsideClick: false
+            });
+        }
+
+        // Verify CEO credentials
+        await verifyCEOCredentials(ceoEmail, ceoPassword);
+
+        // Delete from Firestore
+        await deleteDoc(doc(db, 'employees', empId));
+        try {
+            await deleteDoc(doc(db, 'users', empId));
+        } catch (e) { }
+
+        if (window.Swal) {
+            window.Swal.fire({
+                icon: 'success',
+                title: 'Employee Deleted',
+                text: `Counselor account for "${empName || empId}" has been revoked by CEO authorization.`,
+                confirmButtonColor: '#0b2447'
+            });
+        } else {
+            alert(`Employee account for "${empName || empId}" deleted successfully.`);
+        }
+    } catch (err) {
+        console.error("Error deleting employee:", err);
+        if (window.Swal) {
+            window.Swal.fire({
+                icon: 'error',
+                title: 'CEO Authorization Failed',
+                text: err.message || 'Invalid CEO credentials. Employee deletion aborted.',
+                confirmButtonColor: '#dc3545'
+            });
+        } else {
+            alert("Authorization Failed: " + (err.message || 'Invalid CEO credentials.'));
+        }
+    }
+}
+window.deleteEmployeeAccount = deleteEmployeeAccount;
 
 /**
  * Triggers a password reset email via Firebase Authentication
@@ -337,6 +782,232 @@ export async function handleForgotPassword(event) {
             alert(errorMsg);
         }
     }
+}
+
+/**
+ * Global Sign Out Handler
+ * Signs out current authenticated user and redirects to login/home
+ */
+export async function handleLogout(event) {
+    if (event && event.preventDefault) event.preventDefault();
+    try {
+        await signOut(auth);
+        console.log("Firebase Auth: User signed out successfully.");
+    } catch (err) {
+        console.warn("Firebase Auth: Sign out error:", err);
+    }
+    window.location.href = 'login.html';
+}
+
+/**
+ * Dynamically updates the navigation bar on the Public Home Page (login.html)
+ * when a user is signed in vs signed out.
+ * @param {import("https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js").User | null} user
+ */
+export async function updateHomeNavbarAuthUI(user) {
+    const authContainer = document.getElementById('homeNavbarAuthButtons');
+    if (!authContainer) return;
+
+    if (!user) {
+        // Logged Out State: Show standard Sign In & Sign Up buttons
+        authContainer.innerHTML = `
+            <button class="btn btn-sm btn-outline-light rounded-circle px-2 py-1 me-1" onclick="toggleTheme()" title="Toggle Dark/Light Theme">
+                <i class="themeToggleIcon bi bi-sun-fill text-warning"></i>
+            </button>
+            <button class="btn btn-signin-now px-3.5 py-2 fw-semibold rounded-pill" data-bs-toggle="modal" data-bs-target="#loginModal" onclick="openAuthModal('signin')">
+                <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
+            </button>
+            <button class="btn btn-apply-now pulse-glow-button px-3.5 py-2 fw-semibold rounded-pill" data-bs-toggle="modal" data-bs-target="#loginModal" onclick="openAuthModal('signup')">
+                <i class="bi bi-person-plus-fill me-1"></i> Sign Up
+            </button>
+        `;
+        initThemeToggle();
+        return;
+    }
+
+    // Logged In State: Determine user role, full name, and designation
+    let role = getRoleFromEmail(user.email);
+    const cleanEmail = (user.email || '').toLowerCase().trim();
+
+    // Clean name formatter
+    function formatNameString(str) {
+        if (!str) return '';
+        if (str.includes('@')) str = str.split('@')[0];
+        return str
+            .replace(/[._-]/g, ' ')
+            .split(' ')
+            .filter(Boolean)
+            .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+            .join(' ');
+    }
+
+    // Default intelligent fallbacks based on common portal personas
+    let fallbackName = user.displayName;
+    if (fallbackName && fallbackName.includes('@')) fallbackName = '';
+
+    if (!fallbackName && cleanEmail) {
+        if (cleanEmail.includes('didar') || cleanEmail.startsWith('ceo')) {
+            fallbackName = 'Didar Hossain';
+        } else if (cleanEmail.includes('kabir')) {
+            fallbackName = 'Kabir Hossain';
+        } else if (cleanEmail.includes('sakib')) {
+            fallbackName = 'Sakib Rahman';
+        } else if (cleanEmail.includes('ayesha')) {
+            fallbackName = 'Ayesha Rahman';
+        } else if (cleanEmail.includes('rafid')) {
+            fallbackName = 'Rafid Islam';
+        } else {
+            fallbackName = formatNameString(cleanEmail);
+        }
+    }
+    if (!fallbackName) fallbackName = 'Candidate';
+
+    let resolvedName = fallbackName;
+    let resolvedDesignation = '';
+
+    try {
+        // 0. Check 'employees' collection in Firestore for Counselor Profile
+        try {
+            let empSnap = await getDoc(doc(db, "employees", cleanEmail));
+            if (!empSnap.exists() && user.uid) {
+                empSnap = await getDoc(doc(db, "employees", user.uid));
+            }
+            if (empSnap.exists()) {
+                const empData = empSnap.data();
+                role = 'Employee';
+                if (empData.fullName || empData.name) {
+                    resolvedName = empData.fullName || empData.name;
+                }
+                if (empData.designation) {
+                    resolvedDesignation = empData.designation;
+                }
+                const empHeroName = document.getElementById('empHeroName');
+                const empHeroRole = document.getElementById('empHeroRole');
+                const empHeroDept = document.getElementById('empHeroDept');
+                const empHeroEmail = document.getElementById('empHeroEmail');
+                const navEmployeeName = document.getElementById('navEmployeeName');
+
+                if (empHeroName) empHeroName.innerText = `Welcome, ${resolvedName}`;
+                if (empHeroRole) empHeroRole.innerText = empData.designation || 'Admission Counselor';
+                if (empHeroDept) empHeroDept.innerText = empData.department || 'General Admissions';
+                if (empHeroEmail) empHeroEmail.innerText = empData.email || cleanEmail;
+                if (navEmployeeName) navEmployeeName.innerText = resolvedName;
+            }
+        } catch(empErr) {
+            console.warn("Notice fetching employee profile:", empErr);
+        }
+
+        // 1. Check in-memory student cache first if loaded
+        if (window.loadedStudentsMap) {
+            for (const [id, s] of Object.entries(window.loadedStudentsMap)) {
+                const sEmail = (s?.personalInfo?.email || s?.email || id || '').toLowerCase().trim();
+                if (sEmail === cleanEmail) {
+                    const sName = s?.personalInfo?.fullName || s?.personalInfo?.name || s?.fullName || s?.name;
+                    if (sName && !sName.includes('@')) {
+                        resolvedName = sName;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // 2. Check 'users' collection in Firestore for user profile & role
+        if (user.uid) {
+            const userDocRef = doc(db, "users", user.uid);
+            const userDocSnap = await getDoc(userDocRef);
+            if (userDocSnap.exists()) {
+                const data = userDocSnap.data();
+                if (data.role) {
+                    const r = String(data.role).toLowerCase().trim();
+                    if (r === 'ceo' || r === 'admin') role = 'CEO';
+                    else if (r === 'employee' || r === 'counselor') role = 'Employee';
+                    else role = 'Student';
+                }
+                if (data.fullName || data.name) {
+                    const uName = data.fullName || data.name;
+                    if (uName && !uName.includes('@')) resolvedName = uName;
+                }
+                if (data.designation || data.position || data.title) {
+                    resolvedDesignation = data.designation || data.position || data.title;
+                }
+            }
+        }
+
+        // 3. If Student, check 'students' collection direct document & query
+        if (role === 'Student' && cleanEmail) {
+            try {
+                const studentDocRef = doc(db, "students", cleanEmail);
+                const studentDocSnap = await getDoc(studentDocRef);
+                if (studentDocSnap.exists()) {
+                    const sData = studentDocSnap.data();
+                    const actualStudentName = sData.personalInfo?.fullName || sData.personalInfo?.name || sData.fullName || sData.name;
+                    if (actualStudentName && !actualStudentName.includes('@')) {
+                        resolvedName = actualStudentName;
+                    }
+                } else {
+                    // Try query if docId was not direct email
+                    const qStudents = query(collection(db, "students"), where("personalInfo.email", "==", cleanEmail));
+                    const qSnap = await getDocs(qStudents);
+                    if (!qSnap.empty) {
+                        const sData = qSnap.docs[0].data();
+                        const actualStudentName = sData.personalInfo?.fullName || sData.personalInfo?.name || sData.fullName || sData.name;
+                        if (actualStudentName && !actualStudentName.includes('@')) {
+                            resolvedName = actualStudentName;
+                        }
+                    }
+                }
+            } catch (sErr) {
+                console.warn("Student doc lookup notice:", sErr);
+            }
+        }
+    } catch (e) {
+        console.warn("Notice fetching user details for home navbar:", e);
+    }
+
+    // Ensure resolvedName NEVER has an @ symbol
+    if (resolvedName.includes('@')) {
+        resolvedName = formatNameString(resolvedName);
+    }
+
+    // Role-specific badge and portal navigation target
+    let portalUrl = 'student.html';
+    let profileBtnLabel = 'My Profile';
+    let profileIcon = 'bi-person-circle';
+    let roleBadge = '';
+
+    if (role === 'CEO') {
+        portalUrl = 'index.html';
+        profileBtnLabel = 'CEO Dashboard';
+        profileIcon = 'bi-speedometer2';
+        const ceoTitle = resolvedDesignation || 'CEO';
+        roleBadge = `<span class="badge bg-danger-subtle text-danger border border-danger px-3 py-1.5 rounded-pill small d-inline-flex align-items-center gap-1 shadow-sm"><i class="bi bi-award-fill text-danger"></i> ${escapeHtml(resolvedName)} (${escapeHtml(ceoTitle)})</span>`;
+    } else if (role === 'Employee') {
+        portalUrl = 'employee.html';
+        profileBtnLabel = 'Counselor Portal';
+        profileIcon = 'bi-speedometer2';
+        const empTitle = resolvedDesignation || 'Counselor';
+        roleBadge = `<span class="badge bg-warning-subtle text-warning-emphasis border border-warning px-3 py-1.5 rounded-pill small d-inline-flex align-items-center gap-1 shadow-sm"><i class="bi bi-person-badge-fill text-warning"></i> ${escapeHtml(resolvedName)} (${escapeHtml(empTitle)})</span>`;
+    } else {
+        portalUrl = 'student.html';
+        profileBtnLabel = 'My Profile';
+        profileIcon = 'bi-person-circle';
+        // Student displays only student's Name (e.g. Rafid Islam, Sakib Rahman)
+        roleBadge = `<span class="badge bg-info-subtle text-info-emphasis border border-info px-3 py-1.5 rounded-pill small d-inline-flex align-items-center gap-1 shadow-sm"><i class="bi bi-mortarboard-fill text-info"></i> ${escapeHtml(resolvedName)}</span>`;
+    }
+
+    authContainer.innerHTML = `
+        <button class="btn btn-sm btn-outline-light rounded-circle px-2 py-1 flex-shrink-0" onclick="toggleTheme()" title="Toggle Dark/Light Theme">
+            <i class="themeToggleIcon bi bi-sun-fill text-warning"></i>
+        </button>
+        ${roleBadge}
+        <a href="${portalUrl}" class="btn btn-apply-now pulse-glow-button px-3 py-1.5 fw-semibold rounded-pill d-inline-flex align-items-center gap-1 shadow-sm flex-shrink-0" style="font-size: 0.85rem;" title="Return to your Portal Dashboard">
+            <i class="bi ${profileIcon}"></i> ${profileBtnLabel}
+        </a>
+        <button onclick="handleLogout(event)" class="btn btn-outline-danger px-2.5 py-1.5 fw-semibold rounded-pill btn-sm d-inline-flex align-items-center gap-1 shadow-sm flex-shrink-0" style="font-size: 0.85rem;" title="Sign Out">
+            <i class="bi bi-box-arrow-right"></i> Logout
+        </button>
+    `;
+    initThemeToggle();
 }
 
 /**
@@ -640,45 +1311,186 @@ function getLatestMessageTime(studentData) {
 }
 
 /**
- * Helper to check if student has unread messages sent by 'Student' safely
+ * Helper to count unread messages sent by 'Student' for a candidate record
  */
-function hasUnreadStudentMessages(studentData) {
-    if (!studentData) return false;
+export function getUnreadStudentMessagesCount(studentData) {
+    if (!studentData) return 0;
+    if (studentData.hasUnreadStudentMessages === false && (!studentData.unreadStudentMessagesCount || studentData.unreadStudentMessagesCount === 0)) {
+        return 0;
+    }
+    if (typeof studentData.unreadStudentMessagesCount === 'number') {
+        return Math.max(0, studentData.unreadStudentMessagesCount);
+    }
+    if (studentData.hasUnreadStudentMessages === true) {
+        return 1;
+    }
     const msgs = Array.isArray(studentData.messages) ? studentData.messages : [];
-    if (msgs.length === 0) return false;
-    const lastMsg = msgs[msgs.length - 1];
-    return Boolean(lastMsg && lastMsg.sender === 'Student' && lastMsg.isRead !== true);
+    return msgs.filter(m => (m.sender === 'Student' || m.sender === 'student') && m.isRead !== true && m.isRead !== 'true').length;
 }
 
 /**
- * Marks messages sent by a specific role as read in Firestore
+ * Helper to check if student has unread messages sent by 'Student' safely
  */
-export async function markMessagesAsRead(studentId, unreadSender = 'Student') {
-    const student = window.loadedStudentsMap ? window.loadedStudentsMap[studentId] : null;
-    if (!student || !Array.isArray(student.messages)) return;
+export function hasUnreadStudentMessages(studentData) {
+    if (!studentData) return false;
+    if (studentData.hasUnreadStudentMessages === false && (!studentData.unreadStudentMessagesCount || studentData.unreadStudentMessagesCount === 0)) {
+        return false;
+    }
+    if (typeof studentData.unreadStudentMessagesCount === 'number') {
+        return studentData.unreadStudentMessagesCount > 0;
+    }
+    if (typeof studentData.hasUnreadStudentMessages === 'boolean') {
+        return studentData.hasUnreadStudentMessages;
+    }
+    const msgs = Array.isArray(studentData.messages) ? studentData.messages : [];
+    return msgs.some(m => (m.sender === 'Student' || m.sender === 'student') && m.isRead !== true && m.isRead !== 'true');
+}
 
-    let updated = false;
-    const updatedMessages = student.messages.map(m => {
-        if (m.sender === unreadSender && m.isRead !== true) {
-            updated = true;
-            return { ...m, isRead: true };
+// Mutable Global Fallback Data
+const globalSampleStudents = [
+    {
+        id: "std_sakib_01",
+        data: {
+            personalInfo: { fullName: "Sakib Rahman", email: "sakib@gmail.com", contactNo: "+880 1712-345678" },
+            preferences: { countryChoices: ["UK"], courseChoices: ["MSc Computer Science"] },
+            hasUnreadStudentMessages: false,
+            unreadStudentMessagesCount: 0,
+            messages: []
         }
-        return m;
+    },
+    {
+        id: "std_amina_02",
+        data: {
+            personalInfo: { fullName: "Amina Khatun", email: "amina@gmail.com", contactNo: "+880 1819-876543" },
+            preferences: { countryChoices: ["Canada"], courseChoices: ["MBA"] },
+            hasUnreadStudentMessages: false,
+            unreadStudentMessagesCount: 0,
+            messages: []
+        }
+    },
+    {
+        id: "std_tanvir_03",
+        data: {
+            personalInfo: { fullName: "Tanvir Hasan", email: "tanvir@gmail.com", contactNo: "+880 1911-223344" },
+            preferences: { countryChoices: ["Australia"], courseChoices: ["BSc Software Engineering"] },
+            hasUnreadStudentMessages: false,
+            unreadStudentMessagesCount: 0,
+            messages: []
+        }
+    }
+];
+
+/**
+ * Marks messages sent by a specific role as read in Firestore and clears unread badges immediately
+ */
+export async function markMessagesAsRead(identifier, unreadSender = 'Student') {
+    if (!identifier) return;
+    const cleanId = String(identifier).trim().toLowerCase();
+
+    // 1. Immediately remove all unread badges for this student from the current DOM
+    try {
+        const matchingButtons = document.querySelectorAll(`[data-email="${cleanId}"], .chat-btn`);
+        matchingButtons.forEach(btn => {
+            const btnEmail = (btn.getAttribute('data-email') || '').trim().toLowerCase();
+            if (btnEmail === cleanId || cleanId.includes(btnEmail) || (btnEmail && btnEmail.includes(cleanId))) {
+                const badge = btn.querySelector('.badge');
+                if (badge && (badge.textContent.includes('New') || badge.classList.contains('bg-danger'))) {
+                    badge.remove();
+                }
+            }
+        });
+    } catch (domErr) {
+        console.warn("DOM badge update notice:", domErr);
+    }
+
+    // 2. Mark in global sample memory
+    globalSampleStudents.forEach(item => {
+        const sEmail = (item.data?.personalInfo?.email || item.id || '').trim().toLowerCase();
+        if (sEmail === cleanId || item.id.toLowerCase() === cleanId) {
+            if (Array.isArray(item.data.messages)) {
+                item.data.messages.forEach(m => { m.isRead = true; });
+            }
+            item.data.unreadStudentMessagesCount = 0;
+            item.data.hasUnreadStudentMessages = false;
+        }
     });
 
-    if (updated) {
+    // 3. Collect all matching student document IDs
+    const docIdsToUpdate = new Set([cleanId, identifier]);
+    if (window.loadedStudentsMap) {
+        for (const [id, sData] of Object.entries(window.loadedStudentsMap)) {
+            const sEmail = (sData?.personalInfo?.email || sData?.email || '').trim().toLowerCase();
+            if (sEmail === cleanId || id.toLowerCase() === cleanId || cleanId.includes(sEmail) || sEmail.includes(cleanId)) {
+                docIdsToUpdate.add(id);
+                sData.unreadStudentMessagesCount = 0;
+                sData.hasUnreadStudentMessages = false;
+                if (Array.isArray(sData.messages)) {
+                    sData.messages.forEach(m => { m.isRead = true; });
+                }
+            }
+        }
+    }
+
+    // 4. Query Firestore collection case-insensitively to find the true document ID
+    try {
+        const allStudentsSnap = await getDocs(collection(db, 'students'));
+        allStudentsSnap.forEach(dSnap => {
+            const dData = dSnap.data();
+            const dEmail = (dData?.personalInfo?.email || dData?.email || '').trim().toLowerCase();
+            if (dEmail === cleanId || dSnap.id.toLowerCase() === cleanId || (dEmail && cleanId.includes(dEmail))) {
+                docIdsToUpdate.add(dSnap.id);
+            }
+        });
+    } catch (qErr) {
+        console.warn("Notice querying all students:", qErr);
+    }
+
+    // 5. Update every matching student document & subcollection in Firestore
+    for (const docId of docIdsToUpdate) {
+        if (!docId) continue;
         try {
-            const studentRef = doc(db, 'students', studentId);
-            await updateDoc(studentRef, { messages: updatedMessages });
-            student.messages = updatedMessages;
-            console.log(`Marked ${unreadSender} messages as read for student ${studentId}`);
-            if (document.getElementById('studentsTableBody')) fetchStudents();
-            if (document.getElementById('recentApplicationsTableBody')) loadCEODashboardData();
+            const studentRef = doc(db, 'students', docId);
+            const docSnap = await getDoc(studentRef);
+            if (docSnap.exists()) {
+                const docData = docSnap.data();
+                let updatedMessages = docData.messages;
+                if (Array.isArray(updatedMessages)) {
+                    updatedMessages = updatedMessages.map(m => {
+                        if (m.sender === 'student' || m.sender === 'Student' || m.senderRole === 'student') {
+                            return { ...m, isRead: true };
+                        }
+                        return m;
+                    });
+                }
+                await updateDoc(studentRef, {
+                    unreadStudentMessagesCount: 0,
+                    hasUnreadStudentMessages: false,
+                    ...(Array.isArray(updatedMessages) ? { messages: updatedMessages } : {})
+                });
+            }
         } catch (err) {
-            console.error("Error marking messages as read:", err);
+            // Safe ignore if document is only virtual
+        }
+
+        try {
+            const chatSubRef = collection(db, 'students', docId, 'chatMessages');
+            const allMsgsSnap = await getDocs(chatSubRef);
+            allMsgsSnap.forEach(async (docSnap) => {
+                const data = docSnap.data();
+                if (data.isRead !== true) {
+                    if ((unreadSender === 'Student' && (data.sender === 'student' || data.sender === 'Student' || data.senderRole === 'student')) ||
+                        (unreadSender !== 'Student' && data.sender !== 'student' && data.sender !== 'Student' && data.senderRole !== 'student') ||
+                        (!unreadSender)) {
+                        await updateDoc(docSnap.ref, { isRead: true }).catch(() => { });
+                    }
+                }
+            });
+        } catch (subErr) {
+            console.warn("Notice marking subcollection messages as read:", subErr);
         }
     }
 }
+window.markMessagesAsRead = markMessagesAsRead;
 
 
 
@@ -830,86 +1642,99 @@ function renderCEOAnalyticsCharts(studentItems = []) {
     });
 }
 
+let studentsSnapshotUnsubscribe = null;
+
 /**
  * Fetches all student records from Firestore 'students' collection and renders them dynamically for Employee Portal
  */
-export async function fetchStudents() {
+export function fetchStudents() {
     const tableBody = document.getElementById('studentsTableBody');
     const studentCountBadge = document.getElementById('studentCountBadge');
 
     if (!tableBody) return;
 
-    // Show skeleton loaders before data arrives
-    tableBody.innerHTML = getSkeletonRowsHTML(6, 5);
+    if (!tableBody.innerHTML || tableBody.innerHTML.trim() === '') {
+        tableBody.innerHTML = getSkeletonRowsHTML(6, 5);
+    }
+
+    if (studentsSnapshotUnsubscribe) {
+        studentsSnapshotUnsubscribe();
+        studentsSnapshotUnsubscribe = null;
+    }
 
     try {
-        let snapshot;
-        try {
-            const q = query(collection(db, "students"), orderBy("createdAt", "desc"));
-            snapshot = await getDocs(q);
-        } catch (e) {
-            console.warn("Falling back to unordered query for students collection:", e);
-            snapshot = await getDocs(collection(db, "students"));
-        }
+        const q = query(collection(db, "students"), orderBy("createdAt", "desc"));
+        studentsSnapshotUnsubscribe = onSnapshot(q, (snapshot) => {
+            if (snapshot.empty) {
+                renderFallbackStudents(tableBody, studentCountBadge);
+                return;
+            }
 
-        if (snapshot.empty) {
+            if (studentCountBadge) studentCountBadge.innerText = `${snapshot.size} Records`;
+
+            const studentItems = [];
+            window.loadedStudentsMap = window.loadedStudentsMap || {};
+
+            snapshot.forEach((docSnap) => {
+                const data = docSnap.data();
+                window.loadedStudentsMap[docSnap.id] = data;
+                if (data?.personalInfo?.email) {
+                    window.loadedStudentsMap[data.personalInfo.email.toLowerCase()] = data;
+                }
+                studentItems.push({ id: docSnap.id, data });
+            });
+
+            // Sort students: Most recent message appears at the top
+            studentItems.sort((a, b) => getLatestMessageTime(b.data) - getLatestMessageTime(a.data));
+
+            let html = '';
+            studentItems.forEach(({ id, data }) => {
+                const fullName = data.personalInfo?.fullName || 'N/A';
+                const rawEmail = data.personalInfo?.email || data.email || '';
+                const email = (rawEmail && rawEmail !== 'N/A') ? rawEmail : 'N/A';
+                const studentIdentifier = (email !== 'N/A' && email.includes('@')) ? email.trim().toLowerCase() : id;
+                const phone = data.personalInfo?.contactNo || 'N/A';
+                const primaryCountry = (data.preferences?.countryChoices && data.preferences.countryChoices.length > 0)
+                    ? data.preferences.countryChoices[0]
+                    : 'N/A';
+                const primaryCourse = (data.preferences?.courseChoices && data.preferences.courseChoices.length > 0)
+                    ? data.preferences.courseChoices[0]
+                    : 'N/A';
+                const hasUnread = hasUnreadStudentMessages(data);
+                const unreadBadge = hasUnread
+                    ? `<span class="badge rounded-pill bg-danger ms-1" style="font-size: 0.7rem;">New Message</span>`
+                    : '';
+
+                html += `
+                    <tr>
+                        <td class="py-2.5 ps-4">
+                            <div class="fw-bold text-dark mb-0" style="font-size: 0.875rem;">${escapeHtml(fullName)}</div>
+                            <small class="text-muted" style="font-size: 0.7rem;">ID: #${id.substring(0, 8).toUpperCase()}</small>
+                        </td>
+                        <td class="text-muted small py-2.5">${escapeHtml(email)}</td>
+                        <td class="small py-2.5">${escapeHtml(phone)}</td>
+                        <td class="py-2.5">
+                            <span class="badge bg-danger px-2.5 py-1 rounded-pill">${escapeHtml(primaryCountry)}</span>
+                        </td>
+                        <td class="small fw-semibold text-secondary py-2.5">${escapeHtml(primaryCourse)}</td>
+                        <td class="py-2.5 text-center pe-4">
+                            <div class="d-inline-flex align-items-center gap-1">
+                                <button class="btn btn-sm btn-navy view-btn py-1 px-2.5 rounded-3" data-email="${escapeHtml(studentIdentifier)}" data-id="${id}" data-student-id="${id}" onclick="viewStudentDetails('${id}')" title="View Full Profile">
+                                    <i class="bi bi-eye-fill me-1"></i> View
+                                </button>
+                                <button class="btn btn-sm btn-info chat-btn py-1 px-2.5 rounded-3 fw-semibold ms-1" data-email="${escapeHtml(studentIdentifier)}" data-name="${escapeHtml(fullName)}" data-bs-toggle="modal" data-bs-target="#employeeChatModal" onclick="window.openEmployeeChatModal && window.openEmployeeChatModal('${escapeHtml(studentIdentifier)}', '${escapeHtml(fullName)}')">💬 Chat${unreadBadge}</button>
+                            </div>
+                        </td>
+                    </tr>`;
+            });
+
+            tableBody.innerHTML = html;
+        }, (error) => {
+            console.warn("Firestore onSnapshot error, falling back to query:", error);
             renderFallbackStudents(tableBody, studentCountBadge);
-            return;
-        }
-
-        if (studentCountBadge) studentCountBadge.innerText = `${snapshot.size} Records`;
-
-        const studentItems = [];
-        window.loadedStudentsMap = window.loadedStudentsMap || {};
-
-        snapshot.forEach((doc) => {
-            const data = doc.data();
-            window.loadedStudentsMap[doc.id] = data;
-            studentItems.push({ id: doc.id, data });
         });
-
-        // Sort students: Most recent message appears at the top
-        studentItems.sort((a, b) => getLatestMessageTime(b.data) - getLatestMessageTime(a.data));
-
-        let html = '';
-        studentItems.forEach(({ id, data }) => {
-            const fullName = data.personalInfo?.fullName || 'N/A';
-            const email = data.personalInfo?.email || 'N/A';
-            const phone = data.personalInfo?.contactNo || 'N/A';
-            const primaryCountry = (data.preferences?.countryChoices && data.preferences.countryChoices.length > 0)
-                ? data.preferences.countryChoices[0]
-                : 'N/A';
-            const primaryCourse = (data.preferences?.courseChoices && data.preferences.courseChoices.length > 0)
-                ? data.preferences.courseChoices[0]
-                : 'N/A';
-
-            html += `
-                <tr>
-                    <td class="py-2.5 ps-4">
-                        <div class="fw-bold text-dark mb-0" style="font-size: 0.875rem;">${escapeHtml(fullName)}</div>
-                        <small class="text-muted" style="font-size: 0.7rem;">ID: #${id.substring(0, 8).toUpperCase()}</small>
-                    </td>
-                    <td class="text-muted small py-2.5">${escapeHtml(email)}</td>
-                    <td class="small py-2.5">${escapeHtml(phone)}</td>
-                    <td class="py-2.5">
-                        <span class="badge bg-danger px-2.5 py-1 rounded-pill">${escapeHtml(primaryCountry)}</span>
-                    </td>
-                    <td class="small fw-semibold text-secondary py-2.5">${escapeHtml(primaryCourse)}</td>
-                    <td class="py-2.5 text-center pe-4">
-                        <div class="d-inline-flex align-items-center gap-1">
-                            <button class="btn btn-sm btn-navy view-btn py-1 px-2.5 rounded-3" data-email="${escapeHtml(email || id)}" data-id="${id}" data-student-id="${id}" onclick="viewStudentDetails('${id}')" title="View Full Profile">
-                                <i class="bi bi-eye-fill me-1"></i> View
-                            </button>
-                            <button class="btn btn-sm btn-info chat-btn py-1 px-2.5 rounded-3 fw-semibold ms-1" data-email="${escapeHtml(email || id)}" data-name="${escapeHtml(fullName)}" data-bs-toggle="modal" data-bs-target="#employeeChatModal" onclick="window.openEmployeeChatModal && window.openEmployeeChatModal('${escapeHtml(email || id)}', '${escapeHtml(fullName)}')">💬 Chat</button>
-                        </div>
-                    </td>
-                </tr>`;
-        });
-
-        tableBody.innerHTML = html;
-
-    } catch (error) {
-        console.error("Firestore Loading Error:", error);
+    } catch (err) {
+        console.error("fetchStudents error:", err);
         renderFallbackStudents(tableBody, studentCountBadge);
     }
 }
@@ -917,38 +1742,25 @@ export async function fetchStudents() {
 function renderFallbackStudents(tableBody, studentCountBadge) {
     if (!tableBody) return;
 
-    const sampleStudents = [
-        {
-            id: "std_sakib_01",
-            data: {
-                personalInfo: { fullName: "Sakib Rahman", email: "sakib@gmail.com", contactNo: "+880 1712-345678" },
-                preferences: { countryChoices: ["UK"], courseChoices: ["MSc Computer Science"] }
-            }
-        },
-        {
-            id: "std_amina_02",
-            data: {
-                personalInfo: { fullName: "Amina Begum", email: "amina@gmail.com", contactNo: "+880 1819-876543" },
-                preferences: { countryChoices: ["Canada"], courseChoices: ["MBA International Business"] }
-            }
-        },
-        {
-            id: "std_zayd_03",
-            data: {
-                personalInfo: { fullName: "Zayd Al-Amin", email: "zayd@gmail.com", contactNo: "+880 1911-223344" },
-                preferences: { countryChoices: ["Australia"], courseChoices: ["Bachelor of Data Science"] }
-            }
-        }
-    ];
+    const sampleStudents = globalSampleStudents;
 
     window.loadedStudentsMap = window.loadedStudentsMap || {};
-    sampleStudents.forEach(s => window.loadedStudentsMap[s.id] = s.data);
+    sampleStudents.forEach(s => {
+        window.loadedStudentsMap[s.id] = s.data;
+        if (s.data?.personalInfo?.email) {
+            window.loadedStudentsMap[s.data.personalInfo.email.toLowerCase()] = s.data;
+        }
+    });
 
     if (studentCountBadge) studentCountBadge.innerText = `${sampleStudents.length} Records`;
 
     let html = '';
     sampleStudents.forEach(({ id, data }) => {
-        const studentEmail = data.personalInfo?.email || id;
+        const hasUnread = hasUnreadStudentMessages(data);
+        const unreadBadge = hasUnread
+            ? `<span class="badge rounded-pill bg-danger ms-1" style="font-size: 0.7rem;">New Message</span>`
+            : '';
+
         html += `
             <tr>
                 <td class="py-2.5 ps-4">
@@ -963,10 +1775,10 @@ function renderFallbackStudents(tableBody, studentCountBadge) {
                 <td class="small fw-semibold text-secondary py-2.5">${escapeHtml(data.preferences.courseChoices[0])}</td>
                 <td class="py-2.5 text-center pe-4">
                     <div class="d-inline-flex align-items-center gap-1">
-                        <button class="btn btn-sm btn-navy view-btn py-1 px-2.5 rounded-3" data-email="${escapeHtml(studentEmail)}" data-id="${id}" data-student-id="${id}" onclick="viewStudentDetails('${id}')" title="View Full Profile">
+                        <button class="btn btn-sm btn-navy view-btn py-1 px-2.5 rounded-3" data-email="${escapeHtml(data.personalInfo.email)}" data-id="${id}" data-student-id="${id}" onclick="viewStudentDetails('${id}')" title="View Full Profile">
                             <i class="bi bi-eye-fill me-1"></i> View
                         </button>
-                        <button class="btn btn-sm btn-info chat-btn py-1 px-2.5 rounded-3 fw-semibold ms-1" data-email="${escapeHtml(studentEmail)}" data-name="${escapeHtml(data.personalInfo.fullName)}" data-bs-toggle="modal" data-bs-target="${document.getElementById('ceoChatModal') ? '#ceoChatModal' : '#employeeChatModal'}" onclick="(window.openCeoChatModal || window.openEmployeeChatModal)('${escapeHtml(studentEmail)}', '${escapeHtml(data.personalInfo.fullName)}')">💬 Chat</button>
+                        <button class="btn btn-sm btn-info chat-btn py-1 px-2.5 rounded-3 fw-semibold ms-1" data-email="${escapeHtml(data.personalInfo.email)}" data-name="${escapeHtml(data.personalInfo.fullName)}" data-bs-toggle="modal" data-bs-target="#employeeChatModal" onclick="window.openEmployeeChatModal && window.openEmployeeChatModal('${escapeHtml(data.personalInfo.email)}', '${escapeHtml(data.personalInfo.fullName)}')">💬 Chat${unreadBadge}</button>
                     </div>
                 </td>
             </tr>`;
@@ -975,99 +1787,155 @@ function renderFallbackStudents(tableBody, studentCountBadge) {
 }
 
 /**
+ * Filter assigned applications for Employee Portal
+ */
+export function renderCounselorApplications(applications, counselorEmail) {
+    const tableBody = document.getElementById('counselorApplicationsTableBody');
+    if (!tableBody) return;
+
+    if (!applications || applications.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-muted">No assigned students found for ${escapeHtml(counselorEmail || 'your profile')}</td></tr>`;
+        return;
+    }
+
+    let html = '';
+    applications.forEach(({ id, data }) => {
+        const studentEmail = data.personalInfo?.email || id;
+        const hasUnread = hasUnreadStudentMessages(data);
+        const unreadBadge = hasUnread
+            ? `<span class="badge rounded-pill bg-danger ms-1" style="font-size: 0.7rem;">New Message</span>`
+            : '';
+
+        html += `
+            <tr>
+                <td class="py-2.5 ps-4">
+                    <div class="fw-bold text-dark mb-0" style="font-size: 0.875rem;">${escapeHtml(data.personalInfo?.fullName || 'N/A')}</div>
+                    <small class="text-muted" style="font-size: 0.7rem;">ID: #${id.substring(0, 8).toUpperCase()}</small>
+                </td>
+                <td class="text-muted small py-2.5">${escapeHtml(studentEmail)}</td>
+                <td class="small py-2.5">${escapeHtml(data.personalInfo?.contactNo || 'N/A')}</td>
+                <td class="py-2.5">
+                    <span class="badge bg-danger px-2.5 py-1 rounded-pill">${escapeHtml(data.preferences?.countryChoices?.[0] || 'N/A')}</span>
+                </td>
+                <td class="small fw-semibold text-secondary py-2.5">${escapeHtml(data.preferences?.courseChoices?.[0] || 'N/A')}</td>
+                <td class="py-2.5 text-center pe-4">
+                    <div class="d-inline-flex align-items-center gap-1">
+                        <button class="btn btn-sm btn-navy view-btn py-1 px-2.5 rounded-3" data-email="${escapeHtml(studentEmail)}" data-id="${id}" data-student-id="${id}" onclick="viewStudentDetails('${id}')" title="View Full Profile">
+                            <i class="bi bi-eye-fill me-1"></i> View
+                        </button>
+                        <button class="btn btn-sm btn-info chat-btn py-1 px-2.5 rounded-3 fw-semibold ms-1" data-email="${escapeHtml(studentEmail)}" data-name="${escapeHtml(data.personalInfo?.fullName || 'Candidate')}" data-bs-toggle="modal" data-bs-target="${document.getElementById('ceoChatModal') ? '#ceoChatModal' : '#employeeChatModal'}" onclick="(window.openCeoChatModal || window.openEmployeeChatModal)('${escapeHtml(studentEmail)}', '${escapeHtml(data.personalInfo?.fullName || 'Candidate')}');">💬 Chat${unreadBadge}</button>
+                    </div>
+                </td>
+            </tr>`;
+    });
+    tableBody.innerHTML = html;
+}
+
+let ceoSnapshotUnsubscribe = null;
+
+/**
  * Loads Firestore data and updates KPIs + Recent Student Applications table on CEO Dashboard
  */
-export async function loadCEODashboardData() {
+export function loadCEODashboardData() {
     const kpiEl = document.getElementById('totalStudentsKpi');
     const tableBody = document.getElementById('recentApplicationsTableBody');
     const badgeEl = document.getElementById('ceoStudentCountBadge');
 
-    if (tableBody) {
-        // Show skeleton loaders before data arrives
+    if (tableBody && (!tableBody.innerHTML || tableBody.innerHTML.trim() === '')) {
         tableBody.innerHTML = getSkeletonRowsHTML(6, 5);
     }
 
+    if (ceoSnapshotUnsubscribe) {
+        ceoSnapshotUnsubscribe();
+        ceoSnapshotUnsubscribe = null;
+    }
+
     try {
-        let snapshot;
-        try {
-            const q = query(collection(db, "students"), orderBy("createdAt", "desc"));
-            snapshot = await getDocs(q);
-        } catch (e) {
-            console.warn("Falling back to unordered query for CEO Dashboard:", e);
-            snapshot = await getDocs(collection(db, "students"));
-        }
+        const q = query(collection(db, "students"), orderBy("createdAt", "desc"));
+        ceoSnapshotUnsubscribe = onSnapshot(q, (snapshot) => {
+            const count = snapshot.size;
 
-        const count = snapshot.size;
+            if (kpiEl) kpiEl.innerText = count.toLocaleString();
+            if (badgeEl) badgeEl.innerText = `${count} Records`;
 
-        if (kpiEl) kpiEl.innerText = count.toLocaleString();
-        if (badgeEl) badgeEl.innerText = `${count} Records`;
+            const studentItems = [];
+            window.loadedStudentsMap = window.loadedStudentsMap || {};
 
-        const studentItems = [];
-        window.loadedStudentsMap = window.loadedStudentsMap || {};
+            snapshot.forEach((docSnap) => {
+                const data = docSnap.data();
+                window.loadedStudentsMap[docSnap.id] = data;
+                if (data?.personalInfo?.email) {
+                    window.loadedStudentsMap[data.personalInfo.email.toLowerCase()] = data;
+                }
+                studentItems.push({ id: docSnap.id, data });
+            });
 
-        snapshot.forEach((doc) => {
-            const data = doc.data();
-            window.loadedStudentsMap[doc.id] = data;
-            studentItems.push({ id: doc.id, data });
+            window.lastLoadedStudentItems = studentItems;
+
+            // Render Chart.js Analytics
+            renderCEOAnalyticsCharts(studentItems);
+
+            if (!tableBody) return;
+
+            if (snapshot.empty) {
+                renderFallbackStudents(tableBody, badgeEl);
+                return;
+            }
+
+            // 🟢 Sort students: Most recent message appears at top
+            studentItems.sort((a, b) => getLatestMessageTime(b.data) - getLatestMessageTime(a.data));
+
+            let html = '';
+            studentItems.forEach(({ id, data }) => {
+                const fullName = data.personalInfo?.fullName || 'N/A';
+                const rawEmail = data.personalInfo?.email || data.email || '';
+                const email = (rawEmail && rawEmail !== 'N/A') ? rawEmail : 'N/A';
+                const studentIdentifier = (email !== 'N/A' && email.includes('@')) ? email.trim().toLowerCase() : id;
+                const phone = data.personalInfo?.contactNo || 'N/A';
+                const primaryCountry = (data.preferences?.countryChoices && data.preferences.countryChoices.length > 0)
+                    ? data.preferences.countryChoices[0]
+                    : 'N/A';
+                const primaryCourse = (data.preferences?.courseChoices && data.preferences.courseChoices.length > 0)
+                    ? data.preferences.courseChoices[0]
+                    : 'N/A';
+                const hasUnread = hasUnreadStudentMessages(data);
+                const unreadBadge = hasUnread
+                    ? `<span class="badge rounded-pill bg-danger ms-1" style="font-size: 0.7rem;">New Message</span>`
+                    : '';
+
+                html += `
+                    <tr>
+                        <td>
+                            <div class="fw-bold text-dark">${escapeHtml(fullName)}</div>
+                            <small class="text-muted" style="font-size: 0.725rem;">ID: #${id.substring(0, 8).toUpperCase()}</small>
+                        </td>
+                        <td class="text-muted small">${escapeHtml(email)}</td>
+                        <td class="small">${escapeHtml(phone)}</td>
+                        <td>
+                            <span class="badge bg-danger px-2.5 py-1 rounded-pill">${escapeHtml(primaryCountry)}</span>
+                        </td>
+                        <td class="small fw-semibold text-secondary">${escapeHtml(primaryCourse)}</td>
+                        <td>
+                            <button class="btn btn-sm btn-navy view-btn shadow-sm" data-email="${escapeHtml(studentIdentifier)}" data-id="${id}" data-student-id="${id}" onclick="viewStudentDetails('${id}')">
+                                <i class="bi bi-person-lines-fill me-1"></i> View Profile
+                            </button>
+                            <button class="btn btn-sm btn-info chat-btn shadow-sm ms-1 fw-semibold" data-email="${escapeHtml(studentIdentifier)}" data-name="${escapeHtml(fullName)}" data-bs-toggle="modal" data-bs-target="#ceoChatModal" onclick="window.openCeoChatModal && window.openCeoChatModal('${escapeHtml(studentIdentifier)}', '${escapeHtml(fullName)}')">💬 Chat${unreadBadge}</button>
+                        </td>
+                    </tr>`;
+            });
+
+            tableBody.innerHTML = html;
+        }, (error) => {
+            console.warn("Firestore CEO onSnapshot error:", error);
+            if (kpiEl) kpiEl.innerText = '3';
+            if (tableBody) renderFallbackStudents(tableBody, badgeEl);
         });
-
-        window.lastLoadedStudentItems = studentItems;
-
-        // Render Chart.js Analytics
-        renderCEOAnalyticsCharts(studentItems);
-
-        if (!tableBody) return;
-
-        if (snapshot.empty) {
-            renderFallbackStudents(tableBody, badgeEl);
-            return;
-        }
-
-        // 🟢 Sort students: Most recent message appears at top
-        studentItems.sort((a, b) => getLatestMessageTime(b.data) - getLatestMessageTime(a.data));
-
-        let html = '';
-        studentItems.forEach(({ id, data }) => {
-            const fullName = data.personalInfo?.fullName || 'N/A';
-            const email = data.personalInfo?.email || 'N/A';
-            const phone = data.personalInfo?.contactNo || 'N/A';
-            const primaryCountry = (data.preferences?.countryChoices && data.preferences.countryChoices.length > 0)
-                ? data.preferences.countryChoices[0]
-                : 'N/A';
-            const primaryCourse = (data.preferences?.courseChoices && data.preferences.courseChoices.length > 0)
-                ? data.preferences.courseChoices[0]
-                : 'N/A';
-
-            html += `
-                <tr>
-                    <td>
-                        <div class="fw-bold text-dark">${escapeHtml(fullName)}</div>
-                        <small class="text-muted" style="font-size: 0.725rem;">ID: #${id.substring(0, 8).toUpperCase()}</small>
-                    </td>
-                    <td class="text-muted small">${escapeHtml(email)}</td>
-                    <td class="small">${escapeHtml(phone)}</td>
-                    <td>
-                        <span class="badge bg-danger px-2.5 py-1 rounded-pill">${escapeHtml(primaryCountry)}</span>
-                    </td>
-                    <td class="small fw-semibold text-secondary">${escapeHtml(primaryCourse)}</td>
-                    <td>
-                        <button class="btn btn-sm btn-navy view-btn shadow-sm" data-email="${escapeHtml(email || id)}" data-id="${id}" data-student-id="${id}" onclick="viewStudentDetails('${id}')">
-                            <i class="bi bi-person-lines-fill me-1"></i> View Profile
-                        </button>
-                        <button class="btn btn-sm btn-info chat-btn shadow-sm ms-1 fw-semibold" data-email="${escapeHtml(email || id)}" data-name="${escapeHtml(fullName)}" data-bs-toggle="modal" data-bs-target="#ceoChatModal" onclick="window.openCeoChatModal && window.openCeoChatModal('${escapeHtml(email || id)}', '${escapeHtml(fullName)}')">💬 Chat</button>
-                    </td>
-                </tr>`;
-        });
-
-        tableBody.innerHTML = html;
-
     } catch (error) {
         console.error("Error loading CEO Dashboard data:", error);
         if (kpiEl) kpiEl.innerText = '3';
-        if (tableBody) {
-            renderFallbackStudents(tableBody, badgeEl);
-        }
+        if (tableBody) renderFallbackStudents(tableBody, badgeEl);
     }
+    fetchEmployeesList();
 }
 
 /**
@@ -1654,13 +2522,18 @@ export function viewStudentDetails(studentId) {
 
     if (modalTitle) modalTitle.innerText = `Record: ${student.personalInfo?.fullName || 'Student Details'}`;
 
+    const hasUnread = hasUnreadStudentMessages(student);
+    const unreadBadge = hasUnread
+        ? `<span class="badge bg-danger rounded-pill ms-2 animate-pulse" style="font-size: 0.72rem;">New Message</span>`
+        : '';
+
     if (modalBody) {
         modalBody.innerHTML = `
             <div class="d-flex justify-content-between align-items-center mb-3" id="editProfileBar">
                 <span class="badge bg-dark px-3 py-2 small"><i class="bi bi-person-vcard me-1"></i>Student ID: ${studentId.substring(0, 8)}</span>
                 <div class="d-flex gap-2">
                     <button class="btn btn-info btn-sm text-white fw-bold px-3 chat-btn shadow-sm" data-email="${escapeHtml(student.personalInfo?.email || studentId)}" data-name="${escapeHtml(student.personalInfo?.fullName || 'Candidate')}" data-bs-toggle="modal" data-bs-target="${document.getElementById('ceoChatModal') ? '#ceoChatModal' : '#employeeChatModal'}" onclick="(window.openCeoChatModal || window.openEmployeeChatModal)('${escapeHtml(student.personalInfo?.email || studentId)}', '${escapeHtml(student.personalInfo?.fullName || 'Candidate')}');">
-                        <i class="bi bi-chat-left-text-fill me-1"></i> Live Chat
+                        <i class="bi bi-chat-left-text-fill me-1"></i> Live Chat${unreadBadge}
                     </button>
                     <button class="btn btn-outline-danger btn-sm px-3" id="editProfileBtn" onclick="toggleEditMode('${studentId}')">
                         <i class="bi bi-pencil-square me-1"></i> Edit Profile
@@ -2162,6 +3035,8 @@ window.deleteStudentRecord = confirmAndDeleteStudent;
 window.handleFirebaseLogin = handleFirebaseLogin;
 window.handleFirebaseSignUp = handleFirebaseSignUp;
 window.handleForgotPassword = handleForgotPassword;
+window.handleLogout = handleLogout;
+window.updateHomeNavbarAuthUI = updateHomeNavbarAuthUI;
 window.handleAddNewEmployee = handleAddNewEmployee;
 window.saveStudentApplication = saveStudentApplication;
 window.fetchStudents = fetchStudents;
@@ -2435,16 +3310,34 @@ function runInit() {
     if (document.getElementById('recentApplicationsTableBody') || document.getElementById('totalStudentsKpi')) {
         loadCEODashboardData();
     }
-    if (document.getElementById('applicationForm')) {
-        onAuthStateChanged(auth, (user) => {
-            if (user && user.email) {
-                const emailInput = document.getElementById('email');
-                if (emailInput && !emailInput.value) {
-                    emailInput.value = user.email;
-                }
+
+    // 🌐 Central Auth State Observer
+    onAuthStateChanged(auth, async (user) => {
+        // 1. Update Home Page (login.html) navigation
+        if (document.getElementById('homeNavbarAuthButtons')) {
+            updateHomeNavbarAuthUI(user);
+        }
+
+        // 2. Application Form autofill
+        if (document.getElementById('applicationForm') && user && user.email) {
+            const emailInput = document.getElementById('email');
+            if (emailInput && !emailInput.value) {
+                emailInput.value = user.email;
             }
-        });
-    }
+        }
+
+        // 3. Update Portal Header greetings if elements exist
+        if (user) {
+            const ceoNameEl = document.getElementById('navCeoName');
+            if (ceoNameEl) {
+                ceoNameEl.textContent = user.displayName || user.email?.split('@')[0] || 'CEO';
+            }
+            const empNameEl = document.getElementById('navEmployeeName');
+            if (empNameEl) {
+                empNameEl.textContent = user.displayName || user.email?.split('@')[0] || 'Counselor';
+            }
+        }
+    });
 
     const forgotBtn = document.getElementById('forgotPasswordBtn');
     if (forgotBtn) {
