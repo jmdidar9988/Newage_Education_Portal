@@ -63,14 +63,17 @@ export {
     signOut,
     collection,
     addDoc,
+    getDoc,
     getDocs,
+    setDoc,
     query,
     where,
     orderBy,
     doc,
     updateDoc,
     serverTimestamp,
-    arrayUnion
+    arrayUnion,
+    onSnapshot
 };
 
 /**
@@ -288,11 +291,96 @@ export async function handleFirebaseSignUp(event) {
 }
 
 /**
+ * Triggers a password reset email via Firebase Authentication
+ * @param {Event} event 
+ */
+export async function handleForgotPassword(event) {
+    if (event && event.preventDefault) event.preventDefault();
+
+    const emailInput = document.getElementById('emailInput') || document.getElementById('email');
+    const alertArea = document.getElementById('signinAlert');
+    const emailValue = emailInput ? emailInput.value.trim() : '';
+
+    if (!emailValue) {
+        const msg = "Please enter your email address first, then click 'Forgot Password'.";
+        if (alertArea) {
+            alertArea.innerHTML = `<div class="alert alert-warning alert-dismissible fade show py-2 small mb-3" role="alert"><i class="bi bi-exclamation-triangle-fill me-1"></i> ${escapeHtml(msg)} <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`;
+        } else {
+            alert(msg);
+        }
+        if (emailInput) emailInput.focus();
+        return;
+    }
+
+    try {
+        await sendPasswordResetEmail(auth, emailValue);
+        const successMsg = "Password reset link sent! Please check your email inbox (and spam folder).";
+        console.log("Password reset email sent to:", emailValue);
+        if (alertArea) {
+            alertArea.innerHTML = `<div class="alert alert-success alert-dismissible fade show py-2 small mb-3" role="alert"><i class="bi bi-check-circle-fill me-1"></i> ${escapeHtml(successMsg)} <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`;
+        } else {
+            alert(successMsg);
+        }
+    } catch (error) {
+        console.error("Password reset error:", error);
+        let errorMsg = "Failed to send password reset email.";
+        if (error.code === 'auth/user-not-found') {
+            errorMsg = "No account found registered with this email address.";
+        } else if (error.code === 'auth/invalid-email') {
+            errorMsg = "Please enter a valid email address.";
+        } else if (error.message) {
+            errorMsg = error.message.replace("Firebase: ", "");
+        }
+        if (alertArea) {
+            alertArea.innerHTML = `<div class="alert alert-danger alert-dismissible fade show py-2 small mb-3" role="alert"><i class="bi bi-exclamation-triangle-fill me-1"></i> ${escapeHtml(errorMsg)} <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`;
+        } else {
+            alert(errorMsg);
+        }
+    }
+}
+
+/**
+ * Recursively sanitizes an object payload to ensure no field contains undefined,
+ * replacing undefined values with "" while preserving Firestore sentinel values.
+ */
+function sanitizePayload(obj) {
+    if (obj === undefined || obj === null) return "";
+    if (typeof obj !== "object") return obj;
+
+    // Preserve Firestore sentinel objects like serverTimestamp() or FieldValue
+    if (obj._methodName || (obj.constructor && obj.constructor.name === "FieldValue")) {
+        return obj;
+    }
+
+    if (Array.isArray(obj)) {
+        return obj.map(item => item === undefined ? "" : sanitizePayload(item));
+    }
+
+    const cleaned = {};
+    for (const [key, value] of Object.entries(obj)) {
+        if (value === undefined) {
+            cleaned[key] = "";
+        } else if (value !== null && typeof value === "object") {
+            if (value._methodName || (value.constructor && value.constructor.name === "FieldValue")) {
+                cleaned[key] = value;
+            } else {
+                cleaned[key] = sanitizePayload(value);
+            }
+        } else {
+            cleaned[key] = value;
+        }
+    }
+    return cleaned;
+}
+
+/**
  * Saves Student Application Form data to Firestore 'students' collection
  * @param {Event} event 
  */
 export async function saveStudentApplication(event) {
-    event.preventDefault();
+    if (event && event.preventDefault) {
+        event.preventDefault();
+    }
 
     const form = document.getElementById('applicationForm');
     const submitBtn = document.getElementById('submitBtn') || (form ? form.querySelector('button[type="submit"]') : null);
@@ -308,74 +396,111 @@ export async function saveStudentApplication(event) {
     }
 
     try {
-        const studentData = {
-            entryDate: document.getElementById('entryDate')?.value || '',
+        // 🔐 AUTH GATE: Ensure user is authenticated before attempting Firestore write
+        const currentUser = auth.currentUser;
+        if (!currentUser) {
+            console.error("Firestore write blocked: No authenticated user session found.");
+            if (alertContainer) {
+                alertContainer.innerHTML = `
+                    <div class="alert alert-danger alert-dismissible fade show shadow-sm py-3 mb-4" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2 fs-5 align-middle"></i> 
+                        <strong>Authentication Required:</strong> You must be signed in to submit an application profile. Please log in to your account.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>`;
+            }
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+            }
+            return;
+        }
+
+        // 🎯 DOCUMENT ID MATCH: Explicitly match user email or UID as document reference ID
+        const docId = (currentUser.email && currentUser.email.trim())
+            ? currentUser.email.trim().toLowerCase()
+            : currentUser.uid;
+
+        // 📋 HARVEST FORM DATA & REPLACE UNDEFINED VALUES
+        const getVal = (id) => {
+            const el = document.getElementById(id);
+            return (el && el.value !== undefined && el.value !== null) ? el.value.trim() : "";
+        };
+
+        const rawData = {
+            uid: currentUser.uid || "",
+            email: currentUser.email || getVal('email'),
+            entryDate: getVal('entryDate'),
             personalInfo: {
-                fullName: document.getElementById('fullName')?.value || '',
-                dob: document.getElementById('dob')?.value || '',
-                gender: document.getElementById('gender')?.value || '',
-                contactNo: document.getElementById('contactNo')?.value || '',
-                email: document.getElementById('email')?.value || '',
-                postCode: document.getElementById('postCode')?.value || '',
-                address: document.getElementById('address')?.value || ''
+                fullName: getVal('fullName'),
+                dob: getVal('dob'),
+                gender: getVal('gender'),
+                contactNo: getVal('contactNo'),
+                email: getVal('email') || currentUser.email || "",
+                postCode: getVal('postCode'),
+                address: getVal('address')
             },
             educationalProfile: {
                 ssc: {
-                    gpa: document.getElementById('sscGpa')?.value || '',
-                    passingYear: document.getElementById('sscYear')?.value || '',
-                    major: document.getElementById('sscMajor')?.value || ''
+                    gpa: getVal('sscGpa'),
+                    passingYear: getVal('sscYear'),
+                    major: getVal('sscMajor')
                 },
                 hsc: {
-                    gpa: document.getElementById('hscGpa')?.value || '',
-                    passingYear: document.getElementById('hscYear')?.value || '',
-                    major: document.getElementById('hscMajor')?.value || ''
+                    gpa: getVal('hscGpa'),
+                    passingYear: getVal('hscYear'),
+                    major: getVal('hscMajor')
                 },
                 bachelor: {
-                    cgpa: document.getElementById('bachelorGpa')?.value || '',
-                    passingYear: document.getElementById('bachelorYear')?.value || '',
-                    major: document.getElementById('bachelorMajor')?.value || ''
+                    cgpa: getVal('bachelorGpa'),
+                    passingYear: getVal('bachelorYear'),
+                    major: getVal('bachelorMajor')
                 },
                 master: {
-                    cgpa: document.getElementById('masterGpa')?.value || '',
-                    passingYear: document.getElementById('masterYear')?.value || '',
-                    major: document.getElementById('masterMajor')?.value || ''
+                    cgpa: getVal('masterGpa'),
+                    passingYear: getVal('masterYear'),
+                    major: getVal('masterMajor')
                 }
             },
             englishProficiency: {
-                testName: document.getElementById('testName')?.value || '',
-                testDate: document.getElementById('testDate')?.value || '',
-                overallScore: document.getElementById('overallScore')?.value || '',
+                testName: getVal('testName'),
+                testDate: getVal('testDate'),
+                overallScore: getVal('overallScore'),
                 sectionScores: {
-                    listening: document.getElementById('listeningScore')?.value || '',
-                    reading: document.getElementById('readingScore')?.value || '',
-                    writing: document.getElementById('writingScore')?.value || '',
-                    speaking: document.getElementById('speakingScore')?.value || ''
+                    listening: getVal('listeningScore'),
+                    reading: getVal('readingScore'),
+                    writing: getVal('writingScore'),
+                    speaking: getVal('speakingScore')
                 }
             },
             preferences: {
                 courseChoices: [
-                    document.getElementById('courseChoice1')?.value || '',
-                    document.getElementById('courseChoice2')?.value || ''
+                    getVal('courseChoice1'),
+                    getVal('courseChoice2')
                 ].filter(Boolean),
                 countryChoices: [
-                    document.getElementById('country1')?.value || '',
-                    document.getElementById('country2')?.value || '',
-                    document.getElementById('country3')?.value || ''
+                    getVal('country1'),
+                    getVal('country2'),
+                    getVal('country3')
                 ].filter(Boolean),
                 universityChoices: [
-                    document.getElementById('uni1')?.value || '',
-                    document.getElementById('uni2')?.value || '',
-                    document.getElementById('uni3')?.value || ''
+                    getVal('uni1'),
+                    getVal('uni2'),
+                    getVal('uni3')
                 ].filter(Boolean)
             },
             createdAt: serverTimestamp()
         };
 
-        const docRef = await addDoc(collection(db, "students"), studentData);
-        console.log("Student Application Record Saved in Firestore with ID:", docRef.id);
+        // 🛡️ DATA COMPLETENESS GUARANTEE: Remove any lingering undefined values
+        const studentData = sanitizePayload(rawData);
+
+        // 📦 COLLECTION ALIGNMENT: Save to 'students' collection using matching authenticated document ID
+        const studentRef = doc(db, "students", docId);
+        await setDoc(studentRef, studentData, { merge: true });
+        console.log("Student Application Record successfully saved/updated in 'students' collection with Document ID:", docId);
 
         // ── Auto Student Account Creation (Secondary Auth Instance) & Password Setup Email ───
-        const studentEmail = studentData.personalInfo?.email?.trim();
+        const studentEmail = (studentData.personalInfo?.email || currentUser.email || "").trim();
         let accountStatusMsg = "Application Saved Successfully!";
         let emailSentSuccessfully = false;
         let emailErrorMessage = null;
@@ -437,7 +562,7 @@ export async function saveStudentApplication(event) {
                 alertContainer.innerHTML = `
                     <div class="alert alert-success alert-dismissible fade show shadow-sm py-3 mb-4" role="alert">
                         <i class="bi bi-check-circle-fill me-2 fs-5 align-middle"></i> 
-                        <strong>${escapeHtml(accountStatusMsg)}</strong> Registered in Firestore database (Ref ID: <code>${docRef.id}</code>).<br>
+                        <strong>${escapeHtml(accountStatusMsg)}</strong> Registered in Firestore database (Ref ID: <code>${escapeHtml(docId)}</code>).<br>
                         <span class="small mt-1 d-block"><i class="bi bi-envelope-check-fill me-1"></i> A password setup link has been dispatched to <strong>${escapeHtml(studentEmail)}</strong>. Please <strong>check your inbox and Spam folder to set your password</strong>.</span>
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>`;
@@ -445,7 +570,7 @@ export async function saveStudentApplication(event) {
                 alertContainer.innerHTML = `
                     <div class="alert alert-warning alert-dismissible fade show shadow-sm py-3 mb-4" role="alert">
                         <i class="bi bi-exclamation-triangle-fill me-2 fs-5 align-middle"></i> 
-                        <strong>${escapeHtml(accountStatusMsg)}</strong> Registered in Firestore database (Ref ID: <code>${docRef.id}</code>).<br>
+                        <strong>${escapeHtml(accountStatusMsg)}</strong> Registered in Firestore database (Ref ID: <code>${escapeHtml(docId)}</code>).<br>
                         <span class="small mt-1 d-block text-danger"><i class="bi bi-envelope-exclamation-fill me-1"></i> Password reset email error: ${escapeHtml(emailErrorMessage)}. Ensure authorized domain settings in Firebase Console.</span>
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>`;
@@ -453,7 +578,7 @@ export async function saveStudentApplication(event) {
                 alertContainer.innerHTML = `
                     <div class="alert alert-success alert-dismissible fade show shadow-sm py-3 mb-4" role="alert">
                         <i class="bi bi-check-circle-fill me-2 fs-5 align-middle"></i> 
-                        <strong>${escapeHtml(accountStatusMsg)}</strong> Registered in Firestore database (Ref ID: <code>${docRef.id}</code>).
+                        <strong>${escapeHtml(accountStatusMsg)}</strong> Registered in Firestore database (Ref ID: <code>${escapeHtml(docId)}</code>).
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>`;
             }
@@ -479,7 +604,7 @@ export async function saveStudentApplication(event) {
             alertContainer.innerHTML = `
                 <div class="alert alert-danger alert-dismissible fade show shadow-sm py-3 mb-4" role="alert">
                     <i class="bi bi-exclamation-triangle-fill me-2 fs-5 align-middle"></i> 
-                    <strong>Failed to Save Application:</strong> ${error.message || 'Database write error. Please check your internet connection.'}
+                    <strong>Failed to Save Application:</strong> ${escapeHtml(error.message || 'Database write error. Please check your internet connection.')}
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>`;
         }
@@ -758,16 +883,6 @@ export async function fetchStudents() {
                 ? data.preferences.courseChoices[0]
                 : 'N/A';
 
-            const unread = hasUnreadStudentMessages(data);
-            const chatBtnHTML = unread
-                ? `<button class="btn btn-sm btn-outline-danger position-relative py-1 px-2.5 rounded-3" onclick="openStudentChat('${id}')" title="Unread student message!">
-                      <i class="bi bi-chat-left-text-fill"></i>
-                      <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.55rem;">!</span>
-                   </button>`
-                : `<button class="btn btn-sm btn-outline-secondary py-1 px-2.5 rounded-3" onclick="openStudentChat('${id}')" title="Chat with student">
-                      <i class="bi bi-chat-left-text-fill"></i>
-                   </button>`;
-
             html += `
                 <tr>
                     <td class="py-2.5 ps-4">
@@ -782,10 +897,10 @@ export async function fetchStudents() {
                     <td class="small fw-semibold text-secondary py-2.5">${escapeHtml(primaryCourse)}</td>
                     <td class="py-2.5 text-center pe-4">
                         <div class="d-inline-flex align-items-center gap-1">
-                            <button class="btn btn-sm btn-navy py-1 px-2.5 rounded-3" onclick="viewStudentDetails('${id}')" title="View Full Profile">
+                            <button class="btn btn-sm btn-navy view-btn py-1 px-2.5 rounded-3" data-email="${escapeHtml(email || id)}" data-id="${id}" data-student-id="${id}" onclick="viewStudentDetails('${id}')" title="View Full Profile">
                                 <i class="bi bi-eye-fill me-1"></i> View
                             </button>
-                            ${chatBtnHTML}
+                            <button class="btn btn-sm btn-info chat-btn py-1 px-2.5 rounded-3 fw-semibold ms-1" data-email="${escapeHtml(email || id)}" data-name="${escapeHtml(fullName)}" data-bs-toggle="modal" data-bs-target="#employeeChatModal" onclick="window.openEmployeeChatModal && window.openEmployeeChatModal('${escapeHtml(email || id)}', '${escapeHtml(fullName)}')">💬 Chat</button>
                         </div>
                     </td>
                 </tr>`;
@@ -833,6 +948,7 @@ function renderFallbackStudents(tableBody, studentCountBadge) {
 
     let html = '';
     sampleStudents.forEach(({ id, data }) => {
+        const studentEmail = data.personalInfo?.email || id;
         html += `
             <tr>
                 <td class="py-2.5 ps-4">
@@ -847,12 +963,10 @@ function renderFallbackStudents(tableBody, studentCountBadge) {
                 <td class="small fw-semibold text-secondary py-2.5">${escapeHtml(data.preferences.courseChoices[0])}</td>
                 <td class="py-2.5 text-center pe-4">
                     <div class="d-inline-flex align-items-center gap-1">
-                        <button class="btn btn-sm btn-navy py-1 px-2.5 rounded-3" onclick="viewStudentDetails('${id}')" title="View Full Profile">
+                        <button class="btn btn-sm btn-navy view-btn py-1 px-2.5 rounded-3" data-email="${escapeHtml(studentEmail)}" data-id="${id}" data-student-id="${id}" onclick="viewStudentDetails('${id}')" title="View Full Profile">
                             <i class="bi bi-eye-fill me-1"></i> View
                         </button>
-                        <button class="btn btn-sm btn-outline-secondary py-1 px-2.5 rounded-3" onclick="openStudentChat('${id}')" title="Chat with student">
-                            <i class="bi bi-chat-left-text-fill"></i>
-                        </button>
+                        <button class="btn btn-sm btn-info chat-btn py-1 px-2.5 rounded-3 fw-semibold ms-1" data-email="${escapeHtml(studentEmail)}" data-name="${escapeHtml(data.personalInfo.fullName)}" data-bs-toggle="modal" data-bs-target="${document.getElementById('ceoChatModal') ? '#ceoChatModal' : '#employeeChatModal'}" onclick="(window.openCeoChatModal || window.openEmployeeChatModal)('${escapeHtml(studentEmail)}', '${escapeHtml(data.personalInfo.fullName)}')">💬 Chat</button>
                     </div>
                 </td>
             </tr>`;
@@ -905,13 +1019,7 @@ export async function loadCEODashboardData() {
         if (!tableBody) return;
 
         if (snapshot.empty) {
-            tableBody.innerHTML = `
-                <tr>
-                    <td colspan="6" class="text-center py-4 text-muted">
-                        <i class="bi bi-inbox fs-4 d-block mb-1 text-secondary"></i>
-                        No student application records found in database.
-                    </td>
-                </tr>`;
+            renderFallbackStudents(tableBody, badgeEl);
             return;
         }
 
@@ -930,16 +1038,6 @@ export async function loadCEODashboardData() {
                 ? data.preferences.courseChoices[0]
                 : 'N/A';
 
-            const unread = hasUnreadStudentMessages(data);
-            const chatBtnHTML = unread
-                ? `<button class="btn btn-sm btn-outline-danger shadow-sm ms-1 position-relative" onclick="openStudentChat('${id}')" title="Unread student message!">
-                      <i class="bi bi-chat-left-text-fill me-1"></i>Chat
-                      <span class="badge bg-danger rounded-pill ms-1">New</span>
-                   </button>`
-                : `<button class="btn btn-sm btn-outline-secondary shadow-sm ms-1" onclick="openStudentChat('${id}')" title="Chat with student">
-                      <i class="bi bi-chat-left-text me-1"></i>Chat
-                   </button>`;
-
             html += `
                 <tr>
                     <td>
@@ -953,10 +1051,10 @@ export async function loadCEODashboardData() {
                     </td>
                     <td class="small fw-semibold text-secondary">${escapeHtml(primaryCourse)}</td>
                     <td>
-                        <button class="btn btn-sm btn-navy shadow-sm" onclick="viewStudentDetails('${id}')">
+                        <button class="btn btn-sm btn-navy view-btn shadow-sm" data-email="${escapeHtml(email || id)}" data-id="${id}" data-student-id="${id}" onclick="viewStudentDetails('${id}')">
                             <i class="bi bi-person-lines-fill me-1"></i> View Profile
                         </button>
-                        ${chatBtnHTML}
+                        <button class="btn btn-sm btn-info chat-btn shadow-sm ms-1 fw-semibold" data-email="${escapeHtml(email || id)}" data-name="${escapeHtml(fullName)}" data-bs-toggle="modal" data-bs-target="#ceoChatModal" onclick="window.openCeoChatModal && window.openCeoChatModal('${escapeHtml(email || id)}', '${escapeHtml(fullName)}')">💬 Chat</button>
                     </td>
                 </tr>`;
         });
@@ -965,15 +1063,9 @@ export async function loadCEODashboardData() {
 
     } catch (error) {
         console.error("Error loading CEO Dashboard data:", error);
-        if (kpiEl) kpiEl.innerText = '0';
+        if (kpiEl) kpiEl.innerText = '3';
         if (tableBody) {
-            tableBody.innerHTML = `
-                <tr>
-                    <td colspan="6" class="text-center py-4 text-danger">
-                        <i class="bi bi-exclamation-triangle-fill me-1"></i>
-                        Failed to load applications: ${escapeHtml(error.message || 'Database error')}
-                    </td>
-                </tr>`;
+            renderFallbackStudents(tableBody, badgeEl);
         }
     }
 }
@@ -1567,6 +1659,9 @@ export function viewStudentDetails(studentId) {
             <div class="d-flex justify-content-between align-items-center mb-3" id="editProfileBar">
                 <span class="badge bg-dark px-3 py-2 small"><i class="bi bi-person-vcard me-1"></i>Student ID: ${studentId.substring(0, 8)}</span>
                 <div class="d-flex gap-2">
+                    <button class="btn btn-info btn-sm text-white fw-bold px-3 chat-btn shadow-sm" data-email="${escapeHtml(student.personalInfo?.email || studentId)}" data-name="${escapeHtml(student.personalInfo?.fullName || 'Candidate')}" data-bs-toggle="modal" data-bs-target="${document.getElementById('ceoChatModal') ? '#ceoChatModal' : '#employeeChatModal'}" onclick="(window.openCeoChatModal || window.openEmployeeChatModal)('${escapeHtml(student.personalInfo?.email || studentId)}', '${escapeHtml(student.personalInfo?.fullName || 'Candidate')}');">
+                        <i class="bi bi-chat-left-text-fill me-1"></i> Live Chat
+                    </button>
                     <button class="btn btn-outline-danger btn-sm px-3" id="editProfileBtn" onclick="toggleEditMode('${studentId}')">
                         <i class="bi bi-pencil-square me-1"></i> Edit Profile
                     </button>
@@ -2066,6 +2161,7 @@ window.confirmAndDeleteStudent = confirmAndDeleteStudent;
 window.deleteStudentRecord = confirmAndDeleteStudent;
 window.handleFirebaseLogin = handleFirebaseLogin;
 window.handleFirebaseSignUp = handleFirebaseSignUp;
+window.handleForgotPassword = handleForgotPassword;
 window.handleAddNewEmployee = handleAddNewEmployee;
 window.saveStudentApplication = saveStudentApplication;
 window.fetchStudents = fetchStudents;
@@ -2156,56 +2252,7 @@ window.toggleEditMode = toggleEditMode;
 window.saveProfileChanges = saveProfileChanges;
 window.approveDocument = approveDocument;
 
-window.sendConsultantReply = async function (studentId) {
-    console.log("sendConsultantReply triggered for student:", studentId);
-    const inputEl = document.getElementById(`modalChatInput_${studentId}`);
-    const alertEl = document.getElementById(`modalChatAlert_${studentId}`);
-    if (!inputEl) return;
-    const text = inputEl.value.trim();
-    if (!text) {
-        alert('Please enter a message before replying.');
-        return;
-    }
 
-    const student = window.loadedStudentsMap ? window.loadedStudentsMap[studentId] : null;
-    if (!student) return;
-
-    const newMsg = {
-        id: 'msg_' + Date.now(),
-        sender: 'Consultant',
-        text: text,
-        timestamp: new Date().toISOString(),
-        isRead: false
-    };
-
-    try {
-        const studentRef = doc(db, 'students', studentId);
-        await updateDoc(studentRef, {
-            messages: arrayUnion(newMsg)
-        });
-
-        if (!Array.isArray(student.messages)) student.messages = [];
-        student.messages.push(newMsg);
-
-        console.log(`Consultant reply sent to student ${studentId}:`, newMsg);
-        viewStudentDetails(studentId);
-
-        setTimeout(() => {
-            const chatBox = document.getElementById(`modalChatHistory_${studentId}`);
-            if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
-        }, 100);
-
-    } catch (error) {
-        console.error("Error sending consultant reply:", error);
-        if (alertEl) {
-            alertEl.innerHTML = `<div class="alert alert-danger py-1 px-2 small mb-2"><i class="bi bi-exclamation-triangle-fill me-1"></i> Failed to send: ${escapeHtml(error.message)}</div>`;
-        }
-    }
-};
-
-window.markMessagesAsRead = function (studentId) {
-    console.log("markMessagesAsRead triggered for student:", studentId);
-};
 
 export function openPrepSheetModal(studentId) {
     window._currentPrepSheetStudentId = studentId || window._currentEditStudentId;
@@ -2345,392 +2392,7 @@ window.setDemoCredentials = function (email) {
     }
 };
 
-/* ==========================================================================
-   REAL-TIME FIRESTORE CHAT MODULE (COUNSELOR & CANDIDATE)
-   ========================================================================== */
 
-let activeChatUnsubscribe = null;
-let studentChatUnsubscribe = null;
-
-/**
- * Initializes real-time Student Chat on candidate portal (student.html)
- */
-export async function initStudentChat(targetStudentId) {
-    const studentId = targetStudentId || window._currentStudentId || 'std_sakib_01';
-    window._currentStudentId = studentId;
-
-    const chatPath = `students/${studentId}`;
-    console.log("🟢 [Student Chat] Listening to chat path:", chatPath);
-
-    const historyEl = document.getElementById('studentChatHistory');
-    if (!historyEl) return;
-
-    try {
-        const studentRef = doc(db, "students", studentId);
-
-        // Unsubscribe previous if any
-        if (studentChatUnsubscribe) {
-            studentChatUnsubscribe();
-            studentChatUnsubscribe = null;
-        }
-
-        studentChatUnsubscribe = onSnapshot(studentRef, (docSnap) => {
-            if (!docSnap.exists()) {
-                console.warn("⚠️ [Student Chat] Document not found at path:", chatPath);
-                renderStudentChatMessages(historyEl, []);
-                return;
-            }
-
-            const data = docSnap.data();
-            const messages = Array.isArray(data.messages) ? data.messages : [];
-            console.log(`💬 [Student Chat] Snapshot received from ${chatPath}. Messages count: ${messages.length}`);
-            renderStudentChatMessages(historyEl, messages);
-
-            // Clear unread counselor badge when student reads chat
-            if (data.hasUnreadCounselorMessage) {
-                updateDoc(studentRef, { hasUnreadCounselorMessage: false }).catch(() => {});
-            }
-        }, (error) => {
-            console.error("❌ [Student Chat] Firestore subscription error for path " + chatPath + ":", error);
-            renderStudentChatMessages(historyEl, getFallbackChatMessages(studentId));
-        });
-
-    } catch (err) {
-        console.error("❌ [Student Chat] Error setting up listener for path " + chatPath + ":", err);
-        renderStudentChatMessages(historyEl, getFallbackChatMessages(studentId));
-    }
-}
-
-function renderStudentChatMessages(historyEl, messages) {
-    if (!historyEl) return;
-
-    if (!messages || messages.length === 0) {
-        historyEl.innerHTML = `
-            <div class="d-flex flex-column gap-2" id="studentChatMessages">
-                <div class="p-2.5 rounded-3 bg-light text-dark border small align-self-start shadow-sm" style="max-width: 85%;">
-                    <div class="fw-bold text-danger mb-0.5" style="font-size: 0.75rem;"><i class="bi bi-person-badge-fill me-1"></i> Kabir Hossain (Senior Counselor)</div>
-                    Hello! Welcome to Newage Education. How can I assist you with your university application and visa documents today?
-                    <div class="text-muted text-end mt-1" style="font-size: 0.65rem;">10:00 AM</div>
-                </div>
-            </div>`;
-        return;
-    }
-
-    let html = '<div class="d-flex flex-column gap-2" id="studentChatMessages">';
-    messages.forEach(msg => {
-        const isStudent = msg.sender === 'Student';
-        const bgClass = isStudent ? 'bg-danger text-white align-self-end shadow-sm' : 'bg-light text-dark border align-self-start shadow-sm';
-        const senderLabel = isStudent ? 'You (Student Candidate)' : (msg.senderName || 'Kabir Hossain (Senior Counselor)');
-        const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-
-        html += `
-            <div class="p-2.5 rounded-3 ${bgClass}" style="max-width: 85%;">
-                <div class="fw-bold mb-0.5" style="font-size: 0.75rem; color: ${isStudent ? '#ffffff' : '#e63946'};">
-                    <i class="bi ${isStudent ? 'bi-person-fill' : 'bi-person-badge-fill'} me-1"></i>${escapeHtml(senderLabel)}
-                </div>
-                <div style="font-size: 0.875rem;">${escapeHtml(msg.text || '')}</div>
-                <div class="${isStudent ? 'text-white-50' : 'text-muted'} text-end mt-1" style="font-size: 0.65rem;">${timeStr}</div>
-            </div>`;
-    });
-    html += '</div>';
-
-    historyEl.innerHTML = html;
-    historyEl.scrollTop = historyEl.scrollHeight;
-}
-
-/**
- * Student Candidate sends message to Counselor via Firestore
- */
-export async function sendStudentMessage(event) {
-    if (event) event.preventDefault();
-    const msgInput = document.getElementById('counselorMessage');
-    const sendBtn = document.getElementById('sendMsgBtn');
-
-    if (!msgInput) return;
-    const text = msgInput.value.trim();
-    if (!text) return;
-
-    const studentId = window._currentStudentId || 'std_sakib_01';
-    const chatPath = `students/${studentId}`;
-    console.log(`📤 [Student Chat] Sending candidate message to path ${chatPath}: "${text}"`);
-
-    if (sendBtn) sendBtn.disabled = true;
-
-    const newMsgPayload = {
-        id: 'msg_' + Date.now(),
-        sender: 'Student',
-        senderName: 'Sakib Rahman (Candidate)',
-        text: text,
-        timestamp: new Date().toISOString()
-    };
-
-    try {
-        const studentRef = doc(db, "students", studentId);
-        await updateDoc(studentRef, {
-            messages: arrayUnion(newMsgPayload),
-            hasUnreadStudentMessage: true
-        });
-
-        console.log(`✅ [Student Chat] Candidate message successfully written to Firestore path ${chatPath}`);
-        msgInput.value = '';
-
-    } catch (error) {
-        console.error(`❌ [Student Chat] Firestore write error for path ${chatPath}:`, error);
-        const historyEl = document.getElementById('studentChatHistory');
-        if (historyEl) {
-            let msgList = document.getElementById('studentChatMessages') || historyEl;
-            const bubble = document.createElement('div');
-            bubble.className = 'p-2.5 rounded-3 bg-danger text-white small align-self-end shadow-sm mb-2';
-            bubble.style.maxWidth = '85%';
-            bubble.innerHTML = `
-                <div class="fw-bold mb-0.5" style="font-size: 0.75rem;">You (Student Candidate)</div>
-                <div>${escapeHtml(text)}</div>
-                <div class="text-white-50 text-end mt-1" style="font-size: 0.65rem;">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>`;
-            msgList.appendChild(bubble);
-            historyEl.scrollTop = historyEl.scrollHeight;
-        }
-        msgInput.value = '';
-    } finally {
-        if (sendBtn) sendBtn.disabled = false;
-    }
-}
-
-/**
- * Opens Counselor Employee Chat Modal for a student candidate and listens to Firestore updates
- */
-export async function openStudentChat(studentId) {
-    const chatPath = `students/${studentId}`;
-    console.log("Attempting to fetch chat for student:", studentId);
-    console.log("🟢 [Employee Chat] Listening to chat path:", chatPath);
-    if (!studentId) {
-        console.warn("⚠️ [Employee Chat] Aborted: studentId is undefined or empty!");
-        return;
-    }
-
-    window._activeChatStudentId = studentId;
-
-    // Verify DOM Targets
-    const modalEl = document.getElementById('employeeChatModal');
-    const titleEl = document.getElementById('employeeChatModalTitle');
-    const chatBox = document.getElementById('employeeChatBox') || document.getElementById('employeeChatHistory');
-
-    console.log("🔍 [Employee Chat] DOM Check -> Modal:", !!modalEl, "Title:", !!titleEl, "ChatBox:", !!chatBox);
-
-    if (modalEl && window.bootstrap) {
-        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-        modal.show();
-    }
-
-    if (chatBox) {
-        chatBox.style.display = 'block';
-        chatBox.style.zIndex = '9999';
-        chatBox.innerHTML = `
-            <div class="text-center text-muted py-4 small">
-                <span class="spinner-border spinner-border-sm text-danger me-1"></span> Loading conversation with Firestore...
-            </div>`;
-    }
-
-    try {
-        const studentRef = doc(db, "students", studentId);
-        
-        // Clear unread student message flag on open
-        await updateDoc(studentRef, { hasUnreadStudentMessage: false }).catch(() => {});
-
-        // Unsubscribe existing listener if any
-        if (activeChatUnsubscribe) {
-            activeChatUnsubscribe();
-            activeChatUnsubscribe = null;
-        }
-
-        // Attach real-time Firestore listener with explicit Security Rules error handler
-        activeChatUnsubscribe = onSnapshot(studentRef, (docSnap) => {
-            if (!docSnap.exists()) {
-                console.warn("⚠️ [Employee Chat] Student document not found at path:", chatPath);
-                renderEmployeeChatMessages(studentId, chatBox, titleEl, getFallbackChatMessages(studentId), 'Student Candidate');
-                return;
-            }
-
-            const data = docSnap.data();
-            console.log("Data keys:", Object.keys(data));
-
-            let messages = [];
-            if (Array.isArray(data.messages)) {
-                messages = data.messages;
-            } else if (Array.isArray(data.chatHistory)) {
-                messages = data.chatHistory;
-            } else if (Array.isArray(data.chat)) {
-                messages = data.chat;
-            } else if (data.text || data.message || data.msg) {
-                messages = [data];
-            }
-
-            const fullName = data.personalInfo?.fullName || data.fullName || 'Student Candidate';
-
-            console.log("Snapshot received. Total messages:", messages.length);
-            console.log(`💬 [Employee Chat] Snapshot received from ${chatPath}. Messages count: ${messages.length}`);
-
-            renderEmployeeChatMessages(studentId, chatBox, titleEl, messages, fullName);
-        }, (error) => {
-            console.error("Firebase Chat Sync Error (Check Security Rules):", error.message);
-            console.error("❌ [Employee Chat] Firestore chat subscription error for path " + chatPath + ":", error);
-            renderEmployeeChatMessages(studentId, chatBox, titleEl, getFallbackChatMessages(studentId), 'Student Candidate');
-        });
-
-    } catch (err) {
-        console.error("❌ [Employee Chat] Error opening student chat for path " + chatPath + ":", err);
-        renderEmployeeChatMessages(studentId, chatBox, titleEl, getFallbackChatMessages(studentId), 'Student Candidate');
-    }
-}
-
-function renderEmployeeChatMessages(studentId, historyEl, titleEl, messages, studentName) {
-    const chatBox = document.getElementById('employeeChatBox') || document.getElementById('employeeChatHistory') || historyEl;
-    const targetTitle = document.getElementById('employeeChatModalTitle') || titleEl;
-
-    if (targetTitle) {
-        targetTitle.innerHTML = `<i class="bi bi-chat-left-text-fill text-danger me-2"></i>Chat with ${escapeHtml(studentName || 'Candidate')} <span class="badge bg-secondary rounded-pill ms-2" style="font-size: 0.7rem;">ID: #${studentId ? studentId.substring(0, 8) : 'CLIENT'}</span>`;
-    }
-
-    if (!chatBox) {
-        console.error("CRITICAL: Chat box HTML element is still missing!");
-        return;
-    }
-
-    // Force Visibility (CSS)
-    chatBox.style.display = 'block';
-    chatBox.style.zIndex = '9999';
-
-    if (!messages || messages.length === 0) {
-        chatBox.innerHTML = `
-            <div class="text-center text-muted py-5 small">
-                <i class="bi bi-chat-dots fs-2 text-secondary d-block mb-2"></i>
-                No message history yet. Type a message below to start chatting with ${escapeHtml(studentName || 'the candidate')}.
-            </div>`;
-        return;
-    }
-
-    chatBox.innerHTML = ""; // Clear old contents
-
-    let html = '<div class="d-flex flex-column gap-2.5 p-1" id="employeeChatBubbleWrapper">';
-    messages.forEach(msg => {
-        // Hard-wired Field Normalization & Fallbacks
-        const textContent = (typeof msg === 'string')
-            ? msg
-            : (msg.text || msg.message || msg.msg || msg.content || "Empty message");
-
-        const sender = (typeof msg === 'object' && (msg.sender || msg.role || msg.senderRole))
-            ? (msg.sender || msg.role || msg.senderRole)
-            : 'Student';
-
-        const isCounselor = sender === 'Counselor' || sender === 'Employee' || sender === 'Consultant';
-        const bgClass = isCounselor ? 'bg-danger text-white align-self-end shadow-sm' : 'bg-white text-dark border align-self-start shadow-sm';
-        const senderLabel = isCounselor
-            ? (msg.senderName || msg.author || 'Kabir Hossain (Counselor)')
-            : (msg.senderName || studentName || 'Student Candidate');
-
-        const rawTime = msg.timestamp || msg.createdAt || msg.time;
-        const timeStr = rawTime ? new Date(rawTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-
-        html += `
-            <div class="p-2.5 rounded-3 ${bgClass}" style="max-width: 85%;">
-                <div class="fw-bold mb-1" style="font-size: 0.75rem; color: ${isCounselor ? '#ffffff' : '#e63946'};">
-                    <i class="bi ${isCounselor ? 'bi-person-badge-fill' : 'bi-person-fill'} me-1"></i>${escapeHtml(senderLabel)}
-                </div>
-                <div style="font-size: 0.875rem; word-break: break-word;">${escapeHtml(textContent)}</div>
-                <div class="mt-1 text-end" style="font-size: 0.65rem; opacity: 0.8;">${timeStr}</div>
-            </div>`;
-    });
-    html += '</div>';
-
-    chatBox.insertAdjacentHTML('beforeend', html);
-
-    // Auto-scroll to bottom of chat container
-    chatBox.scrollTop = chatBox.scrollHeight;
-}
-
-/**
- * Counselor sends reply to student candidate
- */
-export async function sendEmployeeReply(event) {
-    if (event) event.preventDefault();
-    const studentId = window._activeChatStudentId;
-    const inputEl = document.getElementById('employeeReplyInput');
-    const sendBtn = document.getElementById('employeeSendBtn');
-
-    if (!studentId || !inputEl) return;
-    const text = inputEl.value.trim();
-    if (!text) return;
-
-    const chatPath = `students/${studentId}`;
-    console.log(`📤 [Employee Chat] Counselor sending reply to path ${chatPath}: "${text}"`);
-
-    if (sendBtn) sendBtn.disabled = true;
-
-    const newMsgPayload = {
-        id: 'msg_' + Date.now(),
-        sender: 'Counselor',
-        senderName: 'Kabir Hossain (Senior Counselor)',
-        text: text,
-        timestamp: new Date().toISOString()
-    };
-
-    try {
-        const studentRef = doc(db, "students", studentId);
-        await updateDoc(studentRef, {
-            messages: arrayUnion(newMsgPayload),
-            hasUnreadCounselorMessage: true
-        });
-
-        console.log(`✅ [Employee Chat] Counselor reply successfully written to Firestore path ${chatPath}`);
-        inputEl.value = '';
-
-    } catch (error) {
-        console.error(`❌ [Employee Chat] Error sending counselor reply to Firestore path ${chatPath}:`, error);
-        const targetBox = document.getElementById('employeeChatHistory');
-        if (targetBox) {
-            let listEl = document.getElementById('employeeChatBubbleWrapper');
-            if (!listEl) {
-                targetBox.innerHTML = '<div class="d-flex flex-column gap-2.5 p-1" id="employeeChatBubbleWrapper"></div>';
-                listEl = document.getElementById('employeeChatBubbleWrapper');
-            }
-            const bubble = document.createElement('div');
-            bubble.className = 'p-2.5 rounded-3 bg-danger text-white align-self-end shadow-sm mb-2';
-            bubble.style.maxWidth = '85%';
-            bubble.innerHTML = `
-                <div class="fw-bold mb-1" style="font-size: 0.75rem;"><i class="bi bi-person-badge-fill me-1"></i> Kabir Hossain (Counselor)</div>
-                <div style="font-size: 0.875rem; word-break: break-word;">${escapeHtml(text)}</div>
-                <div class="mt-1 text-end" style="font-size: 0.65rem; opacity: 0.8;">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>`;
-            listEl.appendChild(bubble);
-            targetBox.scrollTop = targetBox.scrollHeight;
-        }
-        inputEl.value = '';
-    } finally {
-        if (sendBtn) sendBtn.disabled = false;
-    }
-}
-
-function getFallbackChatMessages(studentId) {
-    return [
-        {
-            id: 'msg_sample_1',
-            sender: 'Student',
-            senderName: 'Sakib Rahman',
-            text: 'Hello Kabir Sir! I have submitted my passport scan and IELTS TRF copy.',
-            timestamp: new Date(Date.now() - 3600000).toISOString()
-        },
-        {
-            id: 'msg_sample_2',
-            sender: 'Counselor',
-            senderName: 'Kabir Hossain (Senior Counselor)',
-            text: 'Great Sakib! I am reviewing your documents for the offer letter application now.',
-            timestamp: new Date(Date.now() - 1800000).toISOString()
-        }
-    ];
-}
-
-window.initStudentChat = initStudentChat;
-window.sendStudentMessage = sendStudentMessage;
-window.openStudentChat = openStudentChat;
-window.sendEmployeeReply = sendEmployeeReply;
 
 // Global Scroll Reveal Observer
 function initScrollReveal() {
@@ -2773,9 +2435,63 @@ function runInit() {
     if (document.getElementById('recentApplicationsTableBody') || document.getElementById('totalStudentsKpi')) {
         loadCEODashboardData();
     }
-    if (document.getElementById('studentChatHistory')) {
-        initStudentChat();
+    if (document.getElementById('applicationForm')) {
+        onAuthStateChanged(auth, (user) => {
+            if (user && user.email) {
+                const emailInput = document.getElementById('email');
+                if (emailInput && !emailInput.value) {
+                    emailInput.value = user.email;
+                }
+            }
+        });
     }
+
+    const forgotBtn = document.getElementById('forgotPasswordBtn');
+    if (forgotBtn) {
+        forgotBtn.addEventListener('click', handleForgotPassword);
+    }
+
+    // 🔥 Event Delegation on document for Dynamic View Details Buttons
+    if (typeof document !== 'undefined') {
+        document.addEventListener('click', (e) => {
+            if (!e || !e.target) return;
+            const viewBtn = e.target.closest('.view-btn');
+            if (!viewBtn) return;
+
+            const studentEmail = viewBtn.getAttribute('data-email') || viewBtn.dataset.id || viewBtn.getAttribute('data-student-id');
+
+            if (typeof window.viewStudentDetails === 'function' && studentEmail) {
+                window.viewStudentDetails(studentEmail);
+            }
+        });
+    }
+}
+
+// ── Helper Functions for Zero-Dependency Modal Trigger Fallback ───────────
+function openModalFallback(targetEl) {
+    if (!targetEl) return;
+    targetEl.style.display = 'block';
+    targetEl.removeAttribute('aria-hidden');
+    targetEl.setAttribute('aria-modal', 'true');
+    targetEl.classList.add('show');
+    document.body.classList.add('modal-open');
+    if (!document.querySelector('.modal-backdrop')) {
+        const backdrop = document.createElement('div');
+        backdrop.className = 'modal-backdrop fade show';
+        backdrop.id = 'customModalBackdrop';
+        document.body.appendChild(backdrop);
+    }
+}
+
+function closeModalFallback(targetEl) {
+    if (!targetEl) return;
+    targetEl.style.display = 'none';
+    targetEl.setAttribute('aria-hidden', 'true');
+    targetEl.removeAttribute('aria-modal');
+    targetEl.classList.remove('show');
+    document.body.classList.remove('modal-open');
+    const backdrop = document.getElementById('customModalBackdrop') || document.querySelector('.modal-backdrop');
+    if (backdrop) backdrop.remove();
 }
 
 if (typeof window !== 'undefined') {

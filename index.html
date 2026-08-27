@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CEO Dashboard - Newage Education Portal</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="logo.png">
     <!-- Bootstrap 5.3 CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <!-- Bootstrap Icons -->
@@ -20,8 +22,11 @@
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark navbar-newage">
         <div class="container-fluid">
-            <a class="navbar-brand text-white" href="index.html">
-                <span>🎓</span> Newage Education <span class="portal-badge">CEO Portal</span>
+            <a class="navbar-brand d-flex align-items-center gap-2 text-white" href="index.html">
+                <div class="brand-logo-container">
+                    <img src="logo.png" alt="Newage Education Logo">
+                </div>
+                <span class="portal-badge">CEO Portal</span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -57,6 +62,9 @@
                         <h1 class="display-5 fw-bold text-white">Welcome back, Chief Executive Officer</h1>
                         <p class="lead my-3 text-white-50">Manage counselors, review student records, and control portal activities from one centralized terminal.</p>
                         <div class="d-flex flex-wrap gap-2 mt-4">
+                            <button class="btn btn-danger chat-btn shadow-sm fw-bold" data-email="sakib@gmail.com" data-name="Sakib Rahman" data-bs-toggle="modal" data-bs-target="#ceoChatModal" onclick="window.openCeoChatModal && window.openCeoChatModal('sakib@gmail.com', 'Sakib Rahman')">
+                                <i class="bi bi-chat-left-text-fill me-1 text-white"></i> Candidate Live Chat Workstation
+                            </button>
                             <button class="btn btn-accent shadow-sm" data-bs-toggle="modal" data-bs-target="#addNewEmployeeModal">
                                 <i class="bi bi-person-plus-fill me-1"></i> Add New Employee
                             </button>
@@ -118,7 +126,7 @@
                     <div class="d-flex align-items-center justify-content-between">
                         <div>
                             <p class="text-muted small mb-1">Active Destinations</p>
-                            <h3 class="mb-0 fw-bold">8 Countries</h3>
+                            <h3 class="mb-0 fw-bold">13 Countries</h3>
                         </div>
                         <div class="fs-1 text-accent opacity-75"><i class="bi bi-globe2"></i></div>
                     </div>
@@ -311,12 +319,6 @@
         </div>
     </div>
 
-    <!-- Bootstrap 5.3 JS Bundle CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- Firebase Auth & Firestore Module -->
-    <script type="module" src="auth.js"></script>
-
     <!-- MODAL 1: Assign Task -->
     <div class="modal fade" id="assignTaskModal" tabindex="-1" aria-labelledby="assignTaskModalLabel" aria-hidden="true">
         <div class="modal-dialog">
@@ -480,10 +482,21 @@
         </div>
     </div>
 
+
+
+
+
     <!-- Bootstrap 5.3 JS Bundle CDN -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- JS Scripts -->
+    <!-- Firebase Auth & Firestore Module -->
+    <script type="module" src="auth.js"></script>
+
+    <!-- CEO Real-time Chat Module -->
+    <script type="module" src="index.js"></script>
+
+    <!-- JS Scripts (Global Scope - NOT module) -->
+
     <script>
         function scrollToRequests() {
             const reqSec = document.getElementById('requestsSection');
@@ -496,11 +509,8 @@
 
         function handleRequest(action) {
             alert(`Student update request has been successfully: ${action}ed!`);
-            // Hide the update request card
             document.getElementById('requestContainer').innerHTML = '';
             document.getElementById('noRequestsMsg').classList.remove('d-none');
-            
-            // Clear notification badges
             document.getElementById('requestsBadge').classList.add('d-none');
             document.getElementById('requestsCountBadge').innerText = '0 Actions Required';
             document.getElementById('requestsCountBadge').className = 'badge bg-success';
@@ -511,8 +521,6 @@
             const counselor = document.getElementById('counselorSelect').value;
             const desc = document.getElementById('taskDesc').value;
             const due = document.getElementById('dueDate').value;
-
-            // Add new row to table
             const table = document.getElementById('ceoTasksTable');
             const newRow = document.createElement('tr');
             newRow.innerHTML = `
@@ -522,16 +530,48 @@
                 <td><span class="badge bg-warning text-dark"><i class="bi bi-clock-history me-1"></i> In Progress</span></td>
             `;
             table.insertBefore(newRow, table.firstChild);
-
-            // Notify user
             alert(`Task assigned to ${counselor} successfully!`);
-            
-            // Reset and close
-            document.getElementById('assignTaskForm').reset();
             const modalElement = document.getElementById('assignTaskModal');
-            const modal = bootstrap.Modal.getInstance(modalElement);
-            modal.hide();
+            if (modalElement && window.bootstrap && window.bootstrap.Modal) {
+                const modal = bootstrap.Modal.getInstance(modalElement);
+                if (modal) modal.hide();
+            }
         }
     </script>
+
+    <!-- Real-time CEO Support Chat Modal -->
+    <div class="modal fade" id="ceoChatModal" tabindex="-1" aria-labelledby="ceoChatModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="modal-header bg-dark text-white py-3 px-4 d-flex justify-content-between align-items-center border-bottom border-danger border-2">
+                    <h5 class="modal-title text-white fw-bold d-flex align-items-center" id="ceoChatModalTitle">
+                        <i class="bi bi-chat-left-text-fill text-danger me-2 fs-5"></i>Candidate Support Workstation
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="p-3 bg-light border-bottom d-flex align-items-center justify-content-between">
+                    <p class="text-muted small mb-0" id="ceoChatModalSubtitle">
+                        <i class="bi bi-headset me-1 text-danger"></i> Live Workstation — Chatting with candidate.
+                    </p>
+                    <span class="badge bg-success px-2.5 py-1 rounded-pill"><i class="bi bi-circle-fill me-1" style="font-size: 0.5rem;"></i> Active Session</span>
+                </div>
+                <div class="modal-body p-3 bg-light">
+                    <div id="ceoChatMessages" class="border rounded-3 bg-white p-3 mb-3" style="height: 320px; overflow-y: auto;">
+                        <div class="text-center text-muted py-4 small">
+                            <span class="spinner-border spinner-border-sm text-danger me-1"></span> Loading candidate messages...
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" id="ceoChatInput" class="form-control form-control-sm rounded-start-3" placeholder="Type your reply here..." autocomplete="off" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();window.sendCeoMessage&&window.sendCeoMessage();}">
+                        <button type="button" id="ceoChatSendBtn" class="btn btn-danger fw-bold px-4 rounded-end-3" onclick="window.sendCeoMessage&&window.sendCeoMessage()">
+                            <i class="bi bi-send-fill me-1"></i> Send Reply
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
+
+

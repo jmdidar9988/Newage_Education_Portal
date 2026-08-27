@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Portal - Newage Education</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="logo.png">
     <!-- Bootstrap 5.3 CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <!-- Bootstrap Icons -->
@@ -27,18 +29,19 @@
         left: 0;
         width: 100vw;
         height: 100vh;
-        background: rgba(15, 23, 42, 0.6); /* Dark semi-transparent */
-        backdrop-filter: blur(4px); /* Premium blur effect */
+        background-color: rgba(0, 0, 0, 0.65);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
         z-index: 9998;
         opacity: 0;
         visibility: hidden;
-        pointer-events: none !important; /* Prevents invisible click blocking */
+        pointer-events: none !important;
         transition: all 0.3s ease;
       }
       .neo-backdrop.active-backdrop {
         opacity: 1;
         visibility: visible;
-        pointer-events: auto !important; /* Restores clicks when active */
+        pointer-events: auto !important;
       }
 
       /* The Fixed Screen-Centered Panels */
@@ -54,7 +57,7 @@
         pointer-events: none !important;
         /* Centers it and starts it slightly zoomed out for the pop effect */
         transform: translate(-50%, -50%) scale(0.85); 
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+        transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
       }
       
       /* Active Panel - Zooms into the center of the screen */
@@ -107,8 +110,11 @@
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark navbar-newage">
         <div class="container-fluid">
-            <a class="navbar-brand text-white" href="student.html">
-                <span>🎓</span> Newage Education <span class="portal-badge">Student Portal</span>
+            <a class="navbar-brand d-flex align-items-center gap-2 text-white" href="student.html">
+                <div class="brand-logo-container">
+                    <img src="logo.png" alt="Newage Education Logo">
+                </div>
+                <span class="portal-badge">Student Portal</span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -141,8 +147,27 @@
     <!-- Interactive Workspace -->
     <main class="container-fluid container-xl my-4 flex-grow-1 animate-fade-up">
 
-        <!-- Top Welcome / Status Banner -->
-        <div id="topBannerArea" class="mb-4 animate-fade-up stagger-1"></div>
+        <!-- Top Welcome / Executive Hero Banner -->
+        <div id="topBannerArea" class="mb-4 animate-fade-up stagger-1">
+            <div class="portal-hero-banner">
+                <div class="row align-items-center g-3">
+                    <div class="col-lg-8">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span class="badge bg-danger px-3 py-1.5 rounded-pill text-uppercase fw-bold" style="letter-spacing: 0.5px; font-size: 0.72rem;">Global Candidate Portal</span>
+                            <span class="text-white-50 small"><i class="bi bi-shield-check text-success me-1"></i> Verified &amp; Encrypted Dossier</span>
+                        </div>
+                        <h3 class="fw-bold mb-1 text-white">Welcome, <span id="welcomeCandidateName" class="text-white">Candidate</span>!</h3>
+                        <p class="text-white-50 small mb-0">Manage your international higher education applications, upload certified academic records, and track real-time admissions.</p>
+                    </div>
+                    <div class="col-lg-4 text-lg-end">
+                        <div class="d-inline-flex flex-column align-items-lg-end">
+                            <span class="text-white-50 small mb-1">Target Admission Cycle</span>
+                            <span class="badge bg-white text-dark px-3 py-2 rounded-3 fw-bold fs-6 shadow-sm"><i class="bi bi-calendar2-check text-danger me-1"></i> 2026 – 2027 Session</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <div class="row g-4">
 
@@ -170,29 +195,11 @@
                     </div>
                 </section>
 
-                <!-- 1.5 SECTION: Prominent Current Application Lifecycle Status Banner -->
-                <section id="section-overall-status-banner" class="card-newage border-0 shadow-sm rounded-4 mb-4 overflow-hidden reveal-on-scroll">
-                    <div class="p-4 bg-navy d-flex flex-wrap align-items-center justify-content-between gap-3">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="rounded-circle bg-danger bg-opacity-10 p-3 fs-2 text-danger d-flex align-items-center justify-content-center" style="width: 56px; height: 56px;">
-                                <i class="bi bi-compass-fill"></i>
-                            </div>
-                            <div>
-                                <small class="dynamic-text-muted text-uppercase tracking-wider fw-semibold d-block">Current Application Status</small>
-                                <h4 class="mb-0 fw-bold dynamic-text" id="overallStatusTitle">Pending / Processing</h4>
-                            </div>
-                        </div>
-                        <span id="overallStatusBadge" class="badge px-3.5 py-2 fs-6 rounded-pill shadow-sm">
-                            <i class="bi bi-clock-history me-1.5"></i> Pending / Processing
-                        </span>
-                    </div>
-                </section>
-
-                <!-- 2. SECTION: My Information & Candidate Record Card -->
+                <!-- 2. SECTION: My Information Card -->
                 <section id="section-my-information" class="card-newage border-0 shadow-sm rounded-4 mb-4 reveal-on-scroll">
                     <div class="card-header d-flex align-items-center justify-content-between py-3 px-4 rounded-top-4">
                         <h5 class="mb-0 dynamic-header-text fw-bold">
-                            <i class="bi bi-person-badge-fill text-danger me-2"></i>My Information &amp; Candidate Record
+                            <i class="bi bi-person-badge-fill text-danger me-2"></i>My Information
                         </h5>
                         <span class="badge bg-danger px-2.5 py-1.5 rounded-pill">Candidate Profile</span>
                     </div>
@@ -207,24 +214,14 @@
                                 <span id="profileStatusBadge" class="badge bg-warning text-dark px-3 py-1.5 rounded-pill mb-2"><i class="bi bi-clock-history me-1"></i>Pending</span>
                             </div>
                             <div class="col-md-8 ps-md-4">
-                                <div class="row g-3">
-                                    <div class="col-sm-6">
-                                        <div class="p-3 bg-light rounded-3 border">
-                                            <small class="dynamic-text-muted d-block mb-1">Highest Qualification</small>
-                                            <strong class="dynamic-text" id="profileQualification">—</strong>
-                                        </div>
+                                <div class="d-flex flex-column justify-content-center h-100">
+                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                        <span class="badge bg-light text-dark border small px-2.5 py-1"><i class="bi bi-patch-check-fill text-danger me-1"></i> Verified Account</span>
+                                        <span class="badge bg-light text-dark border small px-2.5 py-1"><i class="bi bi-lock-fill text-secondary me-1"></i> 256-Bit SSL</span>
                                     </div>
-                                    <div class="col-sm-6">
-                                        <div class="p-3 bg-light rounded-3 border">
-                                            <small class="dynamic-text-muted d-block mb-1">Assigned Counselor</small>
-                                            <strong class="text-danger" id="profileCounselor">—</strong>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="d-flex flex-wrap gap-2 mt-4">
-                                    <button class="btn btn-outline-danger btn-sm py-2 px-3 fw-semibold rounded-3" data-bs-toggle="modal" data-bs-target="#viewInfoModal">
-                                        <i class="bi bi-file-person me-1"></i> View Detailed Record
-                                    </button>
+                                    <p class="dynamic-text-muted small mb-0">
+                                        Your personal, contact, and academic records are securely registered in our system. You can review your profile dossier, access your document vault, study interview materials, or open live support from the executive command tiles below.
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -234,27 +231,139 @@
                 <!-- Full Screen Backdrop -->
                 <div id="neoBackdrop" class="neo-backdrop" onclick="closeNeoPanels()"></div>
 
-                <!-- Trigger Buttons -->
-                <div class="d-flex justify-content-center gap-3 mb-4">
-                  <button class="btn btn-outline-danger px-4 py-2 neo-btn" id="btnDocs" onclick="openNeoPanel('docs')">
-                    📁 My Documents
-                  </button>
-                  <button class="btn btn-outline-danger px-4 py-2 neo-btn position-relative" id="btnMats" onclick="openNeoPanel('mats'); clearUnreadMaterialsNotification();">
-                    📚 Interview Materials
-                    <span id="materialsBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none" style="font-size: 0.65rem; z-index: 5;">
-                      New
-                      <span class="visually-hidden">unread materials</span>
-                    </span>
-                  </button>
+                <!-- Executive Operations Hub (4 Multinational Command Tiles) -->
+                <div class="d-flex flex-column gap-3 mb-4">
+                    <!-- 1. My Information -->
+                    <div class="executive-tile" id="btnInfo" onclick="openNeoPanel('info')">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="executive-tile-icon-box icon-box-navy">
+                                <i class="bi bi-file-earmark-person-fill"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-1 dynamic-header-text">My Information</h6>
+                                <p class="text-muted small mb-0">Review full personal bio, contact info, and academic test scores</p>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 ps-3">
+                            <span class="badge bg-light text-dark border small px-2.5 py-1.5 rounded-pill d-none d-sm-inline">Information</span>
+                            <i class="bi bi-arrow-right-circle-fill fs-4 text-danger"></i>
+                        </div>
+                    </div>
+
+                    <!-- 2. My Documents -->
+                    <div class="executive-tile" id="btnDocs" onclick="openNeoPanel('docs')">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="executive-tile-icon-box icon-box-red">
+                                <i class="bi bi-folder-fill"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-1 dynamic-header-text">My Documents</h6>
+                                <p class="text-muted small mb-0">Upload and verify SSC, HSC, Passport, SOP, and financial proofs</p>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 ps-3">
+                            <span class="badge bg-light text-dark border small px-2.5 py-1.5 rounded-pill d-none d-sm-inline">Documents</span>
+                            <i class="bi bi-arrow-right-circle-fill fs-4 text-danger"></i>
+                        </div>
+                    </div>
+
+                    <!-- 3. Interview Preparation Materials -->
+                    <div class="executive-tile position-relative" id="btnMats" onclick="openNeoPanel('mats'); clearUnreadMaterialsNotification();">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="executive-tile-icon-box icon-box-gold">
+                                <i class="bi bi-journal-bookmark-fill"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-1 dynamic-header-text">Interview Preparation Materials</h6>
+                                <p class="text-muted small mb-0">University interview sheets, visa prep guidelines &amp; mock review files</p>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 ps-3">
+                            <span id="materialsBadge" class="badge bg-danger px-2.5 py-1.5 rounded-pill d-none" style="font-size: 0.72rem;">
+                              New Sheet
+                            </span>
+                            <i class="bi bi-arrow-right-circle-fill fs-4 text-danger"></i>
+                        </div>
+                    </div>
+
+                    <!-- 4. Support Live Chat -->
+                    <div class="executive-tile" id="btnChat" onclick="openNeoPanel('chat')">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="executive-tile-icon-box icon-box-emerald">
+                                <i class="bi bi-chat-dots-fill"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-1 dynamic-header-text">Admission Support Live Chat</h6>
+                                <p class="text-muted small mb-0">Direct 2-way real-time messaging with assigned counselor &amp; management</p>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 ps-3">
+                            <span class="badge bg-success-subtle text-success border border-success px-2.5 py-1.5 rounded-pill small d-none d-sm-inline">● Online</span>
+                            <i class="bi bi-arrow-right-circle-fill fs-4 text-danger"></i>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Modal Panels -->
+                <!-- 📄 1. My Information Panel (Opens on click) -->
+                <div id="panelInfo" class="neo-panel-container">
+                   <div class="card neo-card card-body position-relative p-0 overflow-hidden" style="max-width: 720px;">
+                      <button class="btn-close-neo" onclick="closeNeoPanels()" title="Close Record"><i class="bi bi-x-lg"></i></button>
+                      <section id="section-student-info-panel" class="card-newage border-0 mb-0">
+                          <div class="card-header bg-dark text-white d-flex align-items-center justify-content-between py-3 px-4 rounded-top-4 border-bottom border-danger border-2 pe-5">
+                              <h5 class="mb-0 text-white fw-bold d-flex align-items-center">
+                                  <i class="bi bi-person-badge-fill text-danger me-2"></i>My Information
+                              </h5>
+                              <span class="badge bg-danger px-2.5 py-1 rounded-pill small"><i class="bi bi-lock-fill me-1"></i> Locked Record</span>
+                          </div>
+                          <div class="p-4 bg-light rounded-bottom-4">
+                              <div class="alert alert-warning py-2 mb-3 small border border-warning">
+                                  <i class="bi bi-info-circle-fill me-1 text-warning"></i> This profile record is officially registered and locked. Contact your counselor for updates.
+                              </div>
+                              
+                              <div class="bg-white p-3 rounded-3 border mb-3">
+                                  <h6 class="fw-bold border-bottom pb-2 text-danger"><i class="bi bi-person-circle me-1"></i> Personal Details</h6>
+                                  <div class="row g-2 small">
+                                      <div class="col-sm-6"><strong>Full Name:</strong> <span id="info-fullName" class="text-dark">—</span></div>
+                                      <div class="col-sm-6"><strong>Date of Birth:</strong> <span id="info-dob" class="text-dark">—</span></div>
+                                      <div class="col-sm-6"><strong>Email:</strong> <span id="info-email" class="text-dark">—</span></div>
+                                      <div class="col-sm-6"><strong>Contact No:</strong> <span id="info-contact" class="text-dark">—</span></div>
+                                      <div class="col-sm-6"><strong>Gender:</strong> <span id="info-gender" class="text-dark">—</span></div>
+                                      <div class="col-sm-6"><strong>Post Code:</strong> <span id="info-postCode" class="text-dark">—</span></div>
+                                      <div class="col-12"><strong>Address:</strong> <span id="info-address" class="text-dark">—</span></div>
+                                  </div>
+                              </div>
+
+                              <div class="bg-white p-3 rounded-3 border mb-3">
+                                  <h6 class="fw-bold border-bottom pb-2 text-danger"><i class="bi bi-mortarboard-fill me-1"></i> Academic Qualifications</h6>
+                                  <div class="row g-2 small">
+                                      <div class="col-sm-6"><strong>S.S.C Result:</strong> <span id="info-ssc" class="text-dark">—</span></div>
+                                      <div class="col-sm-6"><strong>H.S.C Result:</strong> <span id="info-hsc" class="text-dark">—</span></div>
+                                      <div class="col-sm-6"><strong>Bachelor:</strong> <span id="info-bachelor" class="text-dark">—</span></div>
+                                      <div class="col-sm-6"><strong>Major:</strong> <span id="info-major" class="text-dark">—</span></div>
+                                  </div>
+                              </div>
+
+                              <div class="bg-white p-3 rounded-3 border">
+                                  <h6 class="fw-bold border-bottom pb-2 text-danger"><i class="bi bi-translate me-1"></i> English Proficiency Test</h6>
+                                  <div class="row g-2 small">
+                                      <div class="col-sm-6"><strong>Test Name:</strong> <span id="info-testName" class="text-dark">—</span></div>
+                                      <div class="col-sm-6"><strong>Overall Score:</strong> <span id="info-testScore" class="text-dark">—</span></div>
+                                      <div class="col-12"><strong>Bands / Breakdown:</strong> <span id="info-testBands" class="text-dark">—</span></div>
+                                  </div>
+                              </div>
+                          </div>
+                      </section>
+                   </div>
+                </div>
+
+                <!-- 📁 2. My Documents Panel -->
                 <div id="panelDocs" class="neo-panel-container">
                    <div class="card neo-card card-body position-relative p-0 overflow-hidden">
                       <button class="btn-close-neo" onclick="closeNeoPanels()" title="Close Panel"><i class="bi bi-x-lg"></i></button>
                       <section id="section-document-uploads" class="card-newage border-0 mb-0">
                           <div class="card-header d-flex justify-content-between align-items-center py-3 px-4 rounded-top-4 pe-5">
-                              <h5 class="mb-0 dynamic-header-text fw-bold"><i class="bi bi-folder2-open me-2 text-danger"></i>Documents Vault &amp; Verification Checklist</h5>
+                              <h5 class="mb-0 dynamic-header-text fw-bold"><i class="bi bi-folder2-open me-2 text-danger"></i>My Documents &amp; Verification Checklist</h5>
                               <span class="badge bg-danger px-2.5 py-1.5 rounded-pill">Document Storage</span>
                           </div>
                           <div class="p-4" id="uploadWorkspaceContent">
@@ -415,6 +524,34 @@
                    </div>
                 </div>
 
+                <!-- 💬 Chat Panel (Hidden by default, opens only on Chat click) -->
+                <div id="panelChat" class="neo-panel-container">
+                   <div class="card neo-card card-body position-relative p-0 overflow-hidden" style="max-width: 580px;">
+                      <button class="btn-close-neo" onclick="closeNeoPanels()" title="Close Chat"><i class="bi bi-x-lg"></i></button>
+                      <section id="section-student-chat-panel" class="card-newage border-0 mb-0">
+                          <div class="card-header bg-dark text-white d-flex align-items-center justify-content-between py-3 px-4 rounded-top-4 border-bottom border-danger border-2 pe-5">
+                              <h5 class="mb-0 text-white fw-bold d-flex align-items-center">
+                                  <i class="bi bi-chat-left-text-fill text-danger me-2"></i>Official Admission Support Chat
+                              </h5>
+                              <span class="badge bg-success px-2.5 py-1 rounded-pill small"><i class="bi bi-circle-fill me-1" style="font-size: 0.5rem;"></i> Active Session</span>
+                          </div>
+                          <div class="p-3 bg-light rounded-bottom-4">
+                              <div id="studentChatMessages" class="border rounded-3 bg-white p-3 mb-3" style="height: 340px; overflow-y: auto;">
+                                  <div class="text-center text-muted py-4 small">
+                                      <span class="spinner-border spinner-border-sm text-danger me-1"></span> Loading chat history...
+                                  </div>
+                              </div>
+                              <div class="input-group">
+                                  <input type="text" id="studentChatInput" class="form-control form-control-sm rounded-start-3" placeholder="Type your message here..." autocomplete="off">
+                                  <button type="button" id="studentChatSendBtn" class="btn btn-danger fw-bold px-4 rounded-end-3">
+                                      <i class="bi bi-send-fill me-1"></i> Send
+                                  </button>
+                              </div>
+                          </div>
+                      </section>
+                   </div>
+                </div>
+
                 <!-- 3. SECTION: Applied Courses & Application Trackers Card -->
                 <section id="section-added-applications" class="card-newage border-0 shadow-sm rounded-4 mb-4">
                     <div class="card-header d-flex align-items-center justify-content-between py-3 px-4 rounded-top-4">
@@ -435,57 +572,57 @@
 
 
             <!-- ========================================== -->
-            <!-- RIGHT COLUMN (col-lg-4): Chat & Support    -->
+            <!-- RIGHT COLUMN (col-lg-4): Quick Support     -->
             <!-- ========================================== -->
             <div class="col-lg-4">
 
-                <!-- Dedicated Chat Widget Card -->
-                <div class="card-newage border-0 shadow-sm rounded-4 mb-4 sticky-lg-top" style="top: 1.5rem; z-index: 100;">
-                    <div class="card-header d-flex align-items-center justify-content-between py-3 px-4 rounded-top-4">
-                        <h5 class="mb-0 dynamic-header-text fw-bold">
-                            <i class="bi bi-chat-left-text-fill text-danger me-2"></i>Chat Support
-                            <span id="studentChatUnreadBadge" class="badge bg-danger rounded-pill d-none ms-1">New</span>
-                        </h5>
-                        <span class="badge bg-danger px-2.5 py-1 rounded-pill">Online</span>
+                <!-- Application Milestone Roadmap -->
+                <div class="card-newage border-0 shadow-sm rounded-4 p-4 mb-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+                        <h6 class="fw-bold mb-0 dynamic-header-text"><i class="bi bi-signpost-split text-danger me-2"></i>Application Roadmap</h6>
+                        <span class="badge bg-danger rounded-pill">Timeline</span>
                     </div>
-                    <div class="p-3 bg-light border-bottom">
-                        <p class="text-muted small mb-0">
-                            <i class="bi bi-headset me-1 text-danger"></i> Connect directly with your assigned Newage Education Consultants.
-                        </p>
-                    </div>
-                        <!-- Scrollable Chat History Container -->
-                        <div class="border rounded-3 bg-white p-3 mb-3 chat-widget-container" id="studentChatHistory" style="max-height: 380px; min-height: 240px; overflow-y: auto;">
-                            <div class="d-flex flex-column gap-2" id="studentChatMessages">
-                                <div class="p-2.5 rounded-3 bg-light text-dark border small align-self-start shadow-sm" style="max-width: 85%;">
-                                    <div class="fw-bold text-danger mb-0.5" style="font-size: 0.75rem;"><i class="bi bi-person-badge-fill me-1"></i> Kabir Hossain (Senior Counselor)</div>
-                                    Hello! Welcome to Newage Education. How can I assist you with your university application and visa documents today?
-                                    <div class="text-muted text-end mt-1" style="font-size: 0.65rem;">10:00 AM</div>
-                                </div>
-                            </div>
+                    <div class="roadmap-step-item">
+                        <div class="roadmap-step-circle step-done"><i class="bi bi-check-lg"></i></div>
+                        <div>
+                            <h6 class="fw-bold mb-0 small">Profile Registered</h6>
+                            <small class="text-muted">Student profile dossier created</small>
                         </div>
-
-                        <!-- Chat Input Form -->
-                        <form id="chatForm" onsubmit="sendStudentMessage(event)">
-                            <div class="input-group">
-                                <textarea class="form-control form-control-sm rounded-start-3" id="counselorMessage" rows="2" placeholder="Type your message here..." required></textarea>
-                                <button type="submit" class="btn btn-newage-red fw-bold px-3 rounded-end-3" id="sendMsgBtn">
-                                    <i class="bi bi-send-fill"></i>
-                                </button>
-                            </div>
-                        </form>
+                    </div>
+                    <div class="roadmap-step-item">
+                        <div class="roadmap-step-circle step-active"><i class="bi bi-file-earmark-arrow-up"></i></div>
+                        <div>
+                            <h6 class="fw-bold mb-0 small text-danger">Document Vault</h6>
+                            <small class="text-muted">Academic transcripts verification</small>
+                        </div>
+                    </div>
+                    <div class="roadmap-step-item">
+                        <div class="roadmap-step-circle step-pending">3</div>
+                        <div>
+                            <h6 class="fw-bold mb-0 small text-muted">University Assessment</h6>
+                            <small class="text-muted">Direct partner institution review</small>
+                        </div>
+                    </div>
+                    <div class="roadmap-step-item pb-0">
+                        <div class="roadmap-step-circle step-pending">4</div>
+                        <div>
+                            <h6 class="fw-bold mb-0 small text-muted">Visa Lodgement &amp; Stamping</h6>
+                            <small class="text-muted">Embassy file submission &amp; grant</small>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Support & Hotline Card -->
                 <div class="card-newage border-0 shadow-sm rounded-4 p-4 text-center">
-                    <div class="bg-danger text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3 shadow-sm" style="width: 54px; height: 54px; font-size: 1.5rem;">
-                        <i class="bi bi-telephone-outbound-fill"></i>
+                    <div class="bg-danger text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3 shadow-sm" style="width: 58px; height: 58px; font-size: 1.6rem;">
+                        <i class="bi bi-headset"></i>
                     </div>
-                    <h6 class="fw-bold mb-1">Need Assistance?</h6>
-                    <p class="text-muted small mb-3">Our admission counselors are available Saturday – Thursday, 10:00 AM – 7:00 PM.</p>
-                    <a href="tel:+8801700000000" class="btn btn-outline-dark btn-sm w-100 fw-semibold rounded-3 mb-2">
-                        <i class="bi bi-telephone-fill me-1 text-danger"></i> Call Counselor Hotline
+                    <h6 class="fw-bold mb-1 dynamic-header-text">Official Candidate Helpline</h6>
+                    <p class="text-muted small mb-3">Our dedicated international desk is available Saturday – Thursday, 10:00 AM – 7:00 PM.</p>
+                    <a href="tel:+8801700000000" class="btn btn-danger btn-sm w-100 fw-bold rounded-3 py-2 mb-2 shadow-sm">
+                        <i class="bi bi-telephone-fill me-1"></i> Call Counselor Hotline
                     </a>
+                    <div class="text-muted small pt-1"><i class="bi bi-shield-lock-fill text-success me-1"></i> 100% Confidential Support</div>
                 </div>
 
             </div>
@@ -504,88 +641,6 @@
         </div>
     </footer>
 
-    <!-- MODAL 1: View My Information (Locked View) -->
-    <div class="modal fade" id="viewInfoModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-md">
-            <div class="modal-content">
-                <div class="modal-header bg-dark text-white border-bottom border-danger">
-                    <h5 class="modal-title text-white"><i class="bi bi-lock-fill text-danger me-1"></i> Locked Profile Record</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body small">
-                    <div class="alert alert-warning py-2 mb-3">
-                        <i class="bi bi-info-circle-fill me-1"></i> This information has been officially locked. Contact your counselor to request changes.
-                    </div>
-                    
-                    <h6 class="fw-bold border-bottom pb-1 text-danger">Personal Details</h6>
-                    <div class="row g-2 mb-3">
-                        <div class="col-6"><strong>Full Name:</strong> <span id="info-fullName">—</span></div>
-                        <div class="col-6"><strong>Date of Birth:</strong> <span id="info-dob">—</span></div>
-                        <div class="col-6"><strong>Email:</strong> <span id="info-email">—</span></div>
-                        <div class="col-6"><strong>Contact No:</strong> <span id="info-contact">—</span></div>
-                        <div class="col-6"><strong>Gender:</strong> <span id="info-gender">—</span></div>
-                        <div class="col-6"><strong>Post Code:</strong> <span id="info-postCode">—</span></div>
-                        <div class="col-12"><strong>Address:</strong> <span id="info-address">—</span></div>
-                    </div>
-
-                    <h6 class="fw-bold border-bottom pb-1 text-danger">Academic Qualifications</h6>
-                    <div class="row g-2 mb-3">
-                        <div class="col-6"><strong>S.S.C Result:</strong> <span id="info-ssc">—</span></div>
-                        <div class="col-6"><strong>H.S.C Result:</strong> <span id="info-hsc">—</span></div>
-                        <div class="col-6"><strong>Bachelor:</strong> <span id="info-bachelor">—</span></div>
-                        <div class="col-6"><strong>Major:</strong> <span id="info-major">—</span></div>
-                    </div>
-
-                    <h6 class="fw-bold border-bottom pb-1 text-danger">English Test Score</h6>
-                    <div class="row g-2">
-                        <div class="col-6"><strong>Test Name:</strong> <span id="info-testName">—</span></div>
-                        <div class="col-6"><strong>Overall Score:</strong> <span id="info-testScore">—</span></div>
-                        <div class="col-12"><strong>Bands:</strong> <span id="info-testBands">—</span></div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-newage-dark btn-sm" data-bs-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL 2: Message Counselor / Support Chat -->
-    <div class="modal fade" id="messageCounselorModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header bg-dark text-white border-bottom border-danger">
-                    <h5 class="modal-title text-white"><i class="bi bi-chat-left-text-fill text-danger me-2"></i>Messages &amp; Counselor Support</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body p-3">
-                    <div class="alert alert-light border small py-2 mb-3">
-                        <i class="bi bi-person-badge-fill text-danger me-1"></i> Direct chat with your assigned Newage Education Consultants.
-                    </div>
-
-                    <!-- Scrollable Chat History Container -->
-                    <div class="border rounded bg-white p-3 mb-3" id="studentChatHistory" style="max-height: 320px; min-height: 200px; overflow-y: auto;">
-                        <div class="text-center text-muted py-4 small">
-                            <span class="spinner-border spinner-border-sm me-1"></span> Loading chat history...
-                        </div>
-                    </div>
-
-                    <form id="chatForm" onsubmit="sendStudentMessage(event)">
-                        <div class="input-group">
-                            <textarea class="form-control" id="counselorMessage" rows="2" placeholder="Type your message here..." required></textarea>
-                            <button type="submit" class="btn btn-newage-red fw-bold px-4" id="sendMsgBtn">
-                                <i class="bi bi-send-fill me-1"></i> Send
-                            </button>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer bg-light py-2">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Bootstrap 5.3 JS Bundle CDN -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
@@ -597,7 +652,7 @@
         const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`;
 
         // ── Firebase Auth & Firestore (shared instance from auth.js) ───────────
-        import { auth, db, onAuthStateChanged, collection, query, where, getDocs, updateDoc, doc, escapeHtml as escapeHtmlAuth, arrayUnion } from "./auth.js";
+        import { auth, db, onAuthStateChanged, collection, addDoc, query, where, orderBy, getDoc, getDocs, setDoc, updateDoc, doc, serverTimestamp, escapeHtml as escapeHtmlAuth, arrayUnion, onSnapshot } from "./auth.js";
 
         // Track logged-in user, their Firestore document ID, and full data object
         let currentUser = null;
@@ -692,59 +747,7 @@
             }
         }
 
-        // ── Helper: Check Unread Consultant Messages for Student ────────────
-        function checkStudentUnreadMessages(messages) {
-            const msgs = Array.isArray(messages) ? messages : [];
-            const badge = document.getElementById('studentChatUnreadBadge');
-            const navBadge = document.getElementById('navChatUnreadBadge');
 
-            if (msgs.length === 0) {
-                if (badge) badge.classList.add('d-none');
-                if (navBadge) navBadge.classList.add('d-none');
-                return;
-            }
-
-            const lastMsg = msgs[msgs.length - 1];
-            const isUnread = Boolean(lastMsg && lastMsg.sender === 'Consultant' && lastMsg.isRead !== true);
-
-            if (isUnread) {
-                if (badge) badge.classList.remove('d-none');
-                if (navBadge) navBadge.classList.remove('d-none');
-            } else {
-                if (badge) badge.classList.add('d-none');
-                if (navBadge) navBadge.classList.add('d-none');
-            }
-        }
-
-        // ── Handler: Mark Consultant Messages as Read by Student ─────────────
-        window.markStudentMessagesAsRead = async function() {
-            const badge = document.getElementById('studentChatUnreadBadge');
-            const navBadge = document.getElementById('navChatUnreadBadge');
-            if (badge) badge.classList.add('d-none');
-            if (navBadge) navBadge.classList.add('d-none');
-
-            if (!studentDocId || !currentStudentData || !Array.isArray(currentStudentData.messages)) return;
-
-            let updated = false;
-            const updatedMessages = currentStudentData.messages.map(m => {
-                if (m && m.sender === 'Consultant' && m.isRead !== true) {
-                    updated = true;
-                    return { ...m, isRead: true };
-                }
-                return m;
-            });
-
-            if (updated) {
-                try {
-                    const studentRef = doc(db, 'students', studentDocId);
-                    await updateDoc(studentRef, { messages: updatedMessages });
-                    currentStudentData.messages = updatedMessages;
-                    console.log("Student marked consultant messages as read.");
-                } catch (e) {
-                    console.error("Failed to mark student messages as read:", e);
-                }
-            }
-        };
 
         // ── Handler: Clear Unread Interview Materials Notification ─────────
         window.clearUnreadMaterialsNotification = async function() {
@@ -764,97 +767,11 @@
             }
         };
 
-        // ── Helper: Render Student Messages & Support Chat ─────────────────
-        function renderStudentChat(messages) {
-            const chatBox = document.getElementById('studentChatHistory');
-            if (!chatBox) return;
 
-            const msgList = Array.isArray(messages) ? messages : [];
-
-            if (msgList.length === 0) {
-                chatBox.innerHTML = `
-                    <div class="text-center text-muted py-4 small">
-                        <i class="bi bi-chat-square-text fs-3 d-block mb-1 opacity-50"></i>
-                        No messages yet. Ask a question or send an update to your assigned counselor!
-                    </div>`;
-                return;
-            }
-
-            chatBox.innerHTML = msgList.map(msg => {
-                if (!msg) return '';
-                const isStudent = (msg.sender === 'Student');
-                const bgClass = isStudent ? 'bg-danger text-white ms-auto' : 'bg-light border text-dark me-auto';
-                const alignClass = isStudent ? 'justify-content-end' : 'justify-content-start';
-                const senderLabel = isStudent ? 'You' : 'Counselor Support';
-                const timeStr = formatTimestamp(msg.timestamp);
-
-                return `
-                    <div class="d-flex ${alignClass} mb-2">
-                        <div class="p-2 rounded-3 shadow-sm ${bgClass}" style="max-width: 80%; font-size: 0.85rem;">
-                            <div class="fw-bold mb-1" style="font-size: 0.725rem; opacity: 0.85;">${senderLabel}</div>
-                            <div class="text-break">${escapeHtml(msg.text || '')}</div>
-                            <div class="text-end mt-1" style="font-size: 0.65rem; opacity: 0.75;">${timeStr}</div>
-                        </div>
-                    </div>`;
-            }).join('');
-
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
-
-        // ── Handler: Send Student Message to Firestore ─────────────────────
-        window.sendStudentMessage = async function(event) {
-            if (event) event.preventDefault();
-            const inputEl = document.getElementById('counselorMessage');
-            if (!inputEl) return;
-            const text = inputEl.value.trim();
-            if (!text) return;
-
-            if (!studentDocId) {
-                alert('Student profile not loaded yet.');
-                return;
-            }
-
-            const sendBtn = document.getElementById('sendMsgBtn');
-            if (sendBtn) sendBtn.disabled = true;
-
-            const newMsg = {
-                id: 'msg_' + Date.now(),
-                sender: 'Student',
-                text: text,
-                timestamp: new Date().toISOString(),
-                isRead: false
-            };
-
-            try {
-                const studentRef = doc(db, 'students', studentDocId);
-                await updateDoc(studentRef, {
-                    messages: arrayUnion(newMsg)
-                });
-
-                if (!currentStudentData) currentStudentData = {};
-                if (!Array.isArray(currentStudentData.messages)) currentStudentData.messages = [];
-                currentStudentData.messages.push(newMsg);
-
-                inputEl.value = '';
-                renderStudentChat(currentStudentData.messages);
-                showToast('💬 Message sent!', 'success');
-
-            } catch (error) {
-                console.error("Error sending student message:", error);
-                showToast('Failed to send message: ' + error.message, 'danger');
-            } finally {
-                if (sendBtn) sendBtn.disabled = false;
-            }
-        };
 
         // ── Populate DOM with student record ───────────────────────────────
         function populateProfile(data, docId) {
             currentStudentData = data;
-            renderStudentChat(data?.messages);
-            checkStudentUnreadMessages(data?.messages);
-
-            // Add focus listener to chat textarea to mark read on interaction
-            document.getElementById('counselorMessage')?.addEventListener('focus', markStudentMessagesAsRead);
 
             const p = data?.personalInfo || {};
             const edu = data?.educationalProfile || {};
@@ -914,16 +831,29 @@
                 }
             }
 
-            // Top Banner: Render Welcome Greeting
+            // Top Banner: Render Executive Welcome Greeting
+            const welcomeNameEl = document.getElementById('welcomeCandidateName');
+            if (welcomeNameEl) {
+                welcomeNameEl.textContent = actualName || 'Candidate';
+            }
             const bannerArea = document.getElementById('topBannerArea');
             if (bannerArea) {
                 bannerArea.innerHTML = `
-                    <div class="alert alert-light border shadow-sm p-3 mb-0 d-flex align-items-center justify-content-between" role="alert">
-                        <div class="d-flex align-items-center">
-                            <span class="fs-3 me-3">👋</span>
-                            <div>
-                                <h6 class="fw-bold text-dark mb-0">Welcome back, ${escapeHtml(actualName)}!</h6>
-                                <span class="small text-muted">Manage your candidate profile, document vault, and university application trackers below.</span>
+                    <div class="portal-hero-banner">
+                        <div class="row align-items-center g-3">
+                            <div class="col-lg-8">
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <span class="badge bg-danger px-3 py-1.5 rounded-pill text-uppercase fw-bold" style="letter-spacing: 0.5px; font-size: 0.72rem;">Global Candidate Portal</span>
+                                    <span class="text-white-50 small"><i class="bi bi-shield-check text-success me-1"></i> Verified &amp; Encrypted Dossier</span>
+                                </div>
+                                <h3 class="fw-bold mb-1 text-white">Welcome back, ${escapeHtml(actualName)}!</h3>
+                                <p class="text-white-50 small mb-0">Manage your international higher education applications, upload certified academic records, and track real-time admissions.</p>
+                            </div>
+                            <div class="col-lg-4 text-lg-end">
+                                <div class="d-inline-flex flex-column align-items-lg-end">
+                                    <span class="text-white-50 small mb-1">Target Admission Cycle</span>
+                                    <span class="badge bg-white text-dark px-3 py-2 rounded-3 fw-bold fs-6 shadow-sm"><i class="bi bi-calendar2-check text-danger me-1"></i> 2026 – 2027 Session</span>
+                                </div>
                             </div>
                         </div>
                     </div>`;
@@ -1140,9 +1070,9 @@
             const navAppFormContainer = document.getElementById('nav-application-form-container');
             if (navAppFormContainer) navAppFormContainer.classList.remove('d-none');
 
-            // Hide/Lock Document Uploads section until Application Form is submitted
+            // Ensure Document Uploads section is visible inside panelDocs
             const docUploadsSection = document.getElementById('section-document-uploads');
-            if (docUploadsSection) docUploadsSection.style.display = 'none';
+            if (docUploadsSection) docUploadsSection.style.display = 'block';
 
             const bannerArea = document.getElementById('topBannerArea');
             if (bannerArea) {
@@ -1191,37 +1121,201 @@
                 return;
             }
 
-            // 🔍 Query students collection by authenticated user's email address
+            const email = (user.email || '').trim();
+            const emailClean = email.toLowerCase();
+            studentDocId = emailClean;
+
+            // ── Real-time Student Chat Engine ────────────────────────────────
+            const chatMessagesDiv = document.getElementById('studentChatMessages');
+            const chatInput = document.getElementById('studentChatInput');
+            const chatSendBtn = document.getElementById('studentChatSendBtn');
+            const safeStudentEmail = (auth.currentUser?.email || emailClean).trim().toLowerCase();
+            const chatRef = collection(db, 'students', safeStudentEmail, 'chatMessages');
+
+            // 1. Real-time Listener
             try {
-                let querySnapshot = await getDocs(query(
-                    collection(db, 'students'),
-                    where('personalInfo.email', '==', user.email)
-                ));
+                onSnapshot(query(chatRef, orderBy('timestamp', 'asc')), (snapshot) => {
+                    if (!chatMessagesDiv) return;
+                    if (snapshot.empty) {
+                        chatMessagesDiv.innerHTML = `
+                            <div class="text-center text-muted py-4 small">
+                                <i class="bi bi-chat-dots fs-3 d-block mb-1 text-secondary opacity-50"></i>
+                                No messages yet. Send an update or question to our support team!
+                            </div>`;
+                        return;
+                    }
 
-                // Fallback check if email is stored at root level
-                if (querySnapshot.empty) {
-                    querySnapshot = await getDocs(query(
+                    let html = '';
+                    snapshot.forEach((docSnap) => {
+                        const msg = docSnap.data();
+                        const isStudent = msg.sender === 'student';
+                        const align = isStudent ? 'text-end' : 'text-start';
+                        const color = isStudent ? 'bg-danger text-white ms-auto' : 'bg-light border text-dark me-auto';
+
+                        html += `
+                            <div class="${align} mb-2">
+                                <div class="d-inline-block p-2.5 px-3 rounded-3 shadow-sm ${color}" style="max-width: 80%; font-size: 0.875rem; word-break: break-word; white-space: pre-wrap;">${escapeHtml(msg.text || '')}</div>
+                            </div>`;
+                    });
+                    chatMessagesDiv.innerHTML = html;
+                    chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight;
+                }, (err) => {
+                    console.warn("Student Chat listener notice:", err);
+                });
+            } catch (chatErr) {
+                console.error("Student Chat listener setup error:", chatErr);
+            }
+
+            // 2. Send Logic
+            const handleSendStudentMsg = async () => {
+                if (!chatInput) return;
+                const text = chatInput.value.trim();
+                if (!text) return;
+                try {
+                    if (chatSendBtn) chatSendBtn.disabled = true;
+                    await addDoc(chatRef, {
+                        text: text,
+                        sender: 'student',
+                        senderRole: 'student',
+                        senderName: auth.currentUser?.displayName || 'Student Candidate',
+                        timestamp: serverTimestamp(),
+                        createdAt: new Date().toISOString()
+                    });
+                    chatInput.value = '';
+                } catch (error) {
+                    console.error("Chat Send Error:", error);
+                    alert("Failed to send message: " + error.message);
+                } finally {
+                    if (chatSendBtn) chatSendBtn.disabled = false;
+                }
+            };
+
+            if (chatSendBtn) chatSendBtn.onclick = handleSendStudentMsg;
+            if (chatInput) {
+                chatInput.onkeydown = (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendStudentMsg();
+                    }
+                };
+            }
+            
+            // Console Debugging Requirement
+            console.log("Attempting to fetch profile for:", auth.currentUser ? auth.currentUser.email : email);
+
+            let docSnap = null;
+            studentDocId = emailClean;
+
+            // 🎯 Direct Document Lookup (matches doc(db, "students", auth.currentUser.email) format used in submission)
+            try {
+                const docRef = doc(db, "students", emailClean);
+                const snap = await getDoc(docRef);
+                if (snap && snap.exists()) {
+                    docSnap = snap;
+                    studentDocId = emailClean;
+                }
+            } catch (err) {
+                console.warn("Direct getDoc (lowercase email) note:", err);
+            }
+
+            // Fallback 1: Try exact case email as Document ID
+            if ((!docSnap || !docSnap.exists()) && email) {
+                try {
+                    const snapCase = await getDoc(doc(db, "students", email));
+                    if (snapCase && snapCase.exists()) {
+                        docSnap = snapCase;
+                        studentDocId = email;
+                    }
+                } catch (err) {}
+            }
+
+            // Fallback 2: Try user.uid as Document ID
+            if ((!docSnap || !docSnap.exists()) && user.uid) {
+                try {
+                    const snapUid = await getDoc(doc(db, "students", user.uid));
+                    if (snapUid && snapUid.exists()) {
+                        docSnap = snapUid;
+                        studentDocId = user.uid;
+                    }
+                } catch (err) {}
+            }
+
+            // Fallback 3: Query fallback if Document ID was auto-generated
+            if (!docSnap || !docSnap.exists()) {
+                try {
+                    let querySnapshot = await getDocs(query(
                         collection(db, 'students'),
-                        where('email', '==', user.email)
+                        where('personalInfo.email', '==', user.email)
                     ));
+                    if (querySnapshot.empty) {
+                        querySnapshot = await getDocs(query(
+                            collection(db, 'students'),
+                            where('email', '==', user.email)
+                        ));
+                    }
+                    if (!querySnapshot.empty) {
+                        docSnap = querySnapshot.docs[0];
+                        studentDocId = docSnap.id;
+                    }
+                } catch (err) {
+                    console.error("Query fallback error:", err);
+                }
+            }
+
+            const profileExists = Boolean(docSnap && docSnap.exists());
+
+            // Console Debugging Requirement
+            console.log("Profile exists:", profileExists);
+
+            // 🎯 UI TOGGLING LOGIC
+            const appFormPromptSection = document.getElementById('section-application-form-prompt');
+            const overallStatusBanner = document.getElementById('section-overall-status-banner');
+            const myInfoSection = document.getElementById('section-my-information');
+            const addedAppsSection = document.getElementById('section-added-applications');
+
+            if (profileExists) {
+                // ✅ Profile exists: Hide Application Form Required prompt section, show profile sections
+                if (appFormPromptSection) {
+                    appFormPromptSection.classList.add('d-none');
+                    appFormPromptSection.style.display = 'none';
+                }
+                if (overallStatusBanner) {
+                    overallStatusBanner.classList.remove('d-none');
+                    overallStatusBanner.style.display = 'block';
+                }
+                if (myInfoSection) {
+                    myInfoSection.classList.remove('d-none');
+                    myInfoSection.style.display = 'block';
+                }
+                if (addedAppsSection) {
+                    addedAppsSection.classList.remove('d-none');
+                    addedAppsSection.style.display = 'block';
                 }
 
-                if (!querySnapshot.empty) {
-                    // ✅ Student data found — extract document data and populate DOM
-                    const studentDoc = querySnapshot.docs[0];
-                    studentDocId = studentDoc.id;
-                    const studentData = studentDoc.data();
+                const studentData = docSnap.data();
+                console.log("Successfully fetched student data:", studentData);
 
-                    console.log("Successfully fetched student data: ", studentData);
-
-                    populateProfile(studentData, studentDocId);
-                } else {
-                    // 🆕 Query is empty — fallback to email-parsed name & show Submit Application Form UI
-                    console.log("No student data found for email: ", user.email);
-                    showNewStudentState(user.email);
+                populateProfile(studentData, studentDocId);
+            } else {
+                // ❌ Profile does NOT exist: Show Application Form section, hide Profile sections
+                if (appFormPromptSection) {
+                    appFormPromptSection.classList.remove('d-none');
+                    appFormPromptSection.style.display = 'block';
                 }
-            } catch (error) {
-                console.error("Error fetching data by email:", error);
+                if (overallStatusBanner) {
+                    overallStatusBanner.classList.add('d-none');
+                    overallStatusBanner.style.display = 'none';
+                }
+                if (myInfoSection) {
+                    myInfoSection.classList.add('d-none');
+                    myInfoSection.style.display = 'none';
+                }
+                if (addedAppsSection) {
+                    addedAppsSection.classList.add('d-none');
+                    addedAppsSection.style.display = 'none';
+                }
+
+                console.log("No student profile found for email:", user.email);
                 showNewStudentState(user.email);
             }
         });
@@ -1447,13 +1541,7 @@
             alert(`Application request submitted successfully for course: ${courseName}!`);
         }
 
-        function sendStudentMessage(event) {
-            if (event) event.preventDefault();
-            if (typeof window.sendStudentMessage === 'function' && window.sendStudentMessage !== sendStudentMessage) {
-                return window.sendStudentMessage(event);
-            }
-        }
-        window.sendMessage = sendStudentMessage;
+
     </script>
 
     <!-- Screen-Centered Zoom Logic -->
@@ -1466,10 +1554,38 @@
         if (backdrop) backdrop.classList.add('active-backdrop');
         
         // Show Target Panel
-        if (target === 'docs') {
-          document.getElementById('panelDocs').classList.add('active-panel');
+        if (target === 'info') {
+          const pInfo = document.getElementById('panelInfo');
+          if (pInfo) {
+            pInfo.classList.add('active-panel');
+            const inner = document.getElementById('section-student-info-panel');
+            if (inner) inner.style.display = 'block';
+          }
+        } else if (target === 'docs') {
+          const pDocs = document.getElementById('panelDocs');
+          if (pDocs) {
+            pDocs.classList.add('active-panel');
+            const inner = document.getElementById('section-document-uploads');
+            if (inner) inner.style.display = 'block';
+          }
         } else if (target === 'mats') {
-          document.getElementById('panelMats').classList.add('active-panel');
+          const pMats = document.getElementById('panelMats');
+          if (pMats) {
+            pMats.classList.add('active-panel');
+            const inner = document.getElementById('section-prep-materials');
+            if (inner) inner.style.display = 'block';
+          }
+        } else if (target === 'chat') {
+          const pChat = document.getElementById('panelChat');
+          if (pChat) {
+            pChat.classList.add('active-panel');
+            const inner = document.getElementById('section-student-chat-panel');
+            if (inner) inner.style.display = 'block';
+          }
+          const input = document.getElementById('studentChatInput');
+          if (input) setTimeout(() => input.focus(), 350);
+          const msgBox = document.getElementById('studentChatMessages');
+          if (msgBox) setTimeout(() => msgBox.scrollTop = msgBox.scrollHeight, 100);
         }
       }
 
@@ -1479,11 +1595,22 @@
         if (backdrop) backdrop.classList.remove('active-backdrop');
         
         // Hide Panels
+        const pInfo = document.getElementById('panelInfo');
         const pDocs = document.getElementById('panelDocs');
         const pMats = document.getElementById('panelMats');
+        const pChat = document.getElementById('panelChat');
+        if (pInfo) pInfo.classList.remove('active-panel');
         if (pDocs) pDocs.classList.remove('active-panel');
         if (pMats) pMats.classList.remove('active-panel');
+        if (pChat) pChat.classList.remove('active-panel');
       }
+
+      function openStudentChat() {
+        openNeoPanel('chat');
+      }
+      window.openStudentChat = openStudentChat;
+      window.openNeoPanel = openNeoPanel;
+      window.closeNeoPanels = closeNeoPanels;
     </script>
 </body>
 </html>
