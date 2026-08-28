@@ -13,47 +13,40 @@
 
 ## 🌟 Key Features
 
-### 1. 📱 Screen-Centered Neo-Lightbox Modals
-- **Fixed-Position Pop-Out Lightboxes**: High-performance floating modals centered on screen with backdrop blur (`backdrop-filter: blur(4px)`).
-- **Smooth 2-Way Scale Transitions**: Expands and shrinks smoothly with custom `cubic-bezier(0.175, 0.885, 0.32, 1.275)` timing functions.
-- **Dedicated Close Controls**: Floating circular `X` close buttons (`.btn-close-neo`) with hover rotation and backdrop click dismiss handlers.
-
-### 2. 📁 Document Vault & Verification Checklist
-- **Student Document Workspace**: Streamlined document checklist allowing candidates to upload PDF scans and images for certificates, marksheets, recommendation letters, passport, NID, SOP, CV, and bank statements.
-- **Counselor Verification**: Real-time status mapping (*Pending*, *Verified*, *Rejected*) accessible to counselors for document review.
-
-### 3. 📚 Sequential Interview Preparation Materials
-- **Custom Title & Single-File Upload Modal**: Counselors can upload interview preparation sheets (e.g., "Sheet 1", "Sheet 2") sequentially.
-- **Firestore `arrayUnion` Storage**: Ensures new PDF uploads append safely to the candidate record without overwriting existing materials.
-- **Unread Notification Badge System**: Automatically flags candidate records with `hasUnreadMaterials: true`, displaying a glowing **"New"** notification badge on the student portal that clears once viewed.
-
-### 4. 🎓 10-Stage Visa & Application Lifecycle Tracker
-Real-time progress tracking across all ten key visa and application stages:
-1. `Pending / Processing`
-2. `Offer letter received`
-3. `Applied for unconditional offer letter`
-4. `Applied for CAS`
-5. `CAS received`
-6. `VFS Global Appointment`
-7. `Embassy Interview`
-8. `UKVI interview`
-9. `Visa Success`
-10. `Rejected`
-
-### 5. 👥 Multi-Role Portal Authentication & Access Control
+### 1. 👥 Multi-Role Portal Authentication & Access Control
 - **Automatic Email Role Detection**: Real-time email domain/pattern matching displaying role badges (CEO, Employee, Student) on the login interface.
+- **Persistent Session Navigation**: Clicking the **Home** button keeps users logged in, rendering their active portal state. A dedicated **My Profile** navbar button lets authenticated users instantly return to their respective dashboards.
 - **Role-Based Views**:
-  - **CEO Dashboard**: High-level KPIs, total student metrics, recent applications overview.
-  - **Employee / Counselor Dashboard**: Interactive student directory, document verification workspace, application status dropdowns, prep sheet upload modal, and direct candidate messaging.
-  - **Student Dashboard**: Candidate profile record, real-time application tracker, document vault, interview materials, and assigned counselor chat.
+  - **CEO Dashboard**: Greeted as **Mahfuz Shuvo**, features live student metrics, recent applications, counselor task tracker, and the secure **My Team** management panel.
+  - **Employee / Counselor Dashboard**: Personal greeting from Firestore, task control center, interactive student directory, document verification workspace, and direct candidate messaging.
+  - **Student Dashboard**: Candidate profile, live application tracker, document vault, interview materials, and assigned counselor chat.
 - **Instant Demo Logins**: One-click demo login buttons for testing (`ceo@newage.com`, `employee@newage.com`, `student@newage.com`).
+
+### 2. 💼 "My Team" Staff Management Modal (CEO Only)
+- **Centralized Directory**: Removed static dashboard blocks and placed employee listings inside a secure **My Team** modal directory.
+- **Designation-Based Provisioning**: Adds new employee accounts directly from the team window, allowing the CEO to specify their role/designation (e.g. Senior Admission Counselor).
+- **Secure Configuration Lock**: Clicking **Update** prompts for the CEO's master password. On success, it unlocks a SweetAlert2 form to edit staff names, designations, phone numbers, departments, and status (Active/Inactive), or permanently delete the counselor account.
+
+### 3. 📋 Real-Time Counselor Task Control Center
+- **Deadline Countdowns**: Interactive countdown timer ticking in seconds next to each task. Deadline-passed tasks are visually flagged as red **Missed**.
+- **Inline Work Submissions**: Counselors can toggle task status between *Pending* and *Completed*, submit written work updates, upload verification PDF logs (base64 encoded), and share project URLs.
+- **Task Assign Form**: CEO can dynamically assign due dates, deadlines (with due time), and upload task instruction PDFs.
+- **Unread Task Alerts**: Displays a glowing notification badge on the counselor navbar when a new task is assigned, vanishing once opened.
+
+### 4. 📁 Document Vault & Verification Checklist
+- **Student Document Workspace**: Checklist allowing candidates to upload PDF scans and images for certificates, marksheets, letters, passport, SOP, CV, and bank statements.
+- **Bidirectional Verification Controls**: CEO and counselors can review uploads in the Student Details Modal, toggling status back and forth between **Approve** and **Mark Pending**, or choosing **Delete Document** to remove it from Firestore.
+
+### 5. 💬 Real-Time Synced Chat Notifications & Seen States
+- **High-Visibility Alerts**:
+  - **Student Notification**: A glowing notification banner stating **"New Message from Counselor!"** is displayed at the top of the student dashboard, alongside a red badge on the live chat tile.
+  - **Staff Notification**: Student rows with unread messages are highlighted with a glowing light-pink background and a pulsating red dot next to their name.
+- **Auto-Seen Sync**: Opening the chatbox on either side instantly clears the unread flags in Firestore. For the staff side, when the CEO or an employee opens the chat, the notification badges vanish instantly in real-time across both staff portals.
+- **Double-Click to Delete**: Double-clicking any message bubble prompts a confirmation dialog to delete the message permanently from Firestore.
 
 ### 6. 🌗 Dynamic Light & Dark Theme System
 - **Theme Persistence**: Theme state stored in `localStorage` and synchronized across all pages.
 - **Dynamic Text Contrast Utilities**: CSS classes (`.dynamic-text`, `.dynamic-header-text`, `.dynamic-text-muted`) guaranteeing high contrast and legibility across both Light Slate and Dark Charcoal themes.
-
-### 7. 💬 Real-Time Counselor Support Chat
-- Integrated candidate-counselor messaging widget for direct communication, status updates, and document inquiries.
 
 ---
 
@@ -65,7 +58,7 @@ Real-time progress tracking across all ten key visa and application stages:
   - **UI/UX Enhancements**: SweetAlert2 modal feedback, custom Glassmorphism cards, CSS keyframes.
 - **Backend & Database**:
   - **Firebase v10 SDK**: Modular JavaScript SDK (`firebase/app`, `firebase/auth`, `firebase/firestore`).
-  - **Cloud Database**: Real-time Firebase Firestore (`students` collection).
+  - **Cloud Database**: Real-time Firebase Firestore (`students` and `tasks` collections).
 - **Document & Asset Storage**:
   - **HTML5 FileReader API**: Base64 Data URL encoding for PDF and image document uploads.
   - **Cloudinary Integration Ready**: Prepared infrastructure for cloud image/PDF CDN hosting and asset delivery.
@@ -79,13 +72,15 @@ Real-time progress tracking across all ten key visa and application stages:
 
 ```
 Newage-Education/
-├── index.html            # Public Homepage (Courses, Destinations, Consultation Booking)
-├── login.html            # Multi-Role Authentication Page (CEO, Employee, Student)
-├── student.html          # Candidate Dashboard (Status Tracker, Document Vault, Interview Materials)
-├── employee.html         # Counselor & Staff Portal (Student Management, Prep Sheet Uploads)
+├── index.html            # CEO Dashboard (My Team, Task Assigner, Application Metrics, Student List)
+├── login.html            # Public Homepage & Multi-Role Authentication Page
+├── student.html          # Candidate Dashboard (Status Tracker, Document Vault, Interview Materials, Chat)
+├── employee.html         # Counselor Portal (Student Directory, Chat modal, Task Manager Modal)
 ├── application_form.html # Multi-Step Registration & Application Form
 ├── style.css             # Core CSS Design System & Theme Variables
 ├── auth.js               # Firebase Authentication, Firestore Sync & UI Controllers
+├── index.js              # CEO Chat Module & Seen Clear Handlers
+├── employee.js           # Counselor Chat Module & Seen Clear Handlers
 ├── server.ps1            # Local PowerShell Development HTTP Server
 └── README.md             # Project Documentation
 ```
@@ -111,13 +106,13 @@ Newage-Education/
    ```powershell
    powershell -ExecutionPolicy Bypass -File server.ps1
    ```
-   Or use VS Code Live Server to open `index.html`.
+   Or use VS Code Live Server to open `login.html`.
 
 3. **Access the Portals**:
-   - **Public Portal**: `http://localhost:8000/index.html`
-   - **Login Page**: `http://localhost:8000/login.html`
-   - **Student Dashboard**: `http://localhost:8000/student.html`
-   - **Counselor Portal**: `http://localhost:8000/employee.html`
+   - **Homepage (Login)**: `http://localhost:8080/login.html`
+   - **CEO Terminal**: `http://localhost:8080/index.html`
+   - **Counselor Portal**: `http://localhost:8080/employee.html`
+   - **Student Dashboard**: `http://localhost:8080/student.html`
 
 ### Demo Credentials
 Use the quick demo buttons on `login.html`:
@@ -160,7 +155,25 @@ students/{studentId}
     }
   ],
   "hasUnreadMaterials": true,
-  "assignedCounselor": "Kabir Hossain"
+  "assignedCounselor": "Kabir Hossain",
+  "staffHasUnread": false,
+  "studentHasUnread": true
+}
+```
+
+```json
+tasks/{taskId}
+{
+  "assignedToEmail": "employee@newage.com",
+  "assignedToName": "Kabir Hossain",
+  "description": "Review application documents",
+  "deadline": 1787123456000,
+  "pdfData": "data:application/pdf;base64,...",
+  "pdfName": "instructions.pdf",
+  "status": "pending",
+  "seenByEmployee": false,
+  "employeeUpdates": "",
+  "createdAt": "2026-08-28T13:25:35.225Z"
 }
 ```
 
