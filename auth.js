@@ -149,7 +149,7 @@ export function getRoleFromEmail(email) {
 export function routeByRole(email) {
     const role = getRoleFromEmail(email);
     if (role === 'CEO') {
-        window.location.href = 'index.html';
+        window.location.href = 'ceo.html';
     } else if (role === 'Employee') {
         window.location.href = 'employee.html';
     } else {
@@ -261,7 +261,7 @@ export async function handleFirebaseLogin(event) {
                 console.log("Found user document in Firestore 'users' collection with role:", role);
 
                 if (role === 'ceo' || role === 'admin') {
-                    window.location.href = 'index.html';
+                    window.location.href = 'ceo.html';
                     return;
                 } else if (role === 'employee' || role === 'counselor') {
                     window.location.href = 'employee.html';
@@ -277,7 +277,7 @@ export async function handleFirebaseLogin(event) {
 
         // 3. Fallback string check by email keywords
         if (emailClean.includes('ceo') || emailClean.includes('admin') || emailClean.includes('chief') || emailClean.includes('boss')) {
-            window.location.href = 'index.html';
+            window.location.href = 'ceo.html';
         } else if (emailClean.includes('employee') || emailClean.includes('emp') || emailClean.includes('counselor') || emailClean.includes('counsellor') || emailClean.includes('staff') || emailClean.includes('agent')) {
             window.location.href = 'employee.html';
         } else {
@@ -547,7 +547,7 @@ export async function createEmployeeAccountByCEO(event) {
             window.Swal.fire({
                 icon: 'success',
                 title: 'Authorized by CEO',
-                html: `Employee <b>${escapeHtml(name)}</b> (${escapeHtml(email)}) has been successfully created.<br><br><span class="text-muted small">Employee can now log in at login.html.</span>`,
+                html: `Employee <b>${escapeHtml(name)}</b> (${escapeHtml(email)}) has been successfully created.<br><br><span class="text-muted small">Employee can now log in at index.html.</span>`,
                 confirmButtonColor: '#0b2447'
             });
         }
@@ -932,11 +932,11 @@ export async function handleLogout(event) {
     } catch (err) {
         console.warn("Firebase Auth: Sign out error:", err);
     }
-    window.location.href = 'login.html';
+    window.location.href = 'index.html';
 }
 
 /**
- * Dynamically updates the navigation bar on the Public Home Page (login.html)
+ * Dynamically updates the navigation bar on the Public Home Page (index.html)
  * when a user is signed in vs signed out.
  * @param {import("https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js").User | null} user
  */
@@ -1113,7 +1113,7 @@ export async function updateHomeNavbarAuthUI(user) {
 
     if (role === 'CEO') {
         resolvedName = 'Mahfuz Shuvo';
-        portalUrl = 'index.html';
+        portalUrl = 'ceo.html';
         profileBtnLabel = 'My Profile';
         profileIcon = 'bi-speedometer2';
         const ceoTitle = resolvedDesignation || 'CEO';
@@ -3554,7 +3554,7 @@ function runInit() {
 
     // 🌐 Central Auth State Observer
     onAuthStateChanged(auth, async (user) => {
-        // 1. Update Home Page (login.html) navigation
+        // 1. Update Home Page (index.html) navigation
         if (document.getElementById('homeNavbarAuthButtons')) {
             updateHomeNavbarAuthUI(user);
         }

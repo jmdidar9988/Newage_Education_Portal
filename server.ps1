@@ -33,7 +33,7 @@ try {
     Write-Host ""
 
     # Launch browser automatically
-    Start-Process "http://localhost:$port/login.html"
+    Start-Process "http://localhost:$port/index.html"
 
     while ($listener.IsListening) {
         $context = $listener.GetContext()
@@ -42,7 +42,7 @@ try {
 
         $urlPath = $request.Url.LocalPath
         if ($urlPath -eq "/") {
-            $urlPath = "/login.html"
+            $urlPath = "/index.html"
         }
 
         # Clean path and combine with script root directory

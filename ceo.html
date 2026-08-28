@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CEO Dashboard - Newage Education Portal</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="logo.png">
+    <!-- Bootstrap 5.3 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- SweetAlert2 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="d-flex flex-column min-vh-100">
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-newage">
+        <div class="container-fluid">
+            <a class="navbar-brand d-flex align-items-center gap-2 text-white" href="ceo.html">
+                <div class="brand-logo-container">
+                    <img src="logo.png" alt="Newage Education Logo">
+                </div>
+                <span class="portal-badge">CEO Portal</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                <ul class="navbar-nav align-items-center">
+                    <li class="nav-item me-2">
+                        <a class="btn btn-outline-light btn-sm rounded-pill px-3 py-1 fw-semibold" href="index.html" title="Go to Home Page">
+                            <i class="bi bi-house-door-fill me-1 text-danger"></i> Home
+                        </a>
+                    </li>
+                    <li class="nav-item me-3">
+                        <button class="btn btn-sm btn-outline-light rounded-circle px-2 py-1 me-1" onclick="toggleTheme()" title="Toggle Dark/Light Theme">
+                            <i class="themeToggleIcon bi bi-sun-fill text-warning"></i>
+                        </button>
+                    </li>
+                    <li class="nav-item me-3">
+                        <span class="text-white-50"><i class="bi bi-person-circle me-1"></i> Welcome, <span id="navCeoName">Mahfuz Shuvo</span></span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-newage-outline py-1 px-3 btn-sm" href="#" onclick="window.handleLogout && window.handleLogout(event)">
+                            <i class="bi bi-box-arrow-right me-1"></i> Logout
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container-fluid px-4 my-4 flex-grow-1 animate-fade-up">
+        
+        <!-- Welcome Banner Row -->
+        <div class="row mb-4 reveal-on-scroll">
+            <div class="col-12">
+                <div class="card-newage-dark p-4 p-md-5 text-white position-relative overflow-hidden rounded-4">
+                    <div class="position-relative z-index-2">
+                        <h1 class="display-5 fw-bold text-white">Welcome back, Mahfuz Shuvo</h1>
+                        <p class="lead my-3 text-white-50">Manage counselors, review student records, and control portal activities from one centralized terminal.</p>
+                        <div class="d-flex flex-wrap gap-2 mt-4">
+                            <button class="btn btn-accent shadow-sm" data-bs-toggle="modal" data-bs-target="#myTeamModal">
+                                <i class="bi bi-people-fill me-1"></i> My Team
+                            </button>
+                            <button class="btn btn-navy" data-bs-toggle="modal" data-bs-target="#assignTaskModal">
+                                <i class="bi bi-plus-circle me-1"></i> Assign New Task
+                            </button>
+                            <button class="btn btn-navy" data-bs-toggle="modal" data-bs-target="#employeeUpdatesModal">
+                                <i class="bi bi-journal-text me-1"></i> View Employee Updates
+                            </button>
+                            <a href="application_form.html" class="btn btn-navy">
+                                <i class="bi bi-person-plus me-1"></i> Add New Student (Data Entry)
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stats Cards Row -->
+        <div class="row g-3 mb-4 reveal-on-scroll">
+            <div class="col-md-6">
+                <div class="card-newage p-3 h-100">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <p class="text-muted small mb-1">Active Student Applications</p>
+                            <h3 class="mb-0 text-accent fw-bold" id="totalStudentsKpi"><span class="spinner-border spinner-border-sm" role="status"></span></h3>
+                        </div>
+                        <div class="fs-1 text-accent opacity-75"><i class="bi bi-people"></i></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card-newage p-3 h-100">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <p class="text-muted small mb-1">Active Destinations</p>
+                            <h3 class="mb-0 fw-bold">13 Countries</h3>
+                        </div>
+                        <div class="fs-1 text-accent opacity-75"><i class="bi bi-globe2"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tasks & Updates Row -->
+        <div class="row g-4 mb-4 reveal-on-scroll">
+            <!-- Left: Tasks Status -->
+            <div class="col-12">
+                <div class="card-newage h-100 border-0 shadow-sm rounded-4">
+                    <div class="card-header bg-navy text-white d-flex justify-content-between align-items-center py-3 px-4 rounded-top-4">
+                        <h5 class="mb-0 text-white fw-bold"><i class="bi bi-list-check me-2 text-accent"></i>Counselor Tasks &amp; Actions</h5>
+                        <span class="badge bg-secondary rounded-pill px-2.5 py-1">Live Tracker</span>
+                    </div>
+                    <div class="p-3">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-navy-light text-white">
+                                    <tr>
+                                        <th>Assigned To</th>
+                                        <th>Task Description</th>
+                                        <th>Target Date / Timer</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ceoTasksTable">
+                                    <tr>
+                                        <td colspan="4" class="text-center py-3 text-muted">Loading assigned tasks...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Full-Width Recent Student Applications Section (Firestore Live) -->
+        <div class="row mb-5 reveal-on-scroll">
+            <div class="col-12">
+                <div class="card-newage border-0 shadow-sm rounded-4">
+                    <div class="card-header bg-navy text-white d-flex flex-wrap justify-content-between align-items-center py-3 px-4 rounded-top-4 gap-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <h5 class="mb-0 text-white fw-bold"><i class="bi bi-people-fill me-2 text-accent"></i>Recent Student Applications (Firestore Live)</h5>
+                            <span class="badge bg-accent rounded-pill px-2.5 py-1" id="ceoStudentCountBadge">0 Records</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="input-group input-group-sm" style="max-width: 300px;">
+                                <span class="input-group-text bg-white border-0 text-muted"><i class="bi bi-search"></i></span>
+                                <input type="text" class="form-control border-0 shadow-none" id="ceoSearchInput" placeholder="Search by name, email, or ID..." onkeyup="filterCEOTable()">
+                            </div>
+                            <button class="btn btn-sm btn-outline-light py-1 px-3 rounded-3" onclick="loadCEODashboardData()" title="Sync Firestore Database">
+                                <i class="bi bi-arrow-clockwise me-1"></i> Sync Data
+                            </button>
+                        </div>
+                    </div>
+                    <div class="p-3">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle small mb-0">
+                                <thead class="bg-navy-light text-white">
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Phone</th>
+                                        <th>Preferred Country</th>
+                                        <th>Applied Course</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recentApplicationsTableBody">
+                                    <tr>
+                                        <td colspan="6" class="text-center py-4 text-muted">
+                                            <span class="spinner-border spinner-border-sm text-accent me-2" role="status" aria-hidden="true"></span>
+                                            Fetching recent student records from Firestore...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Visual Analytics & Market Insights Row (Chart.js at Bottom) -->
+        <div class="row g-4 mb-4 mt-2 animate-fade-up stagger-5">
+            <div class="col-lg-6">
+                <div class="card-newage border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-header bg-navy text-white d-flex align-items-center justify-content-between py-3 px-4 rounded-top-4">
+                        <h6 class="mb-0 text-white fw-bold">
+                            <i class="bi bi-pie-chart-fill text-accent me-2"></i>Students by Target Country
+                        </h6>
+                        <span class="badge bg-accent px-2.5 py-1 rounded-pill">Market Share</span>
+                    </div>
+                    <div class="p-4" style="height: 290px; position: relative;">
+                        <canvas id="countryChartCanvas"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card-newage border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-header bg-navy text-white d-flex align-items-center justify-content-between py-3 px-4 rounded-top-4">
+                        <h6 class="mb-0 text-white fw-bold">
+                            <i class="bi bi-bar-chart-line-fill text-accent me-2"></i>Application Pipeline Status
+                        </h6>
+                        <span class="badge bg-accent px-2.5 py-1 rounded-pill">Status Metrics</span>
+                    </div>
+                    <div class="p-4" style="height: 290px; position: relative;">
+                        <canvas id="statusChartCanvas"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="footer-newage">
+        <div class="container text-center">
+            <p class="mb-0">&copy; 2026 Newage Education. All rights reserved. | Corporate Administration Portal</p>
+        </div>
+    </footer>
+
+    <!-- MODAL: View Student Details -->
+    <div class="modal fade" id="studentDetailModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content text-dark border-secondary">
+                <div class="modal-header bg-dark text-white border-bottom border-danger">
+                    <h5 class="modal-title text-white" id="studentDetailModalTitle"><i class="bi bi-person-vcard me-2"></i>Student Record File</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4" id="studentDetailModalBody">
+                    <!-- Populated dynamically by viewStudentDetails() -->
+                </div>
+                <div class="modal-footer bg-light justify-content-between" id="studentDetailModalFooter">
+                    <button type="button" class="btn btn-accent text-white btn-sm px-3 shadow-sm" onclick="confirmAndDeleteStudent(window._currentEditStudentId)">
+                        <i class="bi bi-trash-fill me-1"></i> Delete Student Record
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm px-4" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Upload Interview Prep Material -->
+    <div class="modal fade" id="prepSheetPdfModal" tabindex="-1" aria-labelledby="prepSheetPdfModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header bg-dark text-white py-3 px-4 rounded-top-4">
+                    <h5 class="modal-title text-white fw-bold" id="prepSheetPdfModalLabel">
+                        <i class="bi bi-file-earmark-pdf-fill text-danger me-2"></i>Upload Interview Prep Material
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4 text-dark">
+                    <div id="prepSheetAlert"></div>
+                    <div class="mb-3">
+                        <label for="prepSheetTitle" class="form-label fw-bold text-dark small">Document Title / Sheet Name</label>
+                        <input type="text" id="prepSheetTitle" class="form-control mb-2" placeholder="e.g., Sheet 1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="prepSheetFile" class="form-label fw-bold text-dark small">Select PDF File</label>
+                        <input type="file" id="prepSheetFile" accept="application/pdf" class="form-control">
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-2 px-4 rounded-bottom-4">
+                    <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" id="uploadPrepSheetBtn" class="btn btn-sm btn-accent text-white fw-bold px-4 shadow-sm" onclick="uploadPrepSheet(window._currentPrepSheetStudentId)">
+                        <i class="bi bi-cloud-upload-fill me-1"></i> Upload Material
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 1: Assign Task -->
+    <div class="modal fade" id="assignTaskModal" tabindex="-1" aria-labelledby="assignTaskModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content card-newage-dark border-secondary">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title" id="assignTaskModalLabel">Assign Task to Employee</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="assignTaskForm" onsubmit="window.assignNewTaskFromCEO(event)">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="counselorSelect" class="form-label text-white-50">Assign To Counselor</label>
+                            <select class="form-select bg-dark border-secondary text-white" id="counselorSelect" required>
+                                <option value="" disabled selected>Select employee...</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="taskDesc" class="form-label text-white-50">Task Description</label>
+                            <textarea class="form-control bg-dark border-secondary text-white" id="taskDesc" rows="3" placeholder="e.g. Verify Sakib's IELTS score certificate" required></textarea>
+                        </div>
+                        <div class="mb-3 row">
+                            <div class="col-6">
+                                <label for="dueDate" class="form-label text-white-50">Due Date</label>
+                                <input type="date" class="form-control bg-dark border-secondary text-white" id="dueDate" required>
+                            </div>
+                            <div class="col-6">
+                                <label for="dueTime" class="form-label text-white-50">Due Time</label>
+                                <input type="time" class="form-control bg-dark border-secondary text-white" id="dueTime" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="taskPdfFile" class="form-label text-white-50">Upload PDF Instruction (Optional)</label>
+                            <input type="file" class="form-control bg-dark border-secondary text-white" id="taskPdfFile" accept="application/pdf">
+                        </div>
+                    </div>
+                    <div class="modal-footer border-secondary">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-newage-red">Assign Task</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: Employee Updates -->
+    <div class="modal fade" id="employeeUpdatesModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white border-bottom border-danger">
+                    <h5 class="modal-title text-white">Employee Work Submissions</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <ul class="list-group list-group-flush" id="counselorWorkLog">
+                        <li class="list-group-item py-3">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1 fw-bold">Amina Rahman <span class="badge bg-success ms-2">Completed</span></h6>
+                                <small class="text-muted">Today at 11:32 AM</small>
+                            </div>
+                            <p class="mb-1 text-secondary small">"Uploaded SOP Draft checklist for University of Toronto and finalized feedback. Student has been notified."</p>
+                            <small class="text-muted">Task: SOP check</small>
+                        </li>
+                        <li class="list-group-item py-3">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1 fw-bold">Zayd Al-Amin <span class="badge bg-secondary ms-2">Note Added</span></h6>
+                                <small class="text-muted">Yesterday</small>
+                            </div>
+                            <p class="mb-1 text-secondary small">"Client provided the financial logs. Bank solvency looks fine, waiting for bank validation seal tomorrow."</p>
+                            <small class="text-muted">Task: Solvency verification</small>
+                        </li>
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-newage-dark" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: View Student Documents -->
+    <div class="modal fade" id="viewDocumentsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white border-bottom border-danger">
+                    <h5 class="modal-title text-white">Uploaded Student Documents Catalog</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Document Type</th>
+                                    <th>Uploaded Date</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Sakib Rahman</strong></td>
+                                    <td><i class="bi bi-file-earmark-pdf text-danger me-1"></i> Passport_Sakib.pdf</td>
+                                    <td>20-07-2026</td>
+                                    <td><button class="btn btn-sm btn-outline-dark" onclick="alert('Opening File: Passport_Sakib.pdf')"><i class="bi bi-eye"></i> View</button></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Sakib Rahman</strong></td>
+                                    <td><i class="bi bi-file-earmark-pdf text-danger me-1"></i> SSC_Certificate.pdf</td>
+                                    <td>20-07-2026</td>
+                                    <td><button class="btn btn-sm btn-outline-dark" onclick="alert('Opening File: SSC_Certificate.pdf')"><i class="bi bi-eye"></i> View</button></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Amina Chowdhury</strong></td>
+                                    <td><i class="bi bi-file-earmark-word text-primary me-1"></i> SOP_Draft_Amina.docx</td>
+                                    <td>19-07-2026</td>
+                                    <td><button class="btn btn-sm btn-outline-dark" onclick="alert('Opening File: SOP_Draft_Amina.docx')"><i class="bi bi-eye"></i> View</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-newage-dark" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Add New Employee Account (CEO Only) -->
+    <div class="modal fade" id="addNewEmployeeModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white border-bottom border-danger">
+                    <h5 class="modal-title text-white"><i class="bi bi-person-plus-fill text-danger me-2"></i>Register New Employee Account</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="addEmployeeForm" onsubmit="window.createEmployeeAccountByCEO(event)">
+                    <div class="modal-body">
+                        <div id="createEmpAlert"></div>
+
+                        <div class="alert alert-info py-2 small mb-3">
+                            <i class="bi bi-shield-lock-fill me-1"></i> CEO Access Control: Register staff account with staff role permissions.
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="newEmpName" class="form-label fw-bold small text-muted">Employee Full Name</label>
+                            <input type="text" class="form-control" id="newEmpName" placeholder="e.g. Tanvir Ahmed" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="newEmpEmail" class="form-label fw-bold small text-muted">Employee Email Address</label>
+                            <input type="email" class="form-control" id="newEmpEmail" placeholder="e.g. tanvir.employee@newage.com" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="newEmpDesignation" class="form-label fw-bold small text-muted">Employee Designation</label>
+                            <input type="text" class="form-control" id="newEmpDesignation" placeholder="e.g. Senior Admission Counselor" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="newEmpPassword" class="form-label fw-bold small text-muted">Temporary Account Password</label>
+                            <input type="password" class="form-control" id="newEmpPassword" placeholder="Minimum 6 characters" minlength="6" required>
+                        </div>
+
+                        <hr class="my-3 border-secondary">
+                        <div class="bg-light p-3 border rounded">
+                            <h6 class="fw-bold mb-2 text-danger small"><i class="bi bi-shield-lock-fill"></i> CEO Re-Verification</h6>
+                            <div class="mb-2">
+                                <label for="ceoAuthEmail" class="form-label fw-bold small text-muted">CEO Email Address</label>
+                                <input type="email" class="form-control form-control-sm" id="ceoAuthEmail" placeholder="ceo@newage.com" required>
+                            </div>
+                            <div class="mb-0">
+                                <label for="ceoAuthPassword" class="form-label fw-bold small text-muted">CEO Master Password</label>
+                                <input type="password" class="form-control form-control-sm" id="ceoAuthPassword" placeholder="Enter password" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-newage-red btn-sm fw-bold" id="createEmpSubmitBtn">
+                            <i class="bi bi-check-circle-fill me-1"></i> Create Employee Account
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+
+
+
+    <!-- Bootstrap 5.3 JS Bundle CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Firebase Auth & Firestore Module -->
+    <script type="module" src="auth.js"></script>
+
+    <!-- CEO Real-time Chat Module -->
+    <script type="module" src="index.js"></script>
+
+    <!-- JS Scripts (Global Scope - NOT module) -->
+
+    <script>
+        function scrollToRequests() {
+            const reqSec = document.getElementById('requestsSection');
+            reqSec.scrollIntoView({ behavior: 'smooth' });
+            reqSec.classList.add('pulse-glow-button');
+            setTimeout(() => {
+                reqSec.classList.remove('pulse-glow-button');
+            }, 3000);
+        }
+
+        function handleRequest(action) {
+            alert(`Student update request has been successfully: ${action}ed!`);
+            document.getElementById('requestContainer').innerHTML = '';
+            document.getElementById('noRequestsMsg').classList.remove('d-none');
+            document.getElementById('requestsBadge').classList.add('d-none');
+            document.getElementById('requestsCountBadge').innerText = '0 Actions Required';
+            document.getElementById('requestsCountBadge').className = 'badge bg-success';
+        }
+
+        function submitNewTask(event) {
+            event.preventDefault();
+            const counselor = document.getElementById('counselorSelect').value;
+            const desc = document.getElementById('taskDesc').value;
+            const due = document.getElementById('dueDate').value;
+            const table = document.getElementById('ceoTasksTable');
+            const newRow = document.createElement('tr');
+            newRow.innerHTML = `
+                <td><strong>${counselor}</strong></td>
+                <td>${desc}</td>
+                <td>${due.split('-').reverse().join('-')}</td>
+                <td><span class="badge bg-warning text-dark"><i class="bi bi-clock-history me-1"></i> In Progress</span></td>
+            `;
+            table.insertBefore(newRow, table.firstChild);
+            alert(`Task assigned to ${counselor} successfully!`);
+            const modalElement = document.getElementById('assignTaskModal');
+            if (modalElement && window.bootstrap && window.bootstrap.Modal) {
+                const modal = bootstrap.Modal.getInstance(modalElement);
+                if (modal) modal.hide();
+            }
+        }
+    </script>
+
+    <!-- Real-time CEO Support Chat Modal -->
+    <div class="modal fade" id="ceoChatModal" tabindex="-1" aria-labelledby="ceoChatModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="modal-header bg-dark text-white py-3 px-4 d-flex justify-content-between align-items-center border-bottom border-danger border-2">
+                    <h5 class="modal-title text-white fw-bold d-flex align-items-center" id="ceoChatModalTitle">
+                        <i class="bi bi-chat-left-text-fill text-danger me-2 fs-5"></i>Candidate Support Workstation
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="p-3 bg-light border-bottom d-flex align-items-center justify-content-between">
+                    <p class="text-muted small mb-0" id="ceoChatModalSubtitle">
+                        <i class="bi bi-headset me-1 text-danger"></i> Live Workstation — Chatting with candidate.
+                    </p>
+                    <span class="badge bg-success px-2.5 py-1 rounded-pill"><i class="bi bi-circle-fill me-1" style="font-size: 0.5rem;"></i> Active Session</span>
+                </div>
+                <div class="modal-body p-3 bg-light">
+                    <div id="ceoChatMessages" class="border rounded-3 bg-white p-3 mb-3" style="height: 320px; overflow-y: auto;">
+                        <div class="text-center text-muted py-4 small">
+                            <span class="spinner-border spinner-border-sm text-danger me-1"></span> Loading candidate messages...
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" id="ceoChatInput" class="form-control form-control-sm rounded-start-3" placeholder="Type your reply here..." autocomplete="off" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();window.sendCeoMessage&&window.sendCeoMessage();}">
+                        <button type="button" id="ceoChatSendBtn" class="btn btn-danger fw-bold px-4 rounded-end-3" onclick="window.sendCeoMessage&&window.sendCeoMessage()">
+                            <i class="bi bi-send-fill me-1"></i> Send Reply
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- MODAL: My Team / Employee Directory -->
+    <div class="modal fade" id="myTeamModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content text-dark border-secondary">
+                <div class="modal-header bg-navy text-white py-3 px-4 rounded-top-4">
+                    <h5 class="modal-title text-white fw-bold"><i class="bi bi-people-fill text-accent me-2"></i>My Team</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                        <div>
+                            <h6 class="fw-bold mb-1 text-dark">Staff Directory &amp; Permissions</h6>
+                            <p class="text-muted small mb-0">Review active consultant credentials, designations, and verify settings.</p>
+                        </div>
+                        <button class="btn btn-accent btn-sm shadow-sm px-3 fw-bold" data-bs-toggle="modal" data-bs-target="#addNewEmployeeModal">
+                            <i class="bi bi-person-plus-fill me-1"></i> Add New Employee
+                        </button>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0 small">
+                            <thead class="bg-navy-light text-white">
+                                <tr>
+                                    <th>Name / Email</th>
+                                    <th>Designation</th>
+                                    <th>Department</th>
+                                    <th>Phone</th>
+                                    <th>Status</th>
+                                    <th class="text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ceoEmployeesTableBody">
+                                <tr>
+                                    <td colspan="6" class="text-center py-4 text-muted">No employees registered yet.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm px-4" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
+
