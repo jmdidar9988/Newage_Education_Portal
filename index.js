@@ -1,8 +1,7 @@
 // Global Email State
 window.currentActiveChatEmail = null;
-
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, onSnapshot, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, onSnapshot, addDoc, serverTimestamp, doc, updateDoc, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyDVawQFjahyoHtE1aDzomcO9EsYmJ3c8fw",
@@ -52,6 +51,16 @@ function getFallbackEmail() {
 function startChatListener(email, candidateName) {
     const targetEmail = (email || getFallbackEmail()).trim().toLowerCase();
     window.currentActiveChatEmail = targetEmail;
+
+    // Clear staff unread flags in Firestore
+    try {
+        setDoc(doc(db, 'students', targetEmail), {
+            staffHasUnread: false,
+            hasUnreadStudentMessages: false
+        }, { merge: true });
+    } catch (err) {
+        console.warn("Failed to clear staffHasUnread flag:", err);
+    }
 
     const messagesContainer = getMessagesContainer();
     const modalTitle = document.getElementById('ceoChatModalTitle');
@@ -109,15 +118,35 @@ function startChatListener(email, candidateName) {
 
                 // Clean chat bubble without sender labels or "You"
                 const bubble = document.createElement('div');
-                bubble.className = `p-2.5 px-3 rounded-3 small shadow-sm ${isCeo ? 'bg-danger text-white' : 'bg-white text-dark border'}`;
+                bubble.className = `p-2.5 px-3 rounded-3 small shadow-sm msg-bubble ${isCeo ? 'bg-danger text-white' : 'bg-white text-dark border'}`;
+                bubble.setAttribute('data-msg-id', msg.id);
                 bubble.style.maxWidth = '75%';
                 bubble.style.wordBreak = 'break-word';
                 bubble.style.whiteSpace = 'pre-wrap';
+                bubble.style.cursor = 'pointer';
                 bubble.textContent = msg.text || '';
 
                 row.appendChild(bubble);
                 container.appendChild(row);
             });
+
+            // Add double click delete listener
+            container.ondblclick = async (e) => {
+                const bubble = e.target.closest('.msg-bubble');
+                if (!bubble) return;
+                const msgId = bubble.getAttribute('data-msg-id');
+                if (!msgId) return;
+                
+                if (confirm("Are you sure you want to delete this message?")) {
+                    try {
+                        await deleteDoc(doc(db, 'students', window.currentActiveChatEmail, 'chatMessages', msgId));
+                        console.log("Deleted message:", msgId);
+                    } catch (error) {
+                        console.error("Error deleting message:", error);
+                        alert("Failed to delete message: " + error.message);
+                    }
+                }
+            };
 
             container.scrollTop = container.scrollHeight;
         }, (error) => {
@@ -202,6 +231,9 @@ export async function sendCeoMessage() {
             sender: 'ceo',
             timestamp: serverTimestamp()
         });
+        await setDoc(doc(db, 'students', targetEmail), {
+            studentHasUnread: true
+        }, { merge: true });
         console.log('[CEO Chat] Sent reply to:', targetEmail);
     } catch (error) {
         console.error('[CEO Chat] Send Reply error:', error);

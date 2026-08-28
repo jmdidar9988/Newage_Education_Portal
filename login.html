@@ -122,7 +122,7 @@
     <nav class="navbar navbar-expand-lg navbar-landing sticky-top">
         <div class="container">
             <!-- Brand Logo (Official Newage Education Logo) -->
-            <a class="navbar-brand d-flex align-items-center" href="#">
+            <a class="navbar-brand d-flex align-items-center" href="login.html" title="Newage Education Home">
                 <img src="logo.png" alt="Newage Education Logo" class="brand-logo-img">
             </a>
             
@@ -134,7 +134,7 @@
             <div class="collapse navbar-collapse" id="navbarContent">
                 <ul class="navbar-nav mx-auto mb-2 mb-lg-0 align-items-center">
                     <li class="nav-item">
-                        <a class="nav-link active-link" href="#">Home</a>
+                        <a class="nav-link active-link" href="login.html"><i class="bi bi-house-door-fill me-1 text-danger"></i> Home</a>
                     </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"><i class="bi bi-globe-americas me-1 text-danger"></i> Study Destinations</a>
@@ -168,27 +168,17 @@
                             <li><a class="dropdown-item" href="#" onclick="alert('Scholarship matching')">Scholarship Guidance</a></li>
                         </ul>
                     </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">Blogs & Events</a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#" onclick="alert('Upcoming Seminars')">Upcoming Seminars</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="alert('Latest news blogs')">Academic Blogs</a></li>
-                        </ul>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" onclick="alert('Our Global Offices: Dhaka, Toronto, London, Sydney')">Newage Global Branches</a>
-                    </li>
                 </ul>
 
                 <!-- Sign Up / Sign In Options -->
-                <div class="d-flex align-items-center gap-2 ms-lg-3 mt-2 mt-lg-0">
+                <div id="homeNavbarAuthButtons" class="d-flex align-items-center gap-2 ms-lg-3 mt-2 mt-lg-0">
                     <button class="btn btn-sm btn-outline-light rounded-circle px-2 py-1 me-1" onclick="toggleTheme()" title="Toggle Dark/Light Theme">
                         <i class="themeToggleIcon bi bi-sun-fill text-warning"></i>
                     </button>
-                    <button class="btn btn-signin-now px-3.5 py-2 fw-semibold rounded-pill" data-bs-toggle="modal" data-bs-target="#loginModal" onclick="openAuthModal('signin')">
+                    <button class="btn btn-signin-now px-3.5 py-2 fw-semibold" data-bs-toggle="modal" data-bs-target="#loginModal" onclick="openAuthModal('signin')">
                         <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
                     </button>
-                    <button class="btn btn-apply-now pulse-glow-button px-3.5 py-2 fw-semibold rounded-pill" data-bs-toggle="modal" data-bs-target="#loginModal" onclick="openAuthModal('signup')">
+                    <button class="btn btn-apply-now pulse-glow-button px-3.5 py-2 fw-semibold" data-bs-toggle="modal" data-bs-target="#loginModal" onclick="openAuthModal('signup')">
                         <i class="bi bi-person-plus-fill me-1"></i> Sign Up
                     </button>
                 </div>
@@ -980,6 +970,9 @@
                             </button>
                         </li>
                     </ul>
+                    <a href="login.html" class="btn btn-outline-light btn-sm rounded-pill px-2.5 py-1 text-nowrap me-2 d-flex align-items-center gap-1" title="Go to Home Page" data-bs-dismiss="modal">
+                        <i class="bi bi-house-door-fill text-danger"></i> <span>Home</span>
+                    </a>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
 
@@ -1025,6 +1018,12 @@
                                 <button type="submit" id="signinSubmitBtn" class="btn btn-newage-red w-100 py-2 mt-2">
                                     Sign In &amp; Access Portal <i class="bi bi-arrow-right-short ms-1"></i>
                                 </button>
+
+                                <div class="text-center pt-3 border-top border-secondary mt-3">
+                                    <a href="login.html" class="text-white-50 small text-decoration-none" data-bs-dismiss="modal">
+                                        <i class="bi bi-house-door-fill me-1 text-danger"></i> Return to Homepage
+                                    </a>
+                                </div>
                             </div>
                         </form>
                     </div>
@@ -1101,6 +1100,12 @@
                                 <button type="submit" id="signupSubmitBtn" class="btn btn-apply-now pulse-glow-button w-100 py-2 fw-bold">
                                     Create Free Account <i class="bi bi-check-circle-fill ms-1"></i>
                                 </button>
+
+                                <div class="text-center pt-3 border-top border-secondary mt-3">
+                                    <a href="login.html" class="text-white-50 small text-decoration-none" data-bs-dismiss="modal">
+                                        <i class="bi bi-house-door-fill me-1 text-danger"></i> Return to Homepage
+                                    </a>
+                                </div>
                             </div>
                         </form>
                     </div>

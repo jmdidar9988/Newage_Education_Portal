@@ -30,8 +30,26 @@ import {
     serverTimestamp,
     arrayUnion,
     increment,
-    onSnapshot
+    onSnapshot,
+    deleteField
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+// Inject custom keyframe animation for unread pulse styling
+if (typeof document !== 'undefined') {
+    const style = document.createElement('style');
+    style.innerHTML = `
+    @keyframes pulseUnreadGlow {
+        0% { transform: scale(1); opacity: 1; text-shadow: 0 0 2px rgba(230, 57, 70, 0.4); }
+        50% { transform: scale(1.1); opacity: 0.7; text-shadow: 0 0 8px rgba(230, 57, 70, 0.8); }
+        100% { transform: scale(1); opacity: 1; text-shadow: 0 0 2px rgba(230, 57, 70, 0.4); }
+    }
+    .pulse-unread {
+        display: inline-block;
+        animation: pulseUnreadGlow 1.8s infinite ease-in-out;
+    }
+    `;
+    document.head.appendChild(style);
+}
 
 // Safety fallback for deprecated overall status update
 window.updateOverallApplicationStatus = function () {
@@ -481,10 +499,9 @@ export async function createEmployeeAccountByCEO(event) {
             createdAtDate: new Date().toISOString()
         };
 
-        // Save employee record in Firestore 'employees' and 'users' collections (by both email and UID)
+        // Save employee record in Firestore 'employees' (keyed by email) and 'users' collections (keyed by newUid)
         await setDoc(doc(db, 'employees', email), employeeData, { merge: true });
         if (newUid) {
-            await setDoc(doc(db, 'employees', newUid), employeeData, { merge: true });
             await setDoc(doc(db, 'users', newUid), {
                 uid: newUid,
                 fullName: name,
@@ -496,18 +513,19 @@ export async function createEmployeeAccountByCEO(event) {
                 phone: phone,
                 createdAt: serverTimestamp()
             }, { merge: true });
+        } else {
+            await setDoc(doc(db, 'users', email), {
+                uid: '',
+                fullName: name,
+                displayName: name,
+                email: email,
+                role: 'employee',
+                designation: designation,
+                department: department,
+                phone: phone,
+                createdAt: serverTimestamp()
+            }, { merge: true });
         }
-        await setDoc(doc(db, 'users', email), {
-            uid: newUid,
-            fullName: name,
-            displayName: name,
-            email: email,
-            role: 'employee',
-            designation: designation,
-            department: department,
-            phone: phone,
-            createdAt: serverTimestamp()
-        }, { merge: true });
 
         if (alertArea) {
             alertArea.innerHTML = `
@@ -589,6 +607,22 @@ export function fetchEmployeesList() {
             if (topBadgeEl) topBadgeEl.innerText = count.toString();
             if (kpiEl) kpiEl.innerText = count > 0 ? count.toString() : '12';
 
+            const counselorSelect = document.getElementById('counselorSelect');
+            if (counselorSelect) {
+                let selectHtml = '<option value="" disabled selected>Select employee...</option>';
+                const processedSelectEmails = new Set();
+                snapshot.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    const name = data.fullName || 'Counselor';
+                    const email = (data.email || docSnap.id || '').toLowerCase().trim();
+                    if (email && !processedSelectEmails.has(email)) {
+                        processedSelectEmails.add(email);
+                        selectHtml += `<option value="${escapeHtml(email)}" data-name="${escapeHtml(name)}">${escapeHtml(name)} (${escapeHtml(email)})</option>`;
+                    }
+                });
+                counselorSelect.innerHTML = selectHtml;
+            }
+
             if (snapshot.empty) {
                 tableBody.innerHTML = `
                     <tr>
@@ -601,15 +635,23 @@ export function fetchEmployeesList() {
             }
 
             let html = '';
+            const processedTableEmails = new Set();
             snapshot.forEach((docSnap) => {
                 const data = docSnap.data();
                 const id = docSnap.id;
                 const name = data.fullName || 'Counselor';
-                const email = data.email || id;
+                const email = (data.email || id || '').toLowerCase().trim();
                 const designation = data.designation || 'Admission Counselor';
                 const department = data.department || 'Admissions';
                 const phone = data.phone || 'N/A';
                 const status = data.status || 'active';
+
+                if (email && processedTableEmails.has(email)) {
+                    return; // Skip rendering this duplicate row!
+                }
+                if (email) {
+                    processedTableEmails.add(email);
+                }
 
                 html += `
                     <tr>
@@ -622,8 +664,8 @@ export function fetchEmployeesList() {
                         <td class="py-2.5 small text-muted">${escapeHtml(phone)}</td>
                         <td class="py-2.5"><span class="badge bg-success-subtle text-success border border-success px-2 py-0.5 rounded-pill small"><i class="bi bi-circle-fill me-1" style="font-size: 0.45rem;"></i>${escapeHtml(status)}</span></td>
                         <td class="py-2.5 text-center pe-3">
-                            <button class="btn btn-sm btn-outline-danger p-1 px-2.5 rounded-3" title="Revoke / Delete Employee" onclick="window.deleteEmployeeAccount && window.deleteEmployeeAccount('${escapeHtml(id)}', '${escapeHtml(name)}')">
-                                <i class="bi bi-trash3-fill me-1"></i> Delete
+                            <button class="btn btn-sm btn-outline-navy p-1 px-2.5 rounded-3 fw-bold" title="Manage Employee Settings" onclick="window.manageEmployee && window.manageEmployee('${escapeHtml(id)}', '${escapeHtml(name)}')">
+                                <i class="bi bi-gear-fill me-1"></i> Update
                             </button>
                         </td>
                     </tr>`;
@@ -639,54 +681,50 @@ export function fetchEmployeesList() {
 window.fetchEmployeesList = fetchEmployeesList;
 
 /**
- * Removes an employee from the directory with mandatory CEO verification
+ * Manage (update or delete) employee settings with mandatory CEO verification
  */
-export async function deleteEmployeeAccount(empId, empName) {
+export async function manageEmployee(empId, empName) {
     if (!empId) return;
 
-    let ceoEmail = '';
+    let ceoEmail = auth.currentUser?.email || '';
     let ceoPassword = '';
 
     if (window.Swal) {
-        const { value: formValues, isConfirmed } = await window.Swal.fire({
+        const { value: verifyValues, isConfirmed: isVerConfirmed } = await window.Swal.fire({
             title: 'CEO Authorization Required',
             html: `
                 <div class="text-start small mb-3 text-muted">
                     <span class="text-danger fw-bold"><i class="bi bi-shield-lock-fill me-1"></i> Security Verification:</span><br>
-                    You are revoking access for employee <strong>${escapeHtml(empName || empId)}</strong>. Please provide CEO credentials to confirm this deletion.
+                    You are accessing management controls for <strong>${escapeHtml(empName || empId)}</strong>. Please verify CEO password.
                 </div>
                 <div class="text-start mb-2">
-                    <label class="form-label fw-bold small text-dark mb-1">CEO Email Address <span class="text-danger">*</span></label>
-                    <input id="swal-ceo-email" type="email" class="form-control" placeholder="e.g. didar.ceo@gmail.com" value="${escapeHtml(auth.currentUser?.email || '')}">
+                    <label class="form-label fw-bold small text-dark mb-1">CEO Email Address</label>
+                    <input id="swal-ceo-email" type="email" class="form-control" value="${escapeHtml(ceoEmail)}" disabled>
                 </div>
                 <div class="text-start">
-                    <label class="form-label fw-bold small text-dark mb-1">CEO Master Password <span class="text-danger">*</span></label>
-                    <input id="swal-ceo-password" type="password" class="form-control" placeholder="Enter CEO Password">
+                    <label class="form-label fw-bold small text-dark mb-1">CEO Master Password</label>
+                    <input id="swal-ceo-password" type="password" class="form-control" placeholder="Enter CEO Password" required>
                 </div>
             `,
             focusConfirm: false,
             showCancelButton: true,
-            confirmButtonText: '<i class="bi bi-trash3-fill me-1"></i> Verify &amp; Delete',
-            confirmButtonColor: '#dc3545',
+            confirmButtonText: 'Verify & Unlock',
+            confirmButtonColor: '#0b2447',
             cancelButtonText: 'Cancel',
             preConfirm: () => {
-                const email = document.getElementById('swal-ceo-email')?.value?.trim();
                 const pass = document.getElementById('swal-ceo-password')?.value;
-                if (!email || !pass) {
-                    window.Swal.showValidationMessage('Both CEO Email and Password are required to delete an employee.');
+                if (!pass) {
+                    window.Swal.showValidationMessage('CEO Password is required to unlock employee settings.');
                     return false;
                 }
-                return { email, pass };
+                return pass;
             }
         });
 
-        if (!isConfirmed || !formValues) return;
-        ceoEmail = formValues.email;
-        ceoPassword = formValues.pass;
+        if (!isVerConfirmed || !verifyValues) return;
+        ceoPassword = verifyValues;
     } else {
-        ceoEmail = prompt(`[CEO Security Check]\nEnter CEO Email to delete ${empName || empId}:`, auth.currentUser?.email || '');
-        if (!ceoEmail) return;
-        ceoPassword = prompt(`[CEO Security Check]\nEnter CEO Password for ${ceoEmail}:`);
+        ceoPassword = prompt(`[CEO Security Check]\nEnter CEO Password to manage ${empName || empId}:`);
         if (!ceoPassword) return;
     }
 
@@ -694,46 +732,144 @@ export async function deleteEmployeeAccount(empId, empName) {
         if (window.Swal) {
             window.Swal.fire({
                 title: 'Verifying CEO Credentials...',
-                text: 'Authorizing employee deletion...',
                 didOpen: () => window.Swal.showLoading(),
                 allowOutsideClick: false
             });
         }
 
-        // Verify CEO credentials
+        // Verify credentials
         await verifyCEOCredentials(ceoEmail, ceoPassword);
 
-        // Delete from Firestore
-        await deleteDoc(doc(db, 'employees', empId));
-        try {
-            await deleteDoc(doc(db, 'users', empId));
-        } catch (e) { }
+        // Fetch employee's current details
+        const empRef = doc(db, 'employees', empId);
+        const empSnap = await getDoc(empRef);
+        if (!empSnap.exists()) {
+            throw new Error("Employee document not found.");
+        }
+        const empData = empSnap.data();
 
-        if (window.Swal) {
+        // 2. Open Edit / Delete Dialog
+        const { value: actionResult, isConfirmed, isDenied } = await window.Swal.fire({
+            title: `Manage Staff: ${escapeHtml(empData.fullName || empName)}`,
+            html: `
+                <div class="text-start mb-2">
+                    <label class="form-label fw-bold small text-dark mb-1">Full Name</label>
+                    <input id="swal-emp-name" type="text" class="form-control" value="${escapeHtml(empData.fullName || '')}" required>
+                </div>
+                <div class="text-start mb-2">
+                    <label class="form-label fw-bold small text-dark mb-1">Designation</label>
+                    <input id="swal-emp-designation" type="text" class="form-control" value="${escapeHtml(empData.designation || '')}" required>
+                </div>
+                <div class="text-start mb-2">
+                    <label class="form-label fw-bold small text-dark mb-1">Phone Number</label>
+                    <input id="swal-emp-phone" type="text" class="form-control" value="${escapeHtml(empData.phone || '')}">
+                </div>
+                <div class="text-start mb-2">
+                    <label class="form-label fw-bold small text-dark mb-1">Department</label>
+                    <input id="swal-emp-dept" type="text" class="form-control" value="${escapeHtml(empData.department || '')}">
+                </div>
+                <div class="text-start mb-3">
+                    <label class="form-label fw-bold small text-dark mb-1">Account Status</label>
+                    <select id="swal-emp-status" class="form-select">
+                        <option value="active" ${empData.status === 'active' ? 'selected' : ''}>Active</option>
+                        <option value="inactive" ${empData.status === 'inactive' ? 'selected' : ''}>Inactive</option>
+                    </select>
+                </div>
+            `,
+            showCancelButton: true,
+            showDenyButton: true,
+            confirmButtonText: '<i class="bi bi-save-fill me-1"></i> Save Changes',
+            confirmButtonColor: '#198754',
+            denyButtonText: '<i class="bi bi-trash3-fill me-1"></i> Delete Employee',
+            denyButtonColor: '#dc3545',
+            cancelButtonText: 'Cancel',
+            preConfirm: () => {
+                const name = document.getElementById('swal-emp-name')?.value?.trim();
+                const designation = document.getElementById('swal-emp-designation')?.value?.trim();
+                const phone = document.getElementById('swal-emp-phone')?.value?.trim();
+                const department = document.getElementById('swal-emp-dept')?.value?.trim();
+                const status = document.getElementById('swal-emp-status')?.value;
+
+                if (!name || !designation) {
+                    window.Swal.showValidationMessage('Name and Designation are required.');
+                    return false;
+                }
+                return { name, designation, phone, department, status };
+            }
+        });
+
+        // 3. Process Actions
+        if (isConfirmed && actionResult) {
+            // Save changes
+            await updateDoc(empRef, {
+                fullName: actionResult.name,
+                designation: actionResult.designation,
+                phone: actionResult.phone,
+                department: actionResult.department,
+                status: actionResult.status
+            });
+
+            // Update user collection doc too
+            try {
+                if (empData.uid) {
+                    await updateDoc(doc(db, 'users', empData.uid), {
+                        fullName: actionResult.name,
+                        designation: actionResult.designation
+                    });
+                }
+                await updateDoc(doc(db, 'users', empId), {
+                    fullName: actionResult.name,
+                    designation: actionResult.designation
+                });
+            } catch(e){}
+
             window.Swal.fire({
                 icon: 'success',
-                title: 'Employee Deleted',
-                text: `Counselor account for "${empName || empId}" has been revoked by CEO authorization.`,
+                title: 'Changes Saved',
+                text: 'Employee account profile updated successfully.',
                 confirmButtonColor: '#0b2447'
             });
-        } else {
-            alert(`Employee account for "${empName || empId}" deleted successfully.`);
-        }
-    } catch (err) {
-        console.error("Error deleting employee:", err);
-        if (window.Swal) {
-            window.Swal.fire({
-                icon: 'error',
-                title: 'CEO Authorization Failed',
-                text: err.message || 'Invalid CEO credentials. Employee deletion aborted.',
-                confirmButtonColor: '#dc3545'
+        } else if (isDenied) {
+            // Delete employee
+            const confirmDelete = await window.Swal.fire({
+                title: 'Confirm Permanent Deletion',
+                text: `Are you sure you want to permanently delete the counselor account for ${empData.fullName || empName}? This action is irreversible.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, Delete Account'
             });
-        } else {
-            alert("Authorization Failed: " + (err.message || 'Invalid CEO credentials.'));
+
+            if (confirmDelete.isConfirmed) {
+                await deleteDoc(empRef);
+                try {
+                    if (empData.uid) {
+                        await deleteDoc(doc(db, 'users', empData.uid));
+                    }
+                    await deleteDoc(doc(db, 'users', empId));
+                } catch(e){}
+
+                window.Swal.fire({
+                    icon: 'success',
+                    title: 'Account Deleted',
+                    text: `Counselor profile for ${empData.fullName || empName} deleted successfully.`,
+                    confirmButtonColor: '#0b2447'
+                });
+            }
         }
+
+    } catch (err) {
+        console.error("Management process failed:", err);
+        window.Swal.fire({
+            icon: 'error',
+            title: 'Authorization Rejected',
+            text: err.message || 'Verification failed.',
+            confirmButtonColor: '#dc3545'
+        });
     }
 }
-window.deleteEmployeeAccount = deleteEmployeeAccount;
+window.manageEmployee = manageEmployee;
 
 /**
  * Triggers a password reset email via Firebase Authentication
@@ -814,10 +950,10 @@ export async function updateHomeNavbarAuthUI(user) {
             <button class="btn btn-sm btn-outline-light rounded-circle px-2 py-1 me-1" onclick="toggleTheme()" title="Toggle Dark/Light Theme">
                 <i class="themeToggleIcon bi bi-sun-fill text-warning"></i>
             </button>
-            <button class="btn btn-signin-now px-3.5 py-2 fw-semibold rounded-pill" data-bs-toggle="modal" data-bs-target="#loginModal" onclick="openAuthModal('signin')">
+            <button class="btn btn-signin-now px-3.5 py-2 fw-semibold" data-bs-toggle="modal" data-bs-target="#loginModal" onclick="openAuthModal('signin')">
                 <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
             </button>
-            <button class="btn btn-apply-now pulse-glow-button px-3.5 py-2 fw-semibold rounded-pill" data-bs-toggle="modal" data-bs-target="#loginModal" onclick="openAuthModal('signup')">
+            <button class="btn btn-apply-now pulse-glow-button px-3.5 py-2 fw-semibold" data-bs-toggle="modal" data-bs-target="#loginModal" onclick="openAuthModal('signup')">
                 <i class="bi bi-person-plus-fill me-1"></i> Sign Up
             </button>
         `;
@@ -846,8 +982,8 @@ export async function updateHomeNavbarAuthUI(user) {
     if (fallbackName && fallbackName.includes('@')) fallbackName = '';
 
     if (!fallbackName && cleanEmail) {
-        if (cleanEmail.includes('didar') || cleanEmail.startsWith('ceo')) {
-            fallbackName = 'Didar Hossain';
+        if (cleanEmail.includes('didar') || cleanEmail.startsWith('ceo') || cleanEmail.includes('shuvo') || cleanEmail.includes('mahfuz')) {
+            fallbackName = 'Mahfuz Shuvo';
         } else if (cleanEmail.includes('kabir')) {
             fallbackName = 'Kabir Hossain';
         } else if (cleanEmail.includes('sakib')) {
@@ -976,14 +1112,15 @@ export async function updateHomeNavbarAuthUI(user) {
     let roleBadge = '';
 
     if (role === 'CEO') {
+        resolvedName = 'Mahfuz Shuvo';
         portalUrl = 'index.html';
-        profileBtnLabel = 'CEO Dashboard';
+        profileBtnLabel = 'My Profile';
         profileIcon = 'bi-speedometer2';
         const ceoTitle = resolvedDesignation || 'CEO';
         roleBadge = `<span class="badge bg-danger-subtle text-danger border border-danger px-3 py-1.5 rounded-pill small d-inline-flex align-items-center gap-1 shadow-sm"><i class="bi bi-award-fill text-danger"></i> ${escapeHtml(resolvedName)} (${escapeHtml(ceoTitle)})</span>`;
     } else if (role === 'Employee') {
         portalUrl = 'employee.html';
-        profileBtnLabel = 'Counselor Portal';
+        profileBtnLabel = 'My Profile';
         profileIcon = 'bi-speedometer2';
         const empTitle = resolvedDesignation || 'Counselor';
         roleBadge = `<span class="badge bg-warning-subtle text-warning-emphasis border border-warning px-3 py-1.5 rounded-pill small d-inline-flex align-items-center gap-1 shadow-sm"><i class="bi bi-person-badge-fill text-warning"></i> ${escapeHtml(resolvedName)} (${escapeHtml(empTitle)})</span>`;
@@ -1000,10 +1137,10 @@ export async function updateHomeNavbarAuthUI(user) {
             <i class="themeToggleIcon bi bi-sun-fill text-warning"></i>
         </button>
         ${roleBadge}
-        <a href="${portalUrl}" class="btn btn-apply-now pulse-glow-button px-3 py-1.5 fw-semibold rounded-pill d-inline-flex align-items-center gap-1 shadow-sm flex-shrink-0" style="font-size: 0.85rem;" title="Return to your Portal Dashboard">
+        <a href="${portalUrl}" class="btn btn-apply-now pulse-glow-button px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1 shadow-sm flex-shrink-0" style="font-size: 0.85rem;" title="Return to your Portal Dashboard">
             <i class="bi ${profileIcon}"></i> ${profileBtnLabel}
         </a>
-        <button onclick="handleLogout(event)" class="btn btn-outline-danger px-2.5 py-1.5 fw-semibold rounded-pill btn-sm d-inline-flex align-items-center gap-1 shadow-sm flex-shrink-0" style="font-size: 0.85rem;" title="Sign Out">
+        <button onclick="handleLogout(event)" class="btn btn-outline-danger px-2.5 py-1.5 fw-semibold btn-sm d-inline-flex align-items-center gap-1 shadow-sm flex-shrink-0" style="font-size: 0.85rem;" title="Sign Out">
             <i class="bi bi-box-arrow-right"></i> Logout
         </button>
     `;
@@ -1702,13 +1839,19 @@ export function fetchStudents() {
                     : 'N/A';
                 const hasUnread = hasUnreadStudentMessages(data);
                 const unreadBadge = hasUnread
-                    ? `<span class="badge rounded-pill bg-danger ms-1" style="font-size: 0.7rem;">New Message</span>`
+                    ? `<span class="badge rounded-pill bg-danger ms-1 pulse-unread" style="font-size: 0.7rem;">New Message</span>`
+                    : '';
+                const rowStyle = hasUnread 
+                    ? 'style="background-color: rgba(230, 57, 70, 0.06); font-weight: 600;"' 
+                    : '';
+                const namePrefix = hasUnread 
+                    ? `<span class="text-danger me-1 pulse-unread">●</span>`
                     : '';
 
                 html += `
-                    <tr>
+                    <tr ${rowStyle}>
                         <td class="py-2.5 ps-4">
-                            <div class="fw-bold text-dark mb-0" style="font-size: 0.875rem;">${escapeHtml(fullName)}</div>
+                            <div class="fw-bold text-dark mb-0" style="font-size: 0.875rem;">${namePrefix}${escapeHtml(fullName)}${unreadBadge}</div>
                             <small class="text-muted" style="font-size: 0.7rem;">ID: #${id.substring(0, 8).toUpperCase()}</small>
                         </td>
                         <td class="text-muted small py-2.5">${escapeHtml(email)}</td>
@@ -1900,13 +2043,19 @@ export function loadCEODashboardData() {
                     : 'N/A';
                 const hasUnread = hasUnreadStudentMessages(data);
                 const unreadBadge = hasUnread
-                    ? `<span class="badge rounded-pill bg-danger ms-1" style="font-size: 0.7rem;">New Message</span>`
+                    ? `<span class="badge rounded-pill bg-danger ms-1 pulse-unread" style="font-size: 0.7rem;">New Message</span>`
+                    : '';
+                const rowStyle = hasUnread 
+                    ? 'style="background-color: rgba(230, 57, 70, 0.06); font-weight: 600;"' 
+                    : '';
+                const namePrefix = hasUnread 
+                    ? `<span class="text-danger me-1 pulse-unread">●</span>`
                     : '';
 
                 html += `
-                    <tr>
+                    <tr ${rowStyle}>
                         <td>
-                            <div class="fw-bold text-dark">${escapeHtml(fullName)}</div>
+                            <div class="fw-bold text-dark">${namePrefix}${escapeHtml(fullName)}${unreadBadge}</div>
                             <small class="text-muted" style="font-size: 0.725rem;">ID: #${id.substring(0, 8).toUpperCase()}</small>
                         </td>
                         <td class="text-muted small">${escapeHtml(email)}</td>
@@ -2067,16 +2216,28 @@ function buildDocumentsSection(studentData, studentId) {
             actionBtn = `<span class="text-muted small fst-italic">Not Uploaded Yet</span>`;
         } else {
             const viewBtn = `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer"
-                  class="btn btn-sm btn-outline-primary py-0 px-2 fw-semibold">
+                  class="btn btn-sm btn-outline-primary py-0 px-2 fw-semibold me-1">
                   <i class="bi bi-file-earmark-text me-1"></i>View
                </a>`;
-            // Show Approve button only if Pending and studentId is provided (CEO/Employee modal)
-            const approveBtn = (studentId && docStatus !== 'Approved')
-                ? ` <button class="btn btn-sm btn-outline-success py-0 px-2 fw-semibold" onclick="approveDocument('${studentId}', '${key}')">
-                       <i class="bi bi-check-lg me-1"></i>Approve
-                   </button>`
-                : '';
-            actionBtn = viewBtn + approveBtn;
+            let approveBtn = '';
+            let pendingBtn = '';
+            let deleteBtn = '';
+            
+            if (studentId) {
+                if (docStatus === 'Approved') {
+                    pendingBtn = ` <button class="btn btn-sm btn-outline-warning py-0 px-2 fw-semibold me-1" onclick="window.markDocumentPending('${studentId}', '${key}')">
+                           <i class="bi bi-clock-history me-1"></i>Pending
+                       </button>`;
+                } else {
+                    approveBtn = ` <button class="btn btn-sm btn-outline-success py-0 px-2 fw-semibold me-1" onclick="window.approveDocument('${studentId}', '${key}')">
+                           <i class="bi bi-check-lg me-1"></i>Approve
+                       </button>`;
+                }
+                deleteBtn = ` <button class="btn btn-sm btn-outline-danger py-0 px-2 fw-semibold" onclick="window.deleteStudentDocument('${studentId}', '${key}')">
+                       <i class="bi bi-trash-fill me-1"></i>Delete
+                   </button>`;
+            }
+            actionBtn = viewBtn + approveBtn + pendingBtn + deleteBtn;
         }
 
         const dateCell = uploadedAt
@@ -2167,6 +2328,86 @@ export async function approveDocument(studentId, docKey) {
         alert('Failed to approve document: ' + error.message);
     }
 }
+window.approveDocument = approveDocument;
+
+/**
+ * Marks a specific document as Pending review.
+ */
+export async function markDocumentPending(studentId, docKey) {
+    const student = window.loadedStudentsMap ? window.loadedStudentsMap[studentId] : null;
+    if (!student) { alert('Student data not loaded.'); return; }
+
+    try {
+        const studentRef = doc(db, 'students', studentId);
+        const docEntry = student.documents?.[docKey];
+
+        if (docEntry && typeof docEntry === 'object') {
+            await updateDoc(studentRef, {
+                [`documents.${docKey}.status`]: 'Pending'
+            });
+            docEntry.status = 'Pending';
+        } else if (docEntry && typeof docEntry === 'string') {
+            await updateDoc(studentRef, {
+                [`documents.${docKey}`]: { url: docEntry, status: 'Pending' }
+            });
+            student.documents[docKey] = { url: docEntry, status: 'Pending' };
+        }
+
+        console.log(`Marked document "${docKey}" pending for student ${studentId}`);
+        viewStudentDetails(studentId);
+
+        const alertArea = document.getElementById('profileEditAlert');
+        if (alertArea) {
+            alertArea.innerHTML = `
+                <div class="alert alert-warning alert-dismissible fade show py-2 px-3 small mb-3" role="alert">
+                    <i class="bi bi-clock-history me-1"></i> "${docKey.replace(/_/g, ' ')}" status set back to <strong>Pending</strong>.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>`;
+        }
+    } catch (error) {
+        console.error('Error marking document pending:', error);
+        alert('Failed to mark document pending: ' + error.message);
+    }
+}
+window.markDocumentPending = markDocumentPending;
+
+/**
+ * Deletes a specific student document.
+ */
+export async function deleteStudentDocument(studentId, docKey) {
+    if (!confirm('Are you sure you want to delete this document?')) return;
+    const student = window.loadedStudentsMap ? window.loadedStudentsMap[studentId] : null;
+    if (!student) { alert('Student data not loaded.'); return; }
+
+    try {
+        const studentRef = doc(db, 'students', studentId);
+        await updateDoc(studentRef, {
+            [`documents.${docKey}`]: deleteField(),
+            [`documents.${docKey}_uploadedAt`]: deleteField()
+        });
+
+        if (student.documents) {
+            delete student.documents[docKey];
+            delete student.documents[`${docKey}_uploadedAt`];
+        }
+
+        console.log(`Deleted document "${docKey}" for student ${studentId}`);
+        viewStudentDetails(studentId);
+
+        const alertArea = document.getElementById('profileEditAlert');
+        if (alertArea) {
+            alertArea.innerHTML = `
+                <div class="alert alert-danger alert-dismissible fade show py-2 px-3 small mb-3" role="alert">
+                    <i class="bi bi-trash-fill me-1"></i> "${docKey.replace(/_/g, ' ')}" has been <strong>Deleted</strong>.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>`;
+        }
+    } catch (error) {
+        console.error('Error deleting document:', error);
+        alert('Failed to delete document: ' + error.message);
+    }
+}
+window.deleteStudentDocument = deleteStudentDocument;
 
 /**
  * Resolves applications array for a student, falling back to legacy preferences if empty
@@ -3328,13 +3569,36 @@ function runInit() {
 
         // 3. Update Portal Header greetings if elements exist
         if (user) {
+            const emailClean = user.email ? user.email.toLowerCase().trim() : '';
+            
+            // Tasks Loading
+            if (document.getElementById('ceoTasksTable')) {
+                fetchCEOTasksList();
+            }
+            if (document.getElementById('employeeTasksListContainer') && emailClean) {
+                fetchEmployeeTasksList(emailClean);
+            }
+
             const ceoNameEl = document.getElementById('navCeoName');
             if (ceoNameEl) {
-                ceoNameEl.textContent = user.displayName || user.email?.split('@')[0] || 'CEO';
+                ceoNameEl.textContent = 'Mahfuz Shuvo';
             }
+            
             const empNameEl = document.getElementById('navEmployeeName');
-            if (empNameEl) {
-                empNameEl.textContent = user.displayName || user.email?.split('@')[0] || 'Counselor';
+            if (empNameEl && emailClean) {
+                try {
+                    let empSnap = await getDoc(doc(db, 'employees', emailClean));
+                    if (!empSnap.exists() && user.uid) {
+                        empSnap = await getDoc(doc(db, 'employees', user.uid));
+                    }
+                    if (empSnap.exists()) {
+                        empNameEl.textContent = empSnap.data().fullName || user.displayName || emailClean.split('@')[0];
+                    } else {
+                        empNameEl.textContent = user.displayName || emailClean.split('@')[0] || 'Counselor';
+                    }
+                } catch (e) {
+                    empNameEl.textContent = user.displayName || emailClean.split('@')[0] || 'Counselor';
+                }
             }
         }
     });
@@ -3375,6 +3639,365 @@ function openModalFallback(targetEl) {
         document.body.appendChild(backdrop);
     }
 }
+
+// ==========================================
+// CEO & Employee Task Management functions
+// ==========================================
+
+function getCountdownText(deadlineMs, status) {
+    if (status === 'complete') {
+        return '<span class="badge bg-success"><i class="bi bi-check-circle-fill"></i> Completed</span>';
+    }
+    const now = Date.now();
+    const diff = deadlineMs - now;
+    if (diff <= 0) {
+        return '<span class="badge bg-danger"><i class="bi bi-exclamation-triangle-fill"></i> Missed</span>';
+    }
+    
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+    
+    return `<span class="badge bg-warning text-dark"><i class="bi bi-clock-history"></i> ${days}d ${hours}h ${minutes}m ${seconds}s</span>`;
+}
+
+function updateAllCountdowns() {
+    const timers = document.querySelectorAll('.countdown-timer');
+    timers.forEach(t => {
+        const deadline = parseInt(t.getAttribute('data-deadline'));
+        const status = t.getAttribute('data-status');
+        t.innerHTML = getCountdownText(deadline, status);
+    });
+}
+
+if (typeof window !== 'undefined') {
+    setInterval(updateAllCountdowns, 1000);
+}
+
+export async function assignNewTaskFromCEO(event) {
+    if (event) event.preventDefault();
+    const counselorSelect = document.getElementById('counselorSelect');
+    const descEl = document.getElementById('taskDesc');
+    const dateEl = document.getElementById('dueDate');
+    const timeEl = document.getElementById('dueTime');
+    const pdfInput = document.getElementById('taskPdfFile');
+    
+    if (!counselorSelect || !descEl || !dateEl || !timeEl) return;
+    
+    const selectedOption = counselorSelect.options[counselorSelect.selectedIndex];
+    const employeeEmail = counselorSelect.value;
+    const employeeName = selectedOption ? (selectedOption.getAttribute('data-name') || employeeEmail) : employeeEmail;
+    const description = descEl.value.trim();
+    const dueDate = dateEl.value;
+    const dueTime = timeEl.value;
+    
+    if (!employeeEmail || !description || !dueDate || !dueTime) {
+        alert("Please fill in all fields.");
+        return;
+    }
+    
+    const deadlineTimestamp = new Date(dueDate + 'T' + dueTime).getTime();
+    
+    let pdfData = "";
+    let pdfName = "";
+    if (pdfInput && pdfInput.files.length > 0) {
+        const file = pdfInput.files[0];
+        pdfName = file.name;
+        pdfData = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.readAsDataURL(file);
+        });
+    }
+    
+    try {
+        await addDoc(collection(db, "tasks"), {
+            assignedToEmail: employeeEmail,
+            assignedToName: employeeName,
+            description: description,
+            pdfData: pdfData,
+            pdfName: pdfName,
+            deadline: deadlineTimestamp,
+            status: 'pending',
+            employeeUpdates: "",
+            employeePdfData: "",
+            employeePdfName: "",
+            employeeLink: "",
+            seenByEmployee: false,
+            createdAt: serverTimestamp()
+        });
+        
+        alert(`Task successfully assigned to ${employeeName}!`);
+        document.getElementById('assignTaskForm').reset();
+        
+        const modalEl = document.getElementById('assignTaskModal');
+        if (modalEl && window.bootstrap) {
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+        }
+    } catch (error) {
+        console.error("Error assigning task:", error);
+        alert("Failed to assign task: " + error.message);
+    }
+}
+window.assignNewTaskFromCEO = assignNewTaskFromCEO;
+
+let tasksSnapshotUnsubscribe = null;
+export function fetchCEOTasksList() {
+    const tableBody = document.getElementById('ceoTasksTable');
+    if (!tableBody) return;
+    
+    if (tasksSnapshotUnsubscribe) {
+        tasksSnapshotUnsubscribe();
+    }
+    
+    tasksSnapshotUnsubscribe = onSnapshot(collection(db, "tasks"), (snapshot) => {
+        let html = '';
+        if (snapshot.empty) {
+            html = `<tr><td colspan="4" class="text-center py-3 text-muted">No tasks assigned yet.</td></tr>`;
+            tableBody.innerHTML = html;
+            return;
+        }
+        
+        const tasks = [];
+        snapshot.forEach(docSnap => {
+            tasks.push({ id: docSnap.id, ...docSnap.data() });
+        });
+        
+        tasks.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+        
+        tasks.forEach(t => {
+            const formattedDeadline = new Date(t.deadline).toLocaleDateString('en-GB') + ' ' + new Date(t.deadline).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            const countdownHtml = `<div class="countdown-timer text-nowrap my-1" data-deadline="${t.deadline}" data-status="${t.status}" id="timer-ceo-${t.id}">...</div>`;
+            const docLink = t.pdfData 
+                ? `<br><a href="${t.pdfData}" target="_blank" class="small text-danger"><i class="bi bi-file-earmark-pdf"></i> ${escapeHtml(t.pdfName)}</a>`
+                : '';
+            
+            let updatesHtml = '';
+            if (t.employeeUpdates || t.employeePdfData || t.employeeLink) {
+                updatesHtml = `
+                    <div class="mt-2 border-top pt-1 small text-muted">
+                        <strong>Counselor Update:</strong> ${escapeHtml(t.employeeUpdates || 'None')}
+                        ${t.employeePdfData ? `<br><a href="${t.employeePdfData}" target="_blank" class="text-primary"><i class="bi bi-file-earmark-pdf"></i> ${escapeHtml(t.employeePdfName)}</a>` : ''}
+                        ${t.employeeLink ? `<br><a href="${t.employeeLink}" target="_blank" class="text-success"><i class="bi bi-link-45deg"></i> View Link</a>` : ''}
+                    </div>
+                `;
+            }
+            
+            let statusBadge = '';
+            if (t.status === 'complete') {
+                statusBadge = '<span class="badge bg-success"><i class="bi bi-check-circle-fill"></i> Completed</span>';
+            } else {
+                const now = Date.now();
+                if (now > t.deadline) {
+                    statusBadge = '<span class="badge bg-danger"><i class="bi bi-exclamation-triangle-fill"></i> Missed</span>';
+                } else {
+                    statusBadge = '<span class="badge bg-warning text-dark"><i class="bi bi-clock-history"></i> Pending</span>';
+                }
+            }
+            
+            html += `
+                <tr>
+                    <td><strong>${escapeHtml(t.assignedToName)}</strong></td>
+                    <td>
+                        <div>${escapeHtml(t.description)}</div>
+                        ${docLink}
+                        ${updatesHtml}
+                    </td>
+                    <td>
+                        <div class="small fw-semibold text-secondary">${formattedDeadline}</div>
+                        ${countdownHtml}
+                    </td>
+                    <td>${statusBadge}</td>
+                </tr>
+            `;
+        });
+        tableBody.innerHTML = html;
+        updateAllCountdowns();
+    });
+}
+window.fetchCEOTasksList = fetchCEOTasksList;
+
+let employeeTasksSnapshotUnsubscribe = null;
+export function fetchEmployeeTasksList(emailClean) {
+    const tableBody = document.getElementById('employeeTasksListContainer');
+    const badgeEl = document.getElementById('taskManagerBadge');
+    
+    if (!tableBody) return;
+    
+    if (employeeTasksSnapshotUnsubscribe) {
+        employeeTasksSnapshotUnsubscribe();
+    }
+    
+    const q = query(collection(db, "tasks"), where("assignedToEmail", "==", emailClean));
+    employeeTasksSnapshotUnsubscribe = onSnapshot(q, (snapshot) => {
+        let hasUnseen = false;
+        let html = '';
+        
+        if (snapshot.empty) {
+            tableBody.innerHTML = `<div class="text-center py-4 text-muted"><i class="bi bi-journal-check fs-2 mb-2"></i><br>No tasks assigned to you.</div>`;
+            if (badgeEl) badgeEl.style.display = 'none';
+            return;
+        }
+        
+        const tasks = [];
+        snapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            tasks.push({ id: docSnap.id, ...data });
+            if (data.seenByEmployee === false) {
+                hasUnseen = true;
+            }
+        });
+        
+        if (badgeEl) {
+            badgeEl.style.display = hasUnseen ? 'inline-block' : 'none';
+        }
+        
+        tasks.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+        
+        tasks.forEach(t => {
+            const countdownHtml = `<div class="countdown-timer text-nowrap my-1" data-deadline="${t.deadline}" data-status="${t.status}" id="timer-emp-${t.id}">...</div>`;
+            const docLink = t.pdfData 
+                ? `<a href="${t.pdfData}" target="_blank" class="btn btn-sm btn-outline-danger mt-1 small"><i class="bi bi-file-earmark-pdf"></i> Download Instructions</a>`
+                : '';
+                
+            const isCompleted = t.status === 'complete';
+            
+            let submissionHtml = '';
+            if (isCompleted) {
+                submissionHtml = `
+                    <div class="alert alert-success p-2.5 small mt-3 mb-0">
+                        <h6 class="fw-bold mb-1"><i class="bi bi-check-circle-fill text-success"></i> Submission Status: Complete</h6>
+                        <div><strong>Notes:</strong> ${escapeHtml(t.employeeUpdates || 'None')}</div>
+                        ${t.employeePdfData ? `<div><strong>Attachment:</strong> <a href="${t.employeePdfData}" target="_blank" class="text-primary"><i class="bi bi-file-earmark-pdf"></i> View Submitted PDF</a></div>` : ''}
+                        ${t.employeeLink ? `<div><strong>Link:</strong> <a href="${t.employeeLink}" target="_blank" class="text-success"><i class="bi bi-link-45deg"></i> View Link</a></div>` : ''}
+                        <button class="btn btn-xs btn-outline-secondary mt-2 px-3 fw-bold" onclick="window.updateTaskStatus('${t.id}', 'pending')">
+                            <i class="bi bi-arrow-counterclockwise"></i> Change to Pending
+                        </button>
+                    </div>
+                `;
+            } else {
+                submissionHtml = `
+                    <div class="bg-light p-3 border rounded-3 mt-3 text-start">
+                        <h6 class="fw-bold mb-2 text-dark small"><i class="bi bi-send-check"></i> Submit Work / Update Status</h6>
+                        <div class="mb-2">
+                            <label class="form-label text-muted small fw-semibold mb-1">Status Updates Text</label>
+                            <textarea class="form-control form-control-sm" id="sub-text-${t.id}" rows="2" placeholder="e.g. IELTS Verified...">${escapeHtml(t.employeeUpdates || '')}</textarea>
+                        </div>
+                        <div class="mb-2 row">
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small fw-semibold mb-1">Upload Work PDF (Optional)</label>
+                                <input type="file" class="form-control form-control-sm" id="sub-pdf-${t.id}" accept="application/pdf">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small fw-semibold mb-1">Share URL / Link (Optional)</label>
+                                <input type="text" class="form-control form-control-sm" id="sub-link-${t.id}" placeholder="e.g. http://..." value="${escapeHtml(t.employeeLink || '')}">
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2 mt-3">
+                            <button class="btn btn-sm btn-success px-4 fw-bold flex-grow-1" onclick="window.submitEmployeeWork('${t.id}', 'complete')">
+                                <i class="bi bi-check-circle"></i> Mark as Complete
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            html += `
+                <div class="list-group-item list-group-item-action p-4 border rounded-3 mb-3 text-dark bg-white">
+                    <div class="d-flex justify-content-between align-items-start border-bottom pb-2 mb-2">
+                        <h6 class="fw-bold text-dark mb-0">${escapeHtml(t.description)}</h6>
+                        <div>${isCompleted ? '<span class="badge bg-success">Completed</span>' : '<span class="badge bg-warning text-dark">Pending</span>'}</div>
+                    </div>
+                    <div class="row g-2 align-items-center">
+                        <div class="col-sm-6 small text-muted text-start">
+                            <i class="bi bi-calendar-event me-1"></i>Deadline: ${new Date(t.deadline).toLocaleString('en-GB')}
+                        </div>
+                        <div class="col-sm-6 text-sm-end">
+                            ${countdownHtml}
+                        </div>
+                    </div>
+                    ${docLink}
+                    ${submissionHtml}
+                </div>
+            `;
+        });
+        tableBody.innerHTML = html;
+        updateAllCountdowns();
+    });
+}
+window.fetchEmployeeTasksList = fetchEmployeeTasksList;
+
+export async function openEmployeeTaskManager() {
+    const user = auth.currentUser;
+    if (!user) return;
+    const emailClean = user.email.trim().toLowerCase();
+    
+    try {
+        const q = query(collection(db, "tasks"), where("assignedToEmail", "==", emailClean), where("seenByEmployee", "==", false));
+        const snap = await getDocs(q);
+        if (!snap.empty) {
+            const batchPromises = snap.docs.map(d => updateDoc(d.ref, { seenByEmployee: true }));
+            await Promise.all(batchPromises);
+            console.log("Cleared seenByEmployee flag for employee tasks");
+        }
+    } catch (e) {
+        console.warn("Notice clearing seenByEmployee flag:", e);
+    }
+}
+window.openEmployeeTaskManager = openEmployeeTaskManager;
+
+export async function submitEmployeeWork(taskId, status) {
+    const textVal = document.getElementById(`sub-text-${taskId}`)?.value?.trim() || "";
+    const linkVal = document.getElementById(`sub-link-${taskId}`)?.value?.trim() || "";
+    const pdfInput = document.getElementById(`sub-pdf-${taskId}`);
+    
+    let pdfData = "";
+    let pdfName = "";
+    
+    if (pdfInput && pdfInput.files.length > 0) {
+        const file = pdfInput.files[0];
+        pdfName = file.name;
+        pdfData = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.readAsDataURL(file);
+        });
+    }
+    
+    try {
+        const taskRef = doc(db, "tasks", taskId);
+        const updates = {
+            status: status,
+            employeeUpdates: textVal,
+            employeeLink: linkVal
+        };
+        if (pdfData) {
+            updates.employeePdfData = pdfData;
+            updates.employeePdfName = pdfName;
+        }
+        await updateDoc(taskRef, updates);
+        alert(`Task status successfully updated to Completed!`);
+    } catch (error) {
+        console.error("Error submitting task work:", error);
+        alert("Failed to submit work: " + error.message);
+    }
+}
+window.submitEmployeeWork = submitEmployeeWork;
+
+export async function updateTaskStatus(taskId, status) {
+    try {
+        await updateDoc(doc(db, "tasks", taskId), {
+            status: status
+        });
+        alert(`Task status updated to ${status}!`);
+    } catch (error) {
+        console.error("Error updating task status:", error);
+        alert("Failed to update task: " + error.message);
+    }
+}
+window.updateTaskStatus = updateTaskStatus;
 
 function closeModalFallback(targetEl) {
     if (!targetEl) return;

@@ -33,16 +33,21 @@
             </button>
             <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
                 <ul class="navbar-nav align-items-center">
+                    <li class="nav-item me-2">
+                        <a class="btn btn-outline-light btn-sm rounded-pill px-3 py-1 fw-semibold" href="login.html" title="Go to Home Page">
+                            <i class="bi bi-house-door-fill me-1 text-danger"></i> Home
+                        </a>
+                    </li>
                     <li class="nav-item me-3">
                         <button class="btn btn-sm btn-outline-light rounded-circle px-2 py-1 me-1" onclick="toggleTheme()" title="Toggle Dark/Light Theme">
                             <i class="themeToggleIcon bi bi-sun-fill text-warning"></i>
                         </button>
                     </li>
                     <li class="nav-item me-3">
-                        <span class="text-white-50"><i class="bi bi-person-circle me-1"></i> Welcome, CEO</span>
+                        <span class="text-white-50"><i class="bi bi-person-circle me-1"></i> Welcome, <span id="navCeoName">Mahfuz Shuvo</span></span>
                     </li>
                     <li class="nav-item">
-                        <a class="btn btn-newage-outline py-1 px-3 btn-sm" href="login.html">
+                        <a class="btn btn-newage-outline py-1 px-3 btn-sm" href="#" onclick="window.handleLogout && window.handleLogout(event)">
                             <i class="bi bi-box-arrow-right me-1"></i> Logout
                         </a>
                     </li>
@@ -59,14 +64,11 @@
             <div class="col-12">
                 <div class="card-newage-dark p-4 p-md-5 text-white position-relative overflow-hidden rounded-4">
                     <div class="position-relative z-index-2">
-                        <h1 class="display-5 fw-bold text-white">Welcome back, Chief Executive Officer</h1>
+                        <h1 class="display-5 fw-bold text-white">Welcome back, Mahfuz Shuvo</h1>
                         <p class="lead my-3 text-white-50">Manage counselors, review student records, and control portal activities from one centralized terminal.</p>
                         <div class="d-flex flex-wrap gap-2 mt-4">
-                            <button class="btn btn-danger chat-btn shadow-sm fw-bold" data-email="sakib@gmail.com" data-name="Sakib Rahman" data-bs-toggle="modal" data-bs-target="#ceoChatModal" onclick="window.openCeoChatModal && window.openCeoChatModal('sakib@gmail.com', 'Sakib Rahman')">
-                                <i class="bi bi-chat-left-text-fill me-1 text-white"></i> Candidate Live Chat Workstation
-                            </button>
-                            <button class="btn btn-accent shadow-sm" data-bs-toggle="modal" data-bs-target="#addNewEmployeeModal">
-                                <i class="bi bi-person-plus-fill me-1"></i> Add New Employee
+                            <button class="btn btn-accent shadow-sm" data-bs-toggle="modal" data-bs-target="#myTeamModal">
+                                <i class="bi bi-people-fill me-1"></i> My Team
                             </button>
                             <button class="btn btn-navy" data-bs-toggle="modal" data-bs-target="#assignTaskModal">
                                 <i class="bi bi-plus-circle me-1"></i> Assign New Task
@@ -77,9 +79,6 @@
                             <a href="application_form.html" class="btn btn-navy">
                                 <i class="bi bi-person-plus me-1"></i> Add New Student (Data Entry)
                             </a>
-                            <button class="btn btn-navy" data-bs-toggle="modal" data-bs-target="#viewDocumentsModal">
-                                <i class="bi bi-file-earmark-pdf me-1"></i> View Student Documents
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -88,7 +87,7 @@
 
         <!-- Quick Stats Cards Row -->
         <div class="row g-3 mb-4 reveal-on-scroll">
-            <div class="col-sm-6 col-xl-3">
+            <div class="col-md-6">
                 <div class="card-newage p-3 h-100">
                     <div class="d-flex align-items-center justify-content-between">
                         <div>
@@ -99,29 +98,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-sm-6 col-xl-3">
-                <div class="card-newage p-3 h-100">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div>
-                            <p class="text-muted small mb-1">Visa Success Rate</p>
-                            <h3 class="mb-0 text-success fw-bold">98.4%</h3>
-                        </div>
-                        <div class="fs-1 text-success opacity-75"><i class="bi bi-patch-check"></i></div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-sm-6 col-xl-3">
-                <div class="card-newage p-3 h-100">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div>
-                            <p class="text-muted small mb-1">Active Counselors</p>
-                            <h3 class="mb-0 fw-bold">12</h3>
-                        </div>
-                        <div class="fs-1 text-accent opacity-75"><i class="bi bi-person-workspace"></i></div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-sm-6 col-xl-3">
+            <div class="col-md-6">
                 <div class="card-newage p-3 h-100">
                     <div class="d-flex align-items-center justify-content-between">
                         <div>
@@ -136,7 +113,7 @@
 
         <!-- Tasks & Updates Row -->
         <div class="row g-4 mb-4 reveal-on-scroll">
-            <!-- Full Width: Tasks Status -->
+            <!-- Left: Tasks Status -->
             <div class="col-12">
                 <div class="card-newage h-100 border-0 shadow-sm rounded-4">
                     <div class="card-header bg-navy text-white d-flex justify-content-between align-items-center py-3 px-4 rounded-top-4">
@@ -150,28 +127,13 @@
                                     <tr>
                                         <th>Assigned To</th>
                                         <th>Task Description</th>
-                                        <th>Target Date</th>
+                                        <th>Target Date / Timer</th>
                                         <th>Status</th>
                                     </tr>
                                 </thead>
                                 <tbody id="ceoTasksTable">
                                     <tr>
-                                        <td><strong>Kabir Hossain</strong></td>
-                                        <td>Verify Sakib's IELTS Academic Test Report Form</td>
-                                        <td>24-07-2026</td>
-                                        <td><span class="badge bg-warning text-dark"><i class="bi bi-clock-history me-1"></i> In Progress</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Amina Rahman</strong></td>
-                                        <td>Send SOP draft check to University of Toronto</td>
-                                        <td>23-07-2026</td>
-                                        <td><span class="badge bg-success"><i class="bi bi-check-circle me-1"></i> Completed</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Zayd Al-Amin</strong></td>
-                                        <td>Prepare Bank Solvency Certificate for UK Visa</td>
-                                        <td>28-07-2026</td>
-                                        <td><span class="badge bg-warning text-dark"><i class="bi bi-clock-history me-1"></i> In Progress</span></td>
+                                        <td colspan="4" class="text-center py-3 text-muted">Loading assigned tasks...</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -327,24 +289,31 @@
                     <h5 class="modal-title" id="assignTaskModalLabel">Assign Task to Employee</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form id="assignTaskForm" onsubmit="submitNewTask(event)">
+                <form id="assignTaskForm" onsubmit="window.assignNewTaskFromCEO(event)">
                     <div class="modal-body">
                         <div class="mb-3">
                             <label for="counselorSelect" class="form-label text-white-50">Assign To Counselor</label>
                             <select class="form-select bg-dark border-secondary text-white" id="counselorSelect" required>
                                 <option value="" disabled selected>Select employee...</option>
-                                <option value="Kabir Hossain">Kabir Hossain</option>
-                                <option value="Amina Rahman">Amina Rahman</option>
-                                <option value="Zayd Al-Amin">Zayd Al-Amin</option>
                             </select>
                         </div>
                         <div class="mb-3">
                             <label for="taskDesc" class="form-label text-white-50">Task Description</label>
                             <textarea class="form-control bg-dark border-secondary text-white" id="taskDesc" rows="3" placeholder="e.g. Verify Sakib's IELTS score certificate" required></textarea>
                         </div>
+                        <div class="mb-3 row">
+                            <div class="col-6">
+                                <label for="dueDate" class="form-label text-white-50">Due Date</label>
+                                <input type="date" class="form-control bg-dark border-secondary text-white" id="dueDate" required>
+                            </div>
+                            <div class="col-6">
+                                <label for="dueTime" class="form-label text-white-50">Due Time</label>
+                                <input type="time" class="form-control bg-dark border-secondary text-white" id="dueTime" required>
+                            </div>
+                        </div>
                         <div class="mb-3">
-                            <label for="dueDate" class="form-label text-white-50">Due Date</label>
-                            <input type="date" class="form-control bg-dark border-secondary text-white" id="dueDate" required>
+                            <label for="taskPdfFile" class="form-label text-white-50">Upload PDF Instruction (Optional)</label>
+                            <input type="file" class="form-control bg-dark border-secondary text-white" id="taskPdfFile" accept="application/pdf">
                         </div>
                     </div>
                     <div class="modal-footer border-secondary">
@@ -448,32 +417,50 @@
                     <h5 class="modal-title text-white"><i class="bi bi-person-plus-fill text-danger me-2"></i>Register New Employee Account</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form id="addEmployeeForm" onsubmit="handleAddNewEmployee(event)">
+                <form id="addEmployeeForm" onsubmit="window.createEmployeeAccountByCEO(event)">
                     <div class="modal-body">
-                        <div id="addEmployeeAlert"></div>
+                        <div id="createEmpAlert"></div>
 
                         <div class="alert alert-info py-2 small mb-3">
                             <i class="bi bi-shield-lock-fill me-1"></i> CEO Access Control: Register staff account with staff role permissions.
                         </div>
 
                         <div class="mb-3">
-                            <label for="newEmployeeName" class="form-label fw-bold small text-muted">Employee Full Name</label>
-                            <input type="text" class="form-control" id="newEmployeeName" placeholder="e.g. Tanvir Ahmed" required>
+                            <label for="newEmpName" class="form-label fw-bold small text-muted">Employee Full Name</label>
+                            <input type="text" class="form-control" id="newEmpName" placeholder="e.g. Tanvir Ahmed" required>
                         </div>
 
                         <div class="mb-3">
-                            <label for="newEmployeeEmail" class="form-label fw-bold small text-muted">Employee Email Address</label>
-                            <input type="email" class="form-control" id="newEmployeeEmail" placeholder="e.g. tanvir.employee@newage.com" required>
+                            <label for="newEmpEmail" class="form-label fw-bold small text-muted">Employee Email Address</label>
+                            <input type="email" class="form-control" id="newEmpEmail" placeholder="e.g. tanvir.employee@newage.com" required>
                         </div>
 
                         <div class="mb-3">
-                            <label for="newEmployeePassword" class="form-label fw-bold small text-muted">Temporary Account Password</label>
-                            <input type="password" class="form-control" id="newEmployeePassword" placeholder="Minimum 6 characters" minlength="6" required>
+                            <label for="newEmpDesignation" class="form-label fw-bold small text-muted">Employee Designation</label>
+                            <input type="text" class="form-control" id="newEmpDesignation" placeholder="e.g. Senior Admission Counselor" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="newEmpPassword" class="form-label fw-bold small text-muted">Temporary Account Password</label>
+                            <input type="password" class="form-control" id="newEmpPassword" placeholder="Minimum 6 characters" minlength="6" required>
+                        </div>
+
+                        <hr class="my-3 border-secondary">
+                        <div class="bg-light p-3 border rounded">
+                            <h6 class="fw-bold mb-2 text-danger small"><i class="bi bi-shield-lock-fill"></i> CEO Re-Verification</h6>
+                            <div class="mb-2">
+                                <label for="ceoAuthEmail" class="form-label fw-bold small text-muted">CEO Email Address</label>
+                                <input type="email" class="form-control form-control-sm" id="ceoAuthEmail" placeholder="ceo@newage.com" required>
+                            </div>
+                            <div class="mb-0">
+                                <label for="ceoAuthPassword" class="form-label fw-bold small text-muted">CEO Master Password</label>
+                                <input type="password" class="form-control form-control-sm" id="ceoAuthPassword" placeholder="Enter password" required>
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer bg-light">
                         <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-newage-red btn-sm fw-bold" id="createEmployeeBtn">
+                        <button type="submit" class="btn btn-newage-red btn-sm fw-bold" id="createEmpSubmitBtn">
                             <i class="bi bi-check-circle-fill me-1"></i> Create Employee Account
                         </button>
                     </div>
@@ -567,6 +554,51 @@
                             <i class="bi bi-send-fill me-1"></i> Send Reply
                         </button>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- MODAL: My Team / Employee Directory -->
+    <div class="modal fade" id="myTeamModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content text-dark border-secondary">
+                <div class="modal-header bg-navy text-white py-3 px-4 rounded-top-4">
+                    <h5 class="modal-title text-white fw-bold"><i class="bi bi-people-fill text-accent me-2"></i>My Team</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                        <div>
+                            <h6 class="fw-bold mb-1 text-dark">Staff Directory &amp; Permissions</h6>
+                            <p class="text-muted small mb-0">Review active consultant credentials, designations, and verify settings.</p>
+                        </div>
+                        <button class="btn btn-accent btn-sm shadow-sm px-3 fw-bold" data-bs-toggle="modal" data-bs-target="#addNewEmployeeModal">
+                            <i class="bi bi-person-plus-fill me-1"></i> Add New Employee
+                        </button>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0 small">
+                            <thead class="bg-navy-light text-white">
+                                <tr>
+                                    <th>Name / Email</th>
+                                    <th>Designation</th>
+                                    <th>Department</th>
+                                    <th>Phone</th>
+                                    <th>Status</th>
+                                    <th class="text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ceoEmployeesTableBody">
+                                <tr>
+                                    <td colspan="6" class="text-center py-4 text-muted">No employees registered yet.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm px-4" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
