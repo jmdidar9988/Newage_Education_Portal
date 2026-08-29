@@ -481,32 +481,10 @@
 
     </main>
 
-    <!-- Floating WhatsApp Widget (Pill style matching screenshot) -->
-    <div class="floating-whatsapp-pill" onclick="toggleWhatsAppChat()">
-        <i class="bi bi-whatsapp"></i> WhatsApp
-    </div>
-
-    <!-- WhatsApp Chat Popup -->
-    <div class="whatsapp-chat-box" id="whatsappChatBox">
-        <div class="whatsapp-chat-header">
-            <i class="bi bi-whatsapp fs-3 me-2"></i>
-            <div>
-                <h6 class="mb-0 fw-bold">Newage Helpdesk</h6>
-                <small class="text-white-50">Typically replies instantly</small>
-            </div>
-            <button class="btn-close btn-close-white ms-auto" onclick="toggleWhatsAppChat()"></button>
-        </div>
-        <div class="whatsapp-chat-body" id="chatBody">
-            <div class="bg-white p-2 rounded shadow-sm mb-2" style="max-width: 80%;">
-                <p class="mb-1 text-dark small">Hello! 🎓 Welcome to Newage Education. How can we help you with your Study Abroad plans today?</p>
-                <small class="text-muted text-end d-block" style="font-size: 0.7rem;">10:30 AM</small>
-            </div>
-        </div>
-        <form class="whatsapp-chat-input" onsubmit="sendWhatsAppMsg(event)">
-            <input type="text" id="whatsappMsgInput" placeholder="Type a message..." required>
-            <button type="submit"><i class="bi bi-send-fill"></i></button>
-        </form>
-    </div>
+    <!-- Floating Facebook Widget -->
+    <a class="floating-facebook-pill" href="https://www.facebook.com/share/18BbYk9GWx/" target="_blank" rel="noopener noreferrer">
+        <i class="bi bi-facebook"></i> Facebook
+    </a>
 
     <!-- FOOTER -->
     <footer class="footer-newage">
@@ -2450,43 +2428,7 @@
             modal.hide();
         }
 
-        function toggleWhatsAppChat() {
-            const chatBox = document.getElementById('whatsappChatBox');
-            if (chatBox.style.display === 'block') {
-                chatBox.style.display = 'none';
-            } else {
-                chatBox.style.display = 'block';
-            }
-        }
 
-        function sendWhatsAppMsg(event) {
-            event.preventDefault();
-            const input = document.getElementById('whatsappMsgInput');
-            const messageText = input.value.trim();
-            if (!messageText) return;
-
-            const chatBody = document.getElementById('chatBody');
-            
-            // Append student's message
-            const studentMsg = document.createElement('div');
-            studentMsg.className = 'bg-success text-white p-2 rounded shadow-sm mb-2 ms-auto';
-            studentMsg.style.maxWidth = '80%';
-            studentMsg.innerHTML = `<p class="mb-1 small">${messageText}</p><small class="text-white-50 text-end d-block" style="font-size: 0.65rem;">Just now</small>`;
-            chatBody.appendChild(studentMsg);
-            
-            input.value = '';
-            chatBody.scrollTop = chatBody.scrollHeight;
-
-            // Delayed mock response from counselor
-            setTimeout(() => {
-                const repMsg = document.createElement('div');
-                repMsg.className = 'bg-white p-2 rounded shadow-sm mb-2';
-                repMsg.style.maxWidth = '80%';
-                repMsg.innerHTML = `<p class="mb-1 text-dark small">Thanks for reaching out! Let me check this for you. Could you share your IELTS score and target country?</p><small class="text-muted text-end d-block" style="font-size: 0.65rem;">Just now</small>`;
-                chatBody.appendChild(repMsg);
-                chatBody.scrollTop = chatBody.scrollHeight;
-            }, 1500);
-        }
     </script>
 </body>
 </html>

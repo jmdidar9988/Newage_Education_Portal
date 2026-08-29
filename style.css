@@ -1125,12 +1125,12 @@ a, button, .btn, .card, .card-newage, .card-newage-dark, .dest-card, .form-contr
     transform: translateY(-2px);
 }
 
-/* Floating WhatsApp Widget (Pill shape to match screenshot) */
-.floating-whatsapp-pill {
+/* Floating Facebook Widget (Pill shape) */
+.floating-facebook-pill {
     position: fixed;
     bottom: 25px;
     right: 25px;
-    background-color: #25d366;
+    background-color: #1877F2;
     color: #ffffff;
     display: flex;
     align-items: center;
@@ -1143,69 +1143,13 @@ a, button, .btn, .card, .card-newage, .card-newage-dark, .dest-card, .form-contr
     cursor: pointer;
     z-index: 1000;
     transition: var(--ne-transition);
+    text-decoration: none !important;
 }
 
-.floating-whatsapp-pill:hover {
+.floating-facebook-pill:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4);
-}
-
-/* WhatsApp Chat Box popup */
-.whatsapp-chat-box {
-    position: fixed;
-    bottom: 85px;
-    right: 25px;
-    width: 320px;
-    background: #ffffff;
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-    overflow: hidden;
-    display: none;
-    z-index: 1000;
-    animation: slideInUp 0.3s ease forwards;
-}
-
-.whatsapp-chat-header {
-    background-color: #075e54;
-    color: white;
-    padding: 1rem;
-    display: flex;
-    align-items: center;
-}
-
-.whatsapp-chat-body {
-    background-color: #ece5dd;
-    padding: 1rem;
-    height: 200px;
-    overflow-y: auto;
-    font-size: 0.85rem;
-}
-
-.whatsapp-chat-input {
-    display: flex;
-    padding: 0.5rem;
-    background: #f0f0f0;
-    border-top: 1px solid #e0e0e0;
-}
-
-.whatsapp-chat-input input {
-    flex: 1;
-    border: none;
-    border-radius: 20px;
-    padding: 0.4rem 0.8rem;
-    font-size: 0.85rem;
-}
-
-.whatsapp-chat-input input:focus {
-    outline: none;
-}
-
-.whatsapp-chat-input button {
-    background: none;
-    border: none;
-    color: #075e54;
-    margin-left: 0.5rem;
-    font-size: 1.2rem;
+    box-shadow: 0 6px 20px rgba(24, 119, 242, 0.4);
+    color: #ffffff !important;
 }
 
 /* Modal Login Override */
