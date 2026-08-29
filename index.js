@@ -263,6 +263,15 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
+window.openChatForLatestUnread = function() {
+    if (window._latestUnreadStudent) {
+        const s = window._latestUnreadStudent;
+        const email = (s.data.personalInfo?.email || s.data.email || s.id).trim().toLowerCase();
+        const name = (s.data.personalInfo?.fullName || email).trim();
+        openCeoChatModal(email, name);
+    }
+};
+
 console.log('[CEO Chat] Module initialized with clean bubbles, robust fallbacks, and updated header.');
 
 

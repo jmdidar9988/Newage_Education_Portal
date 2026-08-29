@@ -411,6 +411,60 @@ h1, h2, h3, h4, h5, h6 {
     margin-left: 10px;
 }
 
+/* Light Theme Contrast Overrides for Navbar Elements */
+[data-bs-theme="light"] .navbar-newage .navbar-nav .nav-link,
+[data-theme="light"] .navbar-newage .navbar-nav .nav-link {
+    color: var(--text-main) !important;
+    font-weight: 500;
+}
+
+[data-bs-theme="light"] .navbar-newage .navbar-nav .nav-link:hover,
+[data-theme="light"] .navbar-newage .navbar-nav .nav-link:hover,
+[data-bs-theme="light"] .navbar-newage .navbar-nav .nav-link.active,
+[data-theme="light"] .navbar-newage .navbar-nav .nav-link.active {
+    color: var(--ne-accent-red) !important;
+}
+
+[data-bs-theme="light"] .navbar-newage .navbar-toggler,
+[data-theme="light"] .navbar-newage .navbar-toggler {
+    border-color: rgba(15, 23, 42, 0.2) !important;
+    color: var(--text-main) !important;
+}
+
+[data-bs-theme="light"] .navbar-newage .navbar-toggler-icon,
+[data-theme="light"] .navbar-newage .navbar-toggler-icon {
+    filter: invert(1);
+}
+
+[data-bs-theme="light"] .navbar-newage .navbar-brand,
+[data-theme="light"] .navbar-newage .navbar-brand {
+    color: var(--text-main) !important;
+}
+
+[data-bs-theme="light"] .navbar-newage .btn-outline-light,
+[data-theme="light"] .navbar-newage .btn-outline-light {
+    color: var(--text-main) !important;
+    border-color: rgba(15, 23, 42, 0.35) !important;
+}
+
+[data-bs-theme="light"] .navbar-newage .btn-outline-light:hover,
+[data-theme="light"] .navbar-newage .btn-outline-light:hover {
+    color: #ffffff !important;
+    background-color: var(--ne-accent-red) !important;
+    border-color: var(--ne-accent-red) !important;
+}
+
+[data-bs-theme="light"] .navbar-newage .text-white-50,
+[data-theme="light"] .navbar-newage .text-white-50 {
+    color: var(--text-muted) !important;
+}
+
+[data-bs-theme="light"] .navbar-newage .text-white,
+[data-theme="light"] .navbar-newage .text-white {
+    color: var(--text-main) !important;
+}
+
+
 /* ==========================================================================
    HIGH-VISIBILITY PREMIUM BOX & CARD ARCHITECTURE
    ========================================================================== */

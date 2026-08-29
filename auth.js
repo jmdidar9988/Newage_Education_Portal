@@ -157,6 +157,22 @@ export function routeByRole(email) {
     }
 }
 
+export function goBackToDashboard() {
+    const user = auth.currentUser;
+    if (user) {
+        routeByRole(user.email);
+    } else {
+        if (document.referrer.includes('employee.html')) {
+            window.location.href = 'employee.html';
+        } else if (document.referrer.includes('student.html')) {
+            window.location.href = 'student.html';
+        } else {
+            window.location.href = 'ceo.html';
+        }
+    }
+}
+window.goBackToDashboard = goBackToDashboard;
+
 /**
  * Updates the UI badge indicating the detected portal role
  */
@@ -241,7 +257,7 @@ export async function handleFirebaseLogin(event) {
                 window.location.href = 'employee.html';
                 return;
             }
-        } catch(e) {
+        } catch (e) {
             console.warn("Notice checking employees collection on login:", e);
         }
 
@@ -348,6 +364,27 @@ export async function handleFirebaseSignUp(event) {
 
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         console.log("Firebase Student Sign Up Success:", userCredential.user);
+        
+        const cleanEmail = (userCredential.user.email || email).toLowerCase().trim();
+        
+        // 1. Create a user document in 'users' collection to specify role: student
+        await setDoc(doc(db, "users", userCredential.user.uid), {
+            email: cleanEmail,
+            role: "student",
+            createdAt: serverTimestamp()
+        });
+
+        // 2. Create an initial student document in 'students' collection so they appear in lists
+        await setDoc(doc(db, "students", cleanEmail), {
+            email: cleanEmail,
+            uid: userCredential.user.uid,
+            personalInfo: {
+                fullName: cleanEmail.split('@')[0],
+                email: cleanEmail
+            },
+            createdAt: serverTimestamp()
+        }, { merge: true });
+
         routeByRole(userCredential.user.email || email);
     } catch (error) {
         console.error("Firebase Sign Up Error:", error);
@@ -381,7 +418,7 @@ export async function verifyCEOCredentials(ceoEmail, ceoPassword) {
         throw new Error("CEO Email and Password are required for authorization.");
     }
     const cleanEmail = ceoEmail.toLowerCase().trim();
-    
+
     // Check if the email role qualifies as CEO
     const role = getRoleFromEmail(cleanEmail);
     if (role !== 'CEO') {
@@ -391,7 +428,7 @@ export async function verifyCEOCredentials(ceoEmail, ceoPassword) {
             if (snap.exists() && (snap.data().role === 'ceo' || snap.data().role === 'admin')) {
                 isCeoInFirestore = true;
             }
-        } catch(e) {}
+        } catch (e) { }
         if (!isCeoInFirestore) {
             throw new Error("Access Denied: The provided email does not possess CEO / Executive authorization.");
         }
@@ -821,7 +858,7 @@ export async function manageEmployee(empId, empName) {
                     fullName: actionResult.name,
                     designation: actionResult.designation
                 });
-            } catch(e){}
+            } catch (e) { }
 
             window.Swal.fire({
                 icon: 'success',
@@ -848,7 +885,7 @@ export async function manageEmployee(empId, empName) {
                         await deleteDoc(doc(db, 'users', empData.uid));
                     }
                     await deleteDoc(doc(db, 'users', empId));
-                } catch(e){}
+                } catch (e) { }
 
                 window.Swal.fire({
                     icon: 'success',
@@ -1029,7 +1066,7 @@ export async function updateHomeNavbarAuthUI(user) {
                 if (empHeroEmail) empHeroEmail.innerText = empData.email || cleanEmail;
                 if (navEmployeeName) navEmployeeName.innerText = resolvedName;
             }
-        } catch(empErr) {
+        } catch (empErr) {
             console.warn("Notice fetching employee profile:", empErr);
         }
 
@@ -1812,6 +1849,9 @@ export function fetchStudents() {
             const studentItems = [];
             window.loadedStudentsMap = window.loadedStudentsMap || {};
 
+            let anyUnread = false;
+            let unreadStudent = null;
+
             snapshot.forEach((docSnap) => {
                 const data = docSnap.data();
                 window.loadedStudentsMap[docSnap.id] = data;
@@ -1819,7 +1859,23 @@ export function fetchStudents() {
                     window.loadedStudentsMap[data.personalInfo.email.toLowerCase()] = data;
                 }
                 studentItems.push({ id: docSnap.id, data });
+                
+                if (hasUnreadStudentMessages(data) || data.staffHasUnread === true) {
+                    anyUnread = true;
+                    unreadStudent = { id: docSnap.id, data };
+                }
             });
+
+            const navChatNotif = document.getElementById('navChatNotificationItem');
+            if (navChatNotif) {
+                if (anyUnread && unreadStudent) {
+                    navChatNotif.style.display = 'block';
+                    window._latestUnreadStudent = unreadStudent;
+                } else {
+                    navChatNotif.style.display = 'none';
+                    window._latestUnreadStudent = null;
+                }
+            }
 
             // Sort students: Most recent message appears at the top
             studentItems.sort((a, b) => getLatestMessageTime(b.data) - getLatestMessageTime(a.data));
@@ -1841,10 +1897,10 @@ export function fetchStudents() {
                 const unreadBadge = hasUnread
                     ? `<span class="badge rounded-pill bg-danger ms-1 pulse-unread" style="font-size: 0.7rem;">New Message</span>`
                     : '';
-                const rowStyle = hasUnread 
-                    ? 'style="background-color: rgba(230, 57, 70, 0.06); font-weight: 600;"' 
+                const rowStyle = hasUnread
+                    ? 'style="background-color: rgba(230, 57, 70, 0.06); font-weight: 600;"'
                     : '';
-                const namePrefix = hasUnread 
+                const namePrefix = hasUnread
                     ? `<span class="text-danger me-1 pulse-unread">●</span>`
                     : '';
 
@@ -2004,6 +2060,9 @@ export function loadCEODashboardData() {
             const studentItems = [];
             window.loadedStudentsMap = window.loadedStudentsMap || {};
 
+            let anyUnread = false;
+            let unreadStudent = null;
+
             snapshot.forEach((docSnap) => {
                 const data = docSnap.data();
                 window.loadedStudentsMap[docSnap.id] = data;
@@ -2011,7 +2070,23 @@ export function loadCEODashboardData() {
                     window.loadedStudentsMap[data.personalInfo.email.toLowerCase()] = data;
                 }
                 studentItems.push({ id: docSnap.id, data });
+
+                if (hasUnreadStudentMessages(data) || data.staffHasUnread === true) {
+                    anyUnread = true;
+                    unreadStudent = { id: docSnap.id, data };
+                }
             });
+
+            const navChatNotif = document.getElementById('navChatNotificationItem');
+            if (navChatNotif) {
+                if (anyUnread && unreadStudent) {
+                    navChatNotif.style.display = 'block';
+                    window._latestUnreadStudent = unreadStudent;
+                } else {
+                    navChatNotif.style.display = 'none';
+                    window._latestUnreadStudent = null;
+                }
+            }
 
             window.lastLoadedStudentItems = studentItems;
 
@@ -2045,10 +2120,10 @@ export function loadCEODashboardData() {
                 const unreadBadge = hasUnread
                     ? `<span class="badge rounded-pill bg-danger ms-1 pulse-unread" style="font-size: 0.7rem;">New Message</span>`
                     : '';
-                const rowStyle = hasUnread 
-                    ? 'style="background-color: rgba(230, 57, 70, 0.06); font-weight: 600;"' 
+                const rowStyle = hasUnread
+                    ? 'style="background-color: rgba(230, 57, 70, 0.06); font-weight: 600;"'
                     : '';
-                const namePrefix = hasUnread 
+                const namePrefix = hasUnread
                     ? `<span class="text-danger me-1 pulse-unread">●</span>`
                     : '';
 
@@ -2222,7 +2297,7 @@ function buildDocumentsSection(studentData, studentId) {
             let approveBtn = '';
             let pendingBtn = '';
             let deleteBtn = '';
-            
+
             if (studentId) {
                 if (docStatus === 'Approved') {
                     pendingBtn = ` <button class="btn btn-sm btn-outline-warning py-0 px-2 fw-semibold me-1" onclick="window.markDocumentPending('${studentId}', '${key}')">
@@ -3570,7 +3645,7 @@ function runInit() {
         // 3. Update Portal Header greetings if elements exist
         if (user) {
             const emailClean = user.email ? user.email.toLowerCase().trim() : '';
-            
+
             // Tasks Loading
             if (document.getElementById('ceoTasksTable')) {
                 fetchCEOTasksList();
@@ -3583,7 +3658,7 @@ function runInit() {
             if (ceoNameEl) {
                 ceoNameEl.textContent = 'Mahfuz Shuvo';
             }
-            
+
             const empNameEl = document.getElementById('navEmployeeName');
             if (empNameEl && emailClean) {
                 try {
@@ -3653,12 +3728,12 @@ function getCountdownText(deadlineMs, status) {
     if (diff <= 0) {
         return '<span class="badge bg-danger"><i class="bi bi-exclamation-triangle-fill"></i> Missed</span>';
     }
-    
+
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
     const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-    
+
     return `<span class="badge bg-warning text-dark"><i class="bi bi-clock-history"></i> ${days}d ${hours}h ${minutes}m ${seconds}s</span>`;
 }
 
@@ -3682,23 +3757,23 @@ export async function assignNewTaskFromCEO(event) {
     const dateEl = document.getElementById('dueDate');
     const timeEl = document.getElementById('dueTime');
     const pdfInput = document.getElementById('taskPdfFile');
-    
+
     if (!counselorSelect || !descEl || !dateEl || !timeEl) return;
-    
+
     const selectedOption = counselorSelect.options[counselorSelect.selectedIndex];
     const employeeEmail = counselorSelect.value;
     const employeeName = selectedOption ? (selectedOption.getAttribute('data-name') || employeeEmail) : employeeEmail;
     const description = descEl.value.trim();
     const dueDate = dateEl.value;
     const dueTime = timeEl.value;
-    
+
     if (!employeeEmail || !description || !dueDate || !dueTime) {
         alert("Please fill in all fields.");
         return;
     }
-    
+
     const deadlineTimestamp = new Date(dueDate + 'T' + dueTime).getTime();
-    
+
     let pdfData = "";
     let pdfName = "";
     if (pdfInput && pdfInput.files.length > 0) {
@@ -3710,7 +3785,7 @@ export async function assignNewTaskFromCEO(event) {
             reader.readAsDataURL(file);
         });
     }
-    
+
     try {
         await addDoc(collection(db, "tasks"), {
             assignedToEmail: employeeEmail,
@@ -3727,10 +3802,10 @@ export async function assignNewTaskFromCEO(event) {
             seenByEmployee: false,
             createdAt: serverTimestamp()
         });
-        
+
         alert(`Task successfully assigned to ${employeeName}!`);
         document.getElementById('assignTaskForm').reset();
-        
+
         const modalEl = document.getElementById('assignTaskModal');
         if (modalEl && window.bootstrap) {
             const modal = bootstrap.Modal.getInstance(modalEl);
@@ -3747,11 +3822,11 @@ let tasksSnapshotUnsubscribe = null;
 export function fetchCEOTasksList() {
     const tableBody = document.getElementById('ceoTasksTable');
     if (!tableBody) return;
-    
+
     if (tasksSnapshotUnsubscribe) {
         tasksSnapshotUnsubscribe();
     }
-    
+
     tasksSnapshotUnsubscribe = onSnapshot(collection(db, "tasks"), (snapshot) => {
         let html = '';
         if (snapshot.empty) {
@@ -3759,21 +3834,21 @@ export function fetchCEOTasksList() {
             tableBody.innerHTML = html;
             return;
         }
-        
+
         const tasks = [];
         snapshot.forEach(docSnap => {
             tasks.push({ id: docSnap.id, ...docSnap.data() });
         });
-        
+
         tasks.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-        
+
         tasks.forEach(t => {
-            const formattedDeadline = new Date(t.deadline).toLocaleDateString('en-GB') + ' ' + new Date(t.deadline).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            const formattedDeadline = new Date(t.deadline).toLocaleDateString('en-GB') + ' ' + new Date(t.deadline).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             const countdownHtml = `<div class="countdown-timer text-nowrap my-1" data-deadline="${t.deadline}" data-status="${t.status}" id="timer-ceo-${t.id}">...</div>`;
-            const docLink = t.pdfData 
+            const docLink = t.pdfData
                 ? `<br><a href="${t.pdfData}" target="_blank" class="small text-danger"><i class="bi bi-file-earmark-pdf"></i> ${escapeHtml(t.pdfName)}</a>`
                 : '';
-            
+
             let updatesHtml = '';
             if (t.employeeUpdates || t.employeePdfData || t.employeeLink) {
                 updatesHtml = `
@@ -3784,7 +3859,7 @@ export function fetchCEOTasksList() {
                     </div>
                 `;
             }
-            
+
             let statusBadge = '';
             if (t.status === 'complete') {
                 statusBadge = '<span class="badge bg-success"><i class="bi bi-check-circle-fill"></i> Completed</span>';
@@ -3796,7 +3871,7 @@ export function fetchCEOTasksList() {
                     statusBadge = '<span class="badge bg-warning text-dark"><i class="bi bi-clock-history"></i> Pending</span>';
                 }
             }
-            
+
             html += `
                 <tr>
                     <td><strong>${escapeHtml(t.assignedToName)}</strong></td>
@@ -3823,24 +3898,24 @@ let employeeTasksSnapshotUnsubscribe = null;
 export function fetchEmployeeTasksList(emailClean) {
     const tableBody = document.getElementById('employeeTasksListContainer');
     const badgeEl = document.getElementById('taskManagerBadge');
-    
+
     if (!tableBody) return;
-    
+
     if (employeeTasksSnapshotUnsubscribe) {
         employeeTasksSnapshotUnsubscribe();
     }
-    
+
     const q = query(collection(db, "tasks"), where("assignedToEmail", "==", emailClean));
     employeeTasksSnapshotUnsubscribe = onSnapshot(q, (snapshot) => {
         let hasUnseen = false;
         let html = '';
-        
+
         if (snapshot.empty) {
             tableBody.innerHTML = `<div class="text-center py-4 text-muted"><i class="bi bi-journal-check fs-2 mb-2"></i><br>No tasks assigned to you.</div>`;
             if (badgeEl) badgeEl.style.display = 'none';
             return;
         }
-        
+
         const tasks = [];
         snapshot.forEach(docSnap => {
             const data = docSnap.data();
@@ -3849,21 +3924,22 @@ export function fetchEmployeeTasksList(emailClean) {
                 hasUnseen = true;
             }
         });
-        
+
         if (badgeEl) {
             badgeEl.style.display = hasUnseen ? 'inline-block' : 'none';
         }
-        
+
         tasks.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-        
+
         tasks.forEach(t => {
             const countdownHtml = `<div class="countdown-timer text-nowrap my-1" data-deadline="${t.deadline}" data-status="${t.status}" id="timer-emp-${t.id}">...</div>`;
-            const docLink = t.pdfData 
+            const docLink = t.pdfData
                 ? `<a href="${t.pdfData}" target="_blank" class="btn btn-sm btn-outline-danger mt-1 small"><i class="bi bi-file-earmark-pdf"></i> Download Instructions</a>`
                 : '';
-                
+
             const isCompleted = t.status === 'complete';
-            
+            const deadlinePassed = t.deadline ? (new Date() > new Date(t.deadline)) : false;
+
             let submissionHtml = '';
             if (isCompleted) {
                 submissionHtml = `
@@ -3875,6 +3951,13 @@ export function fetchEmployeeTasksList(emailClean) {
                         <button class="btn btn-xs btn-outline-secondary mt-2 px-3 fw-bold" onclick="window.updateTaskStatus('${t.id}', 'pending')">
                             <i class="bi bi-arrow-counterclockwise"></i> Change to Pending
                         </button>
+                    </div>
+                `;
+            } else if (deadlinePassed) {
+                submissionHtml = `
+                    <div class="alert alert-danger p-3 border rounded-3 mt-3 mb-0 text-start">
+                        <h6 class="fw-bold mb-1 text-danger"><i class="bi bi-exclamation-octagon-fill"></i> Deadline Missed</h6>
+                        <p class="small mb-0 text-muted">The deadline was ${new Date(t.deadline).toLocaleString('en-GB')}. You can no longer mark this task as completed or submit work.</p>
                     </div>
                 `;
             } else {
@@ -3903,7 +3986,7 @@ export function fetchEmployeeTasksList(emailClean) {
                     </div>
                 `;
             }
-            
+
             html += `
                 <div class="list-group-item list-group-item-action p-4 border rounded-3 mb-3 text-dark bg-white">
                     <div class="d-flex justify-content-between align-items-start border-bottom pb-2 mb-2">
@@ -3933,7 +4016,7 @@ export async function openEmployeeTaskManager() {
     const user = auth.currentUser;
     if (!user) return;
     const emailClean = user.email.trim().toLowerCase();
-    
+
     try {
         const q = query(collection(db, "tasks"), where("assignedToEmail", "==", emailClean), where("seenByEmployee", "==", false));
         const snap = await getDocs(q);
@@ -3952,10 +4035,10 @@ export async function submitEmployeeWork(taskId, status) {
     const textVal = document.getElementById(`sub-text-${taskId}`)?.value?.trim() || "";
     const linkVal = document.getElementById(`sub-link-${taskId}`)?.value?.trim() || "";
     const pdfInput = document.getElementById(`sub-pdf-${taskId}`);
-    
+
     let pdfData = "";
     let pdfName = "";
-    
+
     if (pdfInput && pdfInput.files.length > 0) {
         const file = pdfInput.files[0];
         pdfName = file.name;
@@ -3965,9 +4048,22 @@ export async function submitEmployeeWork(taskId, status) {
             reader.readAsDataURL(file);
         });
     }
-    
+
     try {
         const taskRef = doc(db, "tasks", taskId);
+        const taskSnap = await getDoc(taskRef);
+        if (taskSnap.exists()) {
+            const taskData = taskSnap.data();
+            if (taskData.deadline) {
+                const deadlineDate = new Date(taskData.deadline);
+                const now = new Date();
+                if (now > deadlineDate) {
+                    alert("The deadline for this task has passed. You can no longer update it to Completed!");
+                    return;
+                }
+            }
+        }
+
         const updates = {
             status: status,
             employeeUpdates: textVal,
@@ -3988,7 +4084,20 @@ window.submitEmployeeWork = submitEmployeeWork;
 
 export async function updateTaskStatus(taskId, status) {
     try {
-        await updateDoc(doc(db, "tasks", taskId), {
+        const taskRef = doc(db, "tasks", taskId);
+        const taskSnap = await getDoc(taskRef);
+        if (taskSnap.exists()) {
+            const taskData = taskSnap.data();
+            if (taskData.deadline && status === 'complete') {
+                const deadlineDate = new Date(taskData.deadline);
+                const now = new Date();
+                if (now > deadlineDate) {
+                    alert("The deadline for this task has passed. You can no longer update it to Completed!");
+                    return;
+                }
+            }
+        }
+        await updateDoc(taskRef, {
             status: status
         });
         alert(`Task status updated to ${status}!`);

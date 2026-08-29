@@ -314,10 +314,16 @@
         });
 
         function goBack() {
-            if (document.referrer.includes('employee.html')) {
-                window.location.href = 'employee.html';
+            if (window.goBackToDashboard) {
+                window.goBackToDashboard();
             } else {
-                window.location.href = 'ceo.html'; // Default to CEO Dashboard
+                if (document.referrer.includes('employee.html')) {
+                    window.location.href = 'employee.html';
+                } else if (document.referrer.includes('ceo.html')) {
+                    window.location.href = 'ceo.html';
+                } else {
+                    window.location.href = 'student.html'; // Default to Student Dashboard
+                }
             }
         }
 

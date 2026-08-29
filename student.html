@@ -633,18 +633,7 @@
                     </div>
                 </div>
 
-                <!-- Support & Hotline Card -->
-                <div class="card-newage border-0 shadow-sm rounded-4 p-4 text-center">
-                    <div class="bg-danger text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3 shadow-sm" style="width: 58px; height: 58px; font-size: 1.6rem;">
-                        <i class="bi bi-headset"></i>
-                    </div>
-                    <h6 class="fw-bold mb-1 dynamic-header-text">Official Candidate Helpline</h6>
-                    <p class="text-muted small mb-3">Our dedicated international desk is available Saturday – Thursday, 10:00 AM – 7:00 PM.</p>
-                    <a href="tel:+8801700000000" class="btn btn-danger btn-sm w-100 fw-bold rounded-3 py-2 mb-2 shadow-sm">
-                        <i class="bi bi-telephone-fill me-1"></i> Call Counselor Hotline
-                    </a>
-                    <div class="text-muted small pt-1"><i class="bi bi-shield-lock-fill text-success me-1"></i> 100% Confidential Support</div>
-                </div>
+
 
             </div>
 
@@ -1221,10 +1210,16 @@
                         createdAt: new Date().toISOString()
                     });
                     // Mark staff notification flags in Firestore
-                    await setDoc(doc(db, 'students', safeStudentEmail), {
+                    const studentDocRef = doc(db, 'students', safeStudentEmail);
+                    const studentDocSnap = await getDoc(studentDocRef);
+                    const docUpdates = {
                         staffHasUnread: true,
                         hasUnreadStudentMessages: true
-                    }, { merge: true });
+                    };
+                    if (!studentDocSnap.exists() || !studentDocSnap.data().createdAt) {
+                        docUpdates.createdAt = serverTimestamp();
+                    }
+                    await setDoc(studentDocRef, docUpdates, { merge: true });
                     chatInput.value = '';
                 } catch (error) {
                     console.error("Chat Send Error:", error);

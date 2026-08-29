@@ -160,14 +160,7 @@
                     <li class="nav-item">
                         <a class="nav-link" href="#" onclick="openUniversitiesModal(); return false;"><i class="bi bi-bank2 me-1 text-danger"></i> Universities</a>
                     </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">Our Services</a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#" onclick="alert('Student Counseling')">Student Counseling</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="alert('Visa guidance')">Visa Processing</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="alert('Scholarship matching')">Scholarship Guidance</a></li>
-                        </ul>
-                    </li>
+
                 </ul>
 
                 <!-- Sign Up / Sign In Options -->
@@ -207,7 +200,7 @@
                                 <i class="bi bi-calendar-event text-danger"></i> Book Appointment
                             </button>
                             <button class="btn hero-btn" data-bs-toggle="modal" data-bs-target="#intakeModal">
-                                <i class="bi bi-mortarboard"></i> September 2026 Intake
+                                <i class="bi bi-mortarboard"></i> Intake
                             </button>
                         </div>
                     </div>
@@ -484,40 +477,7 @@
             </div>
         </section>
 
-        <!-- Our Services Section -->
-        <section id="services" class="py-5 border-bottom">
-            <div class="container py-4">
-                <div class="text-center mb-5">
-                    <div class="text-uppercase text-danger fw-bold mb-2" style="letter-spacing: 1px;">Our Expertise</div>
-                    <h2 class="fw-bold">Services We Offer</h2>
-                    <p class="text-muted">Providing end-to-end guidance to make your global learning aspirations a reality.</p>
-                </div>
-                
-                <div class="row g-4">
-                    <div class="col-md-4">
-                        <div class="card card-newage p-4 text-center">
-                            <div class="fs-1 text-danger mb-3"><i class="bi bi-chat-text"></i></div>
-                            <h5 class="fw-bold">Free Counselor Counseling</h5>
-                            <p class="text-muted small">Personalized assessments aligning academic history with matching course options.</p>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="card card-newage p-4 text-center">
-                            <div class="fs-1 text-danger mb-3"><i class="bi bi-file-earmark-text"></i></div>
-                            <h5 class="fw-bold">Visa Processing Assistance</h5>
-                            <p class="text-muted small">Complete file preparation, financial log verification, and visa mock assessments.</p>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="card card-newage p-4 text-center">
-                            <div class="fs-1 text-danger mb-3"><i class="bi bi-award"></i></div>
-                            <h5 class="fw-bold">Scholarship Search Support</h5>
-                            <p class="text-muted small">Matching profiles against university and government-sponsored grants.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
+
 
     </main>
 
@@ -1160,35 +1120,109 @@
 
     <!-- MODAL 3: Intake Status -->
     <div class="modal fade" id="intakeModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
                 <div class="modal-header bg-dark text-white border-bottom border-danger">
-                    <h5 class="modal-title text-white">🎓 September 2026 Intake Status</h5>
+                    <h5 class="modal-title text-white"><i class="bi bi-mortarboard-fill text-danger me-2"></i>Upcoming Intake Deadlines & Status</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body">
-                    <p class="small text-muted">Applications for Fall / September 2026 admissions are now fully active. Check destination deadlines:</p>
-                    <ul class="list-group list-group-flush small">
-                        <li class="list-group-item d-flex justify-content-between">
-                            <span>🇨🇦 Canada (Universities)</span>
-                            <span class="badge bg-danger">Open - Deadline Feb 15</span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between">
-                            <span>🇬🇧 United Kingdom</span>
-                            <span class="badge bg-warning text-dark">Open - Deadline May 30</span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between">
-                            <span>🇦🇺 Australia (Semester 2)</span>
-                            <span class="badge bg-danger">Open - Deadline March 1</span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between">
-                            <span>🇺🇸 United States</span>
-                            <span class="badge bg-danger">Open - Deadline Jan 15</span>
-                        </li>
-                    </ul>
+                <div class="modal-body" style="max-height: 75vh; overflow-y: auto;">
+                    <p class="small text-muted mb-3">Below are the primary upcoming intakes and deadlines for all 13 premier higher education destinations. Plan ahead to secure admission and ensure timely visa processing.</p>
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover align-middle small mb-0">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Destination</th>
+                                    <th>Upcoming Major Intakes</th>
+                                    <th>Application Deadline</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>🇨🇦 Canada</strong></td>
+                                    <td>Sept (Fall), Jan (Winter), May (Summer)</td>
+                                    <td>Sept 1, 2026 (Winter 2027) / Feb 15, 2027 (Fall 2027)</td>
+                                    <td><span class="badge bg-success">Applications Open</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>🇬🇧 United Kingdom</strong></td>
+                                    <td>Sept/Oct (Major), Jan/Feb (Spring), May</td>
+                                    <td>Oct 30, 2026 (Jan 2027) / June 30, 2027 (Fall 2027)</td>
+                                    <td><span class="badge bg-success">Applications Open</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>🇦🇺 Australia</strong></td>
+                                    <td>Feb/March, July/Aug, Nov</td>
+                                    <td>Nov 30, 2026 (Feb 2027) / April 30, 2027 (July 2027)</td>
+                                    <td><span class="badge bg-success">Applications Open</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>🇺🇸 United States</strong></td>
+                                    <td>Fall (Aug/Sept), Spring (Jan), Summer</td>
+                                    <td>Oct 1, 2026 (Spring 2027) / Jan 15, 2027 (Fall 2027)</td>
+                                    <td><span class="badge bg-warning text-dark">Rolling Admissions</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>🇳🇿 New Zealand</strong></td>
+                                    <td>February, July</td>
+                                    <td>Nov 30, 2026 (Feb 2027) / May 15, 2027 (July 2027)</td>
+                                    <td><span class="badge bg-success">Applications Open</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>🇭🇺 Hungary</strong></td>
+                                    <td>September, February</td>
+                                    <td>Nov 15, 2026 (Feb 2027) / May 15, 2027 (Sept 2027)</td>
+                                    <td><span class="badge bg-success">Applications Open</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>🇲🇹 Malta</strong></td>
+                                    <td>October, February, June/July</td>
+                                    <td>Nov 30, 2026 (Feb 2027) / July 31, 2027 (Oct 2027)</td>
+                                    <td><span class="badge bg-success">Applications Open</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>🇨🇾 Cyprus</strong></td>
+                                    <td>October, February</td>
+                                    <td>Dec 15, 2026 (Feb 2027) / Aug 31, 2027 (Oct 2027)</td>
+                                    <td><span class="badge bg-success">Applications Open</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>🇲🇾 Malaysia</strong></td>
+                                    <td>March, July, October</td>
+                                    <td>Sept 15, 2026 (Oct 2026) / Jan 31, 2027 (March 2027)</td>
+                                    <td><span class="badge bg-success">Applications Open</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>🇱🇹 Lithuania</strong></td>
+                                    <td>September, February</td>
+                                    <td>Nov 30, 2026 (Feb 2027) / June 30, 2027 (Sept 2027)</td>
+                                    <td><span class="badge bg-success">Applications Open</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>🇫🇮 Finland</strong></td>
+                                    <td>August/September</td>
+                                    <td>Sept 15, 2026 (Jan 2027) / Jan 22, 2027 (Fall Joint App)</td>
+                                    <td><span class="badge bg-success">Applications Open</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>🇷🇸 Serbia</strong></td>
+                                    <td>October, February</td>
+                                    <td>Dec 15, 2026 (Feb 2027) / Aug 15, 2027 (Oct 2027)</td>
+                                    <td><span class="badge bg-success">Applications Open</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>🇵🇱 Poland</strong></td>
+                                    <td>October, February</td>
+                                    <td>Nov 30, 2026 (Feb 2027) / July 15, 2027 (Oct 2027)</td>
+                                    <td><span class="badge bg-success">Applications Open</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-newage-dark btn-sm" data-bs-dismiss="modal">Got it</button>
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
