@@ -1,0 +1,61 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isCEO() {
+      return isAuthenticated() && (
+        request.auth.token.role == 'ceo' ||
+        request.auth.token.role == 'admin' ||
+        request.auth.token.email.matches('.*ceo.*') ||
+        request.auth.token.email.matches('.*admin.*')
+      );
+    }
+
+    function isEmployee() {
+      return isAuthenticated() && (
+        request.auth.token.role == 'employee' ||
+        request.auth.token.role == 'counselor' ||
+        isCEO()
+      );
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Student uploaded documents (e.g. passport, certificates, SOP)
+    // Path: /students/{studentId}/{allPaths=**}
+    match /students/{studentId}/{allPaths=**} {
+      // 25 MB max file size, allowed PDF and Images
+      allow read: if isEmployee() || isOwner(studentId);
+      allow write: if (isEmployee() || isOwner(studentId))
+                   && request.resource.size < 25 * 1024 * 1024
+                   && (request.resource.contentType.matches('application/pdf')
+                       || request.resource.contentType.matches('image/.*'));
+      allow delete: if isEmployee();
+    }
+
+    // Counselor & CEO interview prep sheets
+    // Path: /prepSheets/{studentId}/{allPaths=**}
+    match /prepSheets/{studentId}/{allPaths=**} {
+      allow read: if isEmployee() || isOwner(studentId);
+      allow write: if isEmployee()
+                   && request.resource.size < 50 * 1024 * 1024
+                   && request.resource.contentType.matches('application/pdf');
+      allow delete: if isEmployee();
+    }
+
+    // Task instruction PDFs and employee work submissions
+    // Path: /tasks/{taskId}/{allPaths=**}
+    match /tasks/{taskId}/{allPaths=**} {
+      allow read: if isEmployee();
+      allow write: if isEmployee() && request.resource.size < 50 * 1024 * 1024;
+      allow delete: if isCEO();
+    }
+  }
+}
+

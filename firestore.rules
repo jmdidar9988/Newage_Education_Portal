@@ -1,0 +1,133 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions for RBAC enforcement
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Role verification against Firestore /users/{uid} document
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function hasRole(roleName) {
+      return isAuthenticated() && (
+        request.auth.token.role == roleName ||
+        getUserData().role == roleName
+      );
+    }
+
+    function isCEO() {
+      return hasRole('ceo') || hasRole('admin');
+    }
+
+    function isEmployee() {
+      return hasRole('employee') || hasRole('counselor') || isCEO();
+    }
+
+    function isStudent() {
+      return isAuthenticated() && (
+        hasRole('student') ||
+        request.auth.token.email == resource.data.email ||
+        request.auth.token.email == request.resource.data.email
+      );
+    }
+
+    function isOwner(email) {
+      return isAuthenticated() && request.auth.token.email.lower() == email.lower();
+    }
+
+    // --- USERS COLLECTION ---
+    // Users collection contains RBAC metadata (uid -> { role, email, createdAt })
+    match /users/{userId} {
+      // User can read their own profile; CEO and Employee can read user profiles
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isEmployee());
+      // Only CEO can create/assign roles; self-signup can only create 'student' role
+      allow create: if isAuthenticated() && (
+        isCEO() ||
+        (request.auth.uid == userId && request.resource.data.role == 'student')
+      );
+      // Only CEO can update roles or user records
+      allow update, delete: if isCEO();
+    }
+
+    // --- EMPLOYEES COLLECTION ---
+    match /employees/{employeeId} {
+      // Employees and CEO can read employee directories
+      allow read: if isEmployee();
+      // Only CEO can create, update, or remove staff accounts
+      allow create, update, delete: if isCEO();
+    }
+
+    // --- STUDENTS COLLECTION ---
+    match /students/{studentEmail} {
+      // Students can read their own record; CEO and counselors can read all
+      allow read: if isOwner(studentEmail) || isEmployee();
+
+      // Student can create their own initial profile during registration
+      allow create: if isOwner(studentEmail) || isEmployee();
+
+      // Updates:
+      // - Students can update personalInfo, preferences, and documents
+      // - Employees/CEO can update status, assignedCounselor, prepSheets, document verification
+      allow update: if isEmployee() || (
+        isOwner(studentEmail) &&
+        // Prevent student from altering administrative fields
+        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'isApproved', 'assignedCounselor']))
+      );
+
+      // Only CEO can delete a student document
+      allow delete: if isCEO();
+
+      // Nested chat messages collection: /students/{studentEmail}/chatMessages/{messageId}
+      match /chatMessages/{messageId} {
+        allow read: if isOwner(studentEmail) || isEmployee();
+        allow create: if isOwner(studentEmail) || isEmployee();
+        // Allow deletion by CEO or counselor
+        allow delete: if isEmployee();
+      }
+    }
+
+    // --- TASKS COLLECTION ---
+    match /tasks/{taskId} {
+      // CEO can read all; Employees can read tasks assigned to them
+      allow read: if isCEO() || (
+        isAuthenticated() &&
+        (resource.data.assignedToEmail.lower() == request.auth.token.email.lower() || isEmployee())
+      );
+      // Only CEO can create tasks
+      allow create: if isCEO();
+      // Employee can update status & work submission if deadline hasn't passed
+      allow update: if isCEO() || (
+        isAuthenticated() &&
+        resource.data.assignedToEmail.lower() == request.auth.token.email.lower() &&
+        (resource.data.deadline == null || request.time < timestamp.date(resource.data.deadline))
+      );
+      // Only CEO can delete tasks
+      allow delete: if isCEO();
+    }
+
+    // --- NOTIFICATIONS & FCM TOKENS ---
+    match /fcmTokens/{userId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // --- PAYMENTS COLLECTION ---
+    match /payments/{paymentId} {
+      allow read: if isAuthenticated() && (
+        resource.data.studentEmail.lower() == request.auth.token.email.lower() || isEmployee()
+      );
+      // Server Cloud Functions handle write operations
+      allow write: if isCEO();
+    }
+
+    // --- AUDIT LOGS ---
+    match /auditLogs/{logId} {
+      allow read: if isCEO();
+      allow write: if isEmployee();
+    }
+  }
+}
+

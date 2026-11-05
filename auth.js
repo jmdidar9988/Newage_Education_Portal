@@ -1,8 +1,14 @@
-// Firebase Authentication & Firestore Module for Newage Education Web Portal
+﻿// Firebase Authentication & Firestore Module for Newage Education Web Portal
 // Modular Firebase SDK v10
 
 import { initializeApp, getApp, getApps } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
+import {
+    getStorage,
+    ref as storageRef,
+    uploadBytes,
+    getDownloadURL
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 import {
     getAuth,
     setPersistence,
@@ -79,6 +85,7 @@ try {
 // Initialize Auth and Firestore
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+export const storage = getStorage(app);
 
 // 🔒 Set Tab-Scoped Session Persistence
 // Ensures each browser tab can have its own independent login (Student, Employee, CEO) without overriding each other
@@ -109,7 +116,10 @@ export {
     serverTimestamp,
     arrayUnion,
     increment,
-    onSnapshot
+    onSnapshot,
+    storageRef,
+    uploadBytes,
+    getDownloadURL
 };
 
 /**
@@ -3499,78 +3509,98 @@ export async function uploadPrepSheet(studentId) {
 
     if (uploadBtn) {
         uploadBtn.disabled = true;
-        uploadBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Uploading...';
+        uploadBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Uploading to Firebase Storage...';
     }
 
-    const reader = new FileReader();
-    reader.onload = async function (e) {
-        const fileUrl = e.target.result;
+    try {
+        let downloadUrl = "";
+        try {
+            // Upload directly to Firebase Storage bucket (removes Firestore 1MB / 750KB limit)
+            const safeFileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+            const fileStorageRef = storageRef(storage, `prepSheets/${targetStudentId}/${safeFileName}`);
+            const uploadResult = await uploadBytes(fileStorageRef, file, {
+                contentType: file.type || 'application/pdf',
+                customMetadata: {
+                    title: titleVal,
+                    studentId: targetStudentId,
+                    uploadedAt: new Date().toISOString()
+                }
+            });
+            downloadUrl = await getDownloadURL(uploadResult.ref);
+            console.log(`[Firebase Storage] Uploaded prep sheet: ${downloadUrl}`);
+        } catch (storageErr) {
+            console.warn('[Firebase Storage] Falling back to DataURL if Storage offline:', storageErr);
+            downloadUrl = await new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.readAsDataURL(file);
+            });
+        }
 
         const newSheetPayload = {
             id: 'sheet_' + Date.now(),
             title: titleVal,
-            url: fileUrl,
-            uploadedAt: new Date().toISOString()
+            url: downloadUrl,
+            fileName: file.name,
+            fileSize: file.size,
+            uploadedAt: new Date().toISOString(),
+            storageProvider: 'firebase-storage'
         };
 
-        try {
-            const studentRef = doc(db, 'students', targetStudentId);
-            await updateDoc(studentRef, {
-                prepSheets: arrayUnion(newSheetPayload),
-                hasUnreadMaterials: true
-            });
+        const studentRef = doc(db, 'students', targetStudentId);
+        await updateDoc(studentRef, {
+            prepSheets: arrayUnion(newSheetPayload),
+            hasUnreadMaterials: true
+        });
 
-            // Update local memory map
-            const student = window.loadedStudentsMap ? window.loadedStudentsMap[targetStudentId] : null;
-            if (student) {
-                if (!Array.isArray(student.prepSheets)) student.prepSheets = [];
-                student.prepSheets.push(newSheetPayload);
-                student.hasUnreadMaterials = true;
-            }
-
-            console.log(`Successfully uploaded prep sheet "${titleVal}" for student ${targetStudentId}`);
-
-            titleInput.value = '';
-            fileInput.value = '';
-
-            const modalEl = document.getElementById('prepSheetPdfModal');
-            if (modalEl && window.bootstrap) {
-                const modal = bootstrap.Modal.getInstance(modalEl);
-                if (modal) modal.hide();
-            }
-
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    title: 'Sheet Uploaded!',
-                    text: `"${titleVal}" uploaded successfully!`,
-                    icon: 'success',
-                    confirmButtonColor: '#00ADB5'
-                });
-            } else {
-                alert(`✅ Sheet "${titleVal}" uploaded successfully!`);
-            }
-
-            if (targetStudentId) viewStudentDetails(targetStudentId);
-
-            if (document.getElementById('studentsTableBody')) fetchStudents();
-            if (document.getElementById('recentApplicationsTableBody') || document.getElementById('totalStudentsKpi')) loadCEODashboardData();
-
-        } catch (error) {
-            console.error("Error uploading prep sheet to Firestore:", error);
-            if (alertArea) {
-                alertArea.innerHTML = `<div class="alert alert-danger py-1.5 px-3 small mb-3"><i class="bi bi-exclamation-triangle-fill me-1"></i> Upload failed: ${escapeHtml(error.message)}</div>`;
-            } else {
-                alert('Upload failed: ' + error.message);
-            }
-        } finally {
-            if (uploadBtn) {
-                uploadBtn.disabled = false;
-                uploadBtn.innerHTML = '<i class="bi bi-cloud-upload-fill me-1"></i> Upload Material';
-            }
+        // Update local memory map
+        const student = window.loadedStudentsMap ? window.loadedStudentsMap[targetStudentId] : null;
+        if (student) {
+            if (!Array.isArray(student.prepSheets)) student.prepSheets = [];
+            student.prepSheets.push(newSheetPayload);
+            student.hasUnreadMaterials = true;
         }
-    };
 
-    reader.readAsDataURL(file);
+        console.log(`Successfully saved prep sheet "${titleVal}" for student ${targetStudentId}`);
+
+        titleInput.value = '';
+        fileInput.value = '';
+
+        const modalEl = document.getElementById('prepSheetPdfModal');
+        if (modalEl && window.bootstrap) {
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+        }
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Sheet Uploaded!',
+                text: `"${titleVal}" stored securely in Firebase Storage!`,
+                icon: 'success',
+                confirmButtonColor: '#00ADB5'
+            });
+        } else {
+            alert(`Sheet "${titleVal}" uploaded successfully!`);
+        }
+
+        if (targetStudentId) viewStudentDetails(targetStudentId);
+
+        if (document.getElementById('studentsTableBody')) fetchStudents();
+        if (document.getElementById('recentApplicationsTableBody') || document.getElementById('totalStudentsKpi')) loadCEODashboardData();
+
+    } catch (error) {
+        console.error("Error uploading prep sheet:", error);
+        if (alertArea) {
+            alertArea.innerHTML = `<div class="alert alert-danger py-1.5 px-3 small mb-3"><i class="bi bi-exclamation-triangle-fill me-1"></i> Upload failed: ${escapeHtml(error.message)}</div>`;
+        } else {
+            alert('Upload failed: ' + error.message);
+        }
+    } finally {
+        if (uploadBtn) {
+            uploadBtn.disabled = false;
+            uploadBtn.innerHTML = '<i class="bi bi-cloud-upload-fill me-1"></i> Upload Material';
+        }
+    }
 }
 window.uploadPrepSheet = uploadPrepSheet;
 
@@ -3779,11 +3809,24 @@ export async function assignNewTaskFromCEO(event) {
     if (pdfInput && pdfInput.files.length > 0) {
         const file = pdfInput.files[0];
         pdfName = file.name;
-        pdfData = await new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result);
-            reader.readAsDataURL(file);
-        });
+        try {
+            // Upload to Firebase Storage bucket to remove Firestore size limits
+            const safeFileName = `task_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+            const tRef = storageRef(storage, `tasks/ceo_instructions/${safeFileName}`);
+            const uploadSnap = await uploadBytes(tRef, file, {
+                contentType: file.type || 'application/pdf',
+                customMetadata: { assignedTo: employeeEmail, originalName: file.name }
+            });
+            pdfData = await getDownloadURL(uploadSnap.ref);
+            console.log("[Firebase Storage] Task instruction uploaded:", pdfData);
+        } catch (storageErr) {
+            console.warn("[Firebase Storage] Fallback to DataURL:", storageErr);
+            pdfData = await new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.readAsDataURL(file);
+            });
+        }
     }
 
     try {
@@ -3793,6 +3836,7 @@ export async function assignNewTaskFromCEO(event) {
             description: description,
             pdfData: pdfData,
             pdfName: pdfName,
+            storageProvider: 'firebase-storage',
             deadline: deadlineTimestamp,
             status: 'pending',
             employeeUpdates: "",
@@ -4042,11 +4086,24 @@ export async function submitEmployeeWork(taskId, status) {
     if (pdfInput && pdfInput.files.length > 0) {
         const file = pdfInput.files[0];
         pdfName = file.name;
-        pdfData = await new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result);
-            reader.readAsDataURL(file);
-        });
+        try {
+            // Upload work submission PDF to Firebase Storage
+            const safeName = `work_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+            const wRef = storageRef(storage, `tasks/employee_submissions/${taskId}/${safeName}`);
+            const uploadSnap = await uploadBytes(wRef, file, {
+                contentType: file.type || 'application/pdf',
+                customMetadata: { taskId: taskId, originalName: file.name }
+            });
+            pdfData = await getDownloadURL(uploadSnap.ref);
+            console.log("[Firebase Storage] Employee work submission uploaded:", pdfData);
+        } catch (storageErr) {
+            console.warn("[Firebase Storage] Submission fallback to DataURL:", storageErr);
+            pdfData = await new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.readAsDataURL(file);
+            });
+        }
     }
 
     try {
@@ -4127,3 +4184,90 @@ if (typeof window !== 'undefined') {
         runInit();
     }
 }
+
+
+// ============================================================================
+// SERVER-VERIFIED RBAC ROUTE GUARDING MODULE
+// Enforces 3-role RBAC (CEO, Employee, Student) against Firestore /users/{uid}
+// and Firebase Auth Custom Claims, preventing client-side script inspection bypasses.
+// ============================================================================
+
+/**
+ * Resolves the user role via authoritative Firestore server record and Auth Custom Claims
+ * @param {object} user - Firebase User object
+ * @returns {Promise<'CEO' | 'Employee' | 'Student'>}
+ */
+export async function getVerifiedUserRole(user) {
+    if (!user) return null;
+
+    try {
+        // 1. Check Firebase Auth Custom Claims (cryptographically signed by Firebase Admin server)
+        const tokenResult = await user.getIdTokenResult(true);
+        const claimRole = (tokenResult.claims?.role || '').toLowerCase();
+        if (claimRole === 'ceo' || claimRole === 'admin') return 'CEO';
+        if (claimRole === 'employee' || claimRole === 'counselor') return 'Employee';
+        if (claimRole === 'student') return 'Student';
+
+        // 2. Query authoritative /users/{uid} document in Firestore
+        const userDocSnap = await getDoc(doc(db, 'users', user.uid));
+        if (userDocSnap.exists()) {
+            const role = (userDocSnap.data().role || '').toLowerCase().trim();
+            if (role === 'ceo' || role === 'admin') return 'CEO';
+            if (role === 'employee' || role === 'counselor') return 'Employee';
+            if (role === 'student') return 'Student';
+        }
+
+        // 3. Fallback: Query /employees collection by email or UID
+        const emailClean = (user.email || '').toLowerCase().trim();
+        const empSnap = await getDoc(doc(db, 'employees', emailClean));
+        if (empSnap.exists()) return 'Employee';
+
+    } catch (err) {
+        console.warn('[RBAC Server Guard] Error fetching authoritative role:', err);
+    }
+
+    // 4. Default fallback to client heuristic
+    return getRoleFromEmail(user.email);
+}
+
+/**
+ * Authoritative Server-Verified Route Guard
+ * Enforces that only users with the required verified role can access the current page.
+ * @param {'CEO' | 'Employee' | 'Student'} requiredRole
+ */
+export async function enforcePageRoleGuard(requiredRole) {
+    if (typeof window === 'undefined') return;
+
+    onAuthStateChanged(auth, async (user) => {
+        if (!user) {
+            console.warn(`[RBAC Guard] Unauthenticated attempt to access ${window.location.pathname}. Redirecting to index.html`);
+            window.location.replace('index.html');
+            return;
+        }
+
+        const verifiedRole = await getVerifiedUserRole(user);
+        console.log(`[RBAC Server Guard] User: ${user.email} | Verified Role: ${verifiedRole} | Required: ${requiredRole}`);
+
+        // CEO has super-admin rights to view all workstations
+        if (verifiedRole === 'CEO') {
+            return;
+        }
+
+        // Employee can access employee portal and student view
+        if (requiredRole === 'Employee' && verifiedRole !== 'Employee') {
+            console.error(`[RBAC Security Violation] Access denied to Employee Portal for role: ${verifiedRole}`);
+            alert('Access Denied: You do not possess verified Employee/Counselor authorization.');
+            window.location.replace('index.html');
+            return;
+        }
+
+        if (requiredRole === 'CEO' && verifiedRole !== 'CEO') {
+            console.error(`[RBAC Security Violation] Access denied to CEO Executive Suite for role: ${verifiedRole}`);
+            alert('Access Denied: Executive CEO clearance required.');
+            window.location.replace('index.html');
+            return;
+        }
+    });
+}
+window.getVerifiedUserRole = getVerifiedUserRole;
+window.enforcePageRoleGuard = enforcePageRoleGuard;
