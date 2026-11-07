@@ -152,13 +152,15 @@ function updatePushBadgeUI(isSubscribed) {
 
     if (isSubscribed) {
         container.innerHTML = `
-            <button class="btn btn-sm btn-outline-light rounded-pill px-3 py-1" onclick="window.triggerTestPushNotification && window.triggerTestPushNotification()" title="Click to test live OS push notification">
-                <i class="bi bi-bell-fill text-warning me-1"></i> <span class="d-none d-sm-inline">Push: </span>Active
+            <button class="dropdown-item d-flex align-items-center gap-3 py-2 px-3 text-dark w-100 text-start" onclick="window.triggerTestPushNotification && window.triggerTestPushNotification()" title="Click to test live OS push notification">
+                <i class="bi bi-bell-fill text-warning fs-5"></i>
+                <span class="fw-semibold">Alerts: <span class="badge bg-success-subtle text-success border border-success ms-1">Active</span></span>
             </button>`;
     } else {
         container.innerHTML = `
-            <button id="btnEnablePush" class="btn btn-sm btn-outline-warning rounded-pill px-3 py-1 fw-semibold" onclick="window.handleRequestPushPermission && window.handleRequestPushPermission()" title="Enable push notifications for instant alerts">
-                <i class="bi bi-bell-fill me-1"></i> Enable Alerts
+            <button id="btnEnablePush" class="dropdown-item d-flex align-items-center gap-3 py-2 px-3 text-dark w-100 text-start" onclick="window.handleRequestPushPermission && window.handleRequestPushPermission()" title="Enable push notifications for instant alerts">
+                <i class="bi bi-bell-fill text-warning fs-5"></i>
+                <span class="fw-semibold">Enable Alerts</span>
             </button>`;
     }
 }

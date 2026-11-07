@@ -28,56 +28,89 @@
                 </div>
                 <span class="portal-badge">Employee Portal</span>
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
-                <ul class="navbar-nav align-items-center">
-                    <li class="nav-item me-2">
-                        <a class="btn btn-outline-light btn-sm rounded-pill px-3 py-1 fw-semibold" href="index.html"
-                            title="Go to Home Page">
-                            <i class="bi bi-house-door-fill me-1 text-danger"></i> Home
+            <!-- 3-Line Hamburger Menu Dropdown (All Options Bundled) -->
+            <div class="dropdown ms-auto">
+                <button class="portal-menu-btn text-white" 
+                        type="button" 
+                        id="portalMenuDropdown" 
+                        data-bs-toggle="dropdown" 
+                        aria-expanded="false" 
+                        title="Main Menu">
+                    <i class="bi bi-list fs-2"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end portal-menu-dropdown animate-fade-in shadow-lg" 
+                    aria-labelledby="portalMenuDropdown">
+                    
+                    <!-- Staff ID / Identity Header -->
+                    <li class="px-3 py-2 border-bottom mb-2 bg-light rounded-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="bg-warning text-dark rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px; font-size: 1.15rem;">
+                                <i class="bi bi-person-workspace"></i>
+                            </div>
+                            <div class="overflow-hidden">
+                                <small class="text-muted d-block" style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700;">Counselor ID</small>
+                                <span class="fw-bold text-dark text-truncate d-block" style="font-size: 0.88rem;">
+                                    <span id="navEmployeeName">Counselor</span>
+                                </span>
+                            </div>
+                        </div>
+                    </li>
+
+                    <!-- Home Button -->
+                    <li>
+                        <a class="dropdown-item d-flex align-items-center gap-3 py-2 px-3 text-dark" href="index.html">
+                            <i class="bi bi-house-door-fill text-danger fs-5"></i>
+                            <span class="fw-semibold">Home</span>
                         </a>
                     </li>
-                    <li class="nav-item me-2">
-                        <button class="btn btn-outline-light btn-sm rounded-3 px-3 py-1.5 fw-semibold position-relative"
-                            id="btnTaskManager" data-bs-toggle="modal" data-bs-target="#taskManagerModal"
-                            onclick="window.openEmployeeTaskManager && window.openEmployeeTaskManager()">
-                            <i class="bi bi-clipboard-check me-1"></i> Task Manager
-                            <span
-                                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                                id="taskManagerBadge" style="display: none;">
-                                New Task Assigned
-                            </span>
+
+                    <!-- Task Manager -->
+                    <li>
+                        <button class="dropdown-item d-flex align-items-center gap-3 py-2 px-3 text-dark w-100 text-start position-relative" 
+                                id="btnTaskManager" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#taskManagerModal"
+                                onclick="window.openEmployeeTaskManager && window.openEmployeeTaskManager()">
+                            <i class="bi bi-clipboard-check text-primary fs-5"></i>
+                            <span class="fw-semibold">Task Manager</span>
+                            <span class="badge rounded-pill bg-danger ms-auto" id="taskManagerBadge" style="display: none;">New</span>
                         </button>
                     </li>
-                    <li class="nav-item me-2" id="navChatNotificationItem" style="display: none;">
-                        <button class="btn btn-danger btn-sm rounded-3 px-3 py-1.5 fw-semibold"
-                            onclick="window.openChatForLatestUnread && window.openChatForLatestUnread()"
-                            title="Open Chat with candidate who sent a new message">
-                            <i class="bi bi-chat-left-dots-fill me-1"></i> New Message
+
+                    <!-- Chat Notification -->
+                    <li id="navChatNotificationItem" style="display: none;">
+                        <button class="dropdown-item d-flex align-items-center gap-3 py-2 px-3 text-danger w-100 text-start"
+                                onclick="window.openChatForLatestUnread && window.openChatForLatestUnread()">
+                            <i class="bi bi-chat-left-dots-fill text-danger fs-5"></i>
+                            <span class="fw-semibold">New Message</span>
                         </button>
                     </li>
-                    <li class="nav-item me-2" id="navPushNotificationItem">
-                        <button id="btnEnablePush" class="btn btn-sm btn-outline-warning rounded-pill px-3 py-1 fw-semibold" onclick="window.handleRequestPushPermission && window.handleRequestPushPermission()" title="Enable push notifications for instant alerts">
-                            <i class="bi bi-bell-fill me-1"></i> Alerts
+
+                    <!-- Push Alerts -->
+                    <li id="navPushNotificationItem">
+                        <button id="btnEnablePush" class="dropdown-item d-flex align-items-center gap-3 py-2 px-3 text-dark w-100 text-start" onclick="window.handleRequestPushPermission && window.handleRequestPushPermission()">
+                            <i class="bi bi-bell-fill text-warning fs-5"></i>
+                            <span class="fw-semibold">Push Notifications</span>
                         </button>
                     </li>
-                    <li class="nav-item me-3">
-                        <button class="btn btn-sm btn-outline-light rounded-circle px-2 py-1 me-1"
-                            onclick="toggleTheme()" title="Toggle Dark/Light Theme">
-                            <i class="themeToggleIcon bi bi-sun-fill text-warning"></i>
+
+                    <!-- Theme Toggle -->
+                    <li>
+                        <button class="dropdown-item d-flex align-items-center gap-3 py-2 px-3 text-dark w-100 text-start" onclick="toggleTheme()">
+                            <i class="themeToggleIcon bi bi-sun-fill text-warning fs-5"></i>
+                            <span class="fw-semibold">Toggle Theme</span>
                         </button>
                     </li>
-                    <li class="nav-item me-3">
-                        <span class="text-white-50"><i class="bi bi-person-workspace me-1"></i> Welcome, <span
-                                id="navEmployeeName">Counselor</span></span>
-                    </li>
-                    <li class="nav-item">
-                        <a class="btn btn-newage-outline py-1 px-3 btn-sm" href="#"
-                            onclick="window.handleLogout && window.handleLogout(event)">
-                            <i class="bi bi-box-arrow-right me-1"></i> Logout
-                        </a>
+
+                    <!-- Divider -->
+                    <li><hr class="dropdown-divider my-2"></li>
+
+                    <!-- Logout Button -->
+                    <li>
+                        <button class="dropdown-item d-flex align-items-center gap-3 py-2 px-3 text-danger fw-bold w-100 text-start" onclick="window.handleLogout && window.handleLogout(event)">
+                            <i class="bi bi-box-arrow-right fs-5 text-danger"></i>
+                            <span>Logout</span>
+                        </button>
                     </li>
                 </ul>
             </div>

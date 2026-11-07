@@ -1210,16 +1210,69 @@ export async function updateHomeNavbarAuthUI(user) {
     }
 
     authContainer.innerHTML = `
-        <button class="btn btn-sm btn-outline-light rounded-circle px-2 py-1 flex-shrink-0" onclick="toggleTheme()" title="Toggle Dark/Light Theme">
-            <i class="themeToggleIcon bi bi-sun-fill text-warning"></i>
-        </button>
-        ${roleBadge}
-        <a href="${portalUrl}" class="btn btn-apply-now pulse-glow-button px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1 shadow-sm flex-shrink-0" style="font-size: 0.85rem;" title="Return to your Portal Dashboard">
-            <i class="bi ${profileIcon}"></i> ${profileBtnLabel}
-        </a>
-        <button onclick="handleLogout(event)" class="btn btn-outline-danger px-2.5 py-1.5 fw-semibold btn-sm d-inline-flex align-items-center gap-1 shadow-sm flex-shrink-0" style="font-size: 0.85rem;" title="Sign Out">
-            <i class="bi bi-box-arrow-right"></i> Logout
-        </button>
+        <!-- 3-Line Hamburger Menu Dropdown (All Options Bundled) -->
+        <div class="dropdown">
+            <button class="portal-menu-btn d-flex align-items-center justify-content-center" 
+                    type="button" 
+                    id="homePortalMenuDropdown" 
+                    data-bs-toggle="dropdown" 
+                    aria-expanded="false" 
+                    style="width: 44px; height: 44px; background: rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.15); border-radius: 12px; color: #0f172a !important;"
+                    title="Main Menu">
+                <i class="bi bi-list fs-2 text-dark"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end portal-menu-dropdown animate-fade-in shadow-lg" 
+                aria-labelledby="homePortalMenuDropdown">
+                
+                <!-- Account Identity Header -->
+                <li class="px-3 py-2 border-bottom mb-2 bg-light rounded-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="bg-danger text-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px; font-size: 1.15rem;">
+                            <i class="bi bi-person-fill"></i>
+                        </div>
+                        <div class="overflow-hidden">
+                            <small class="text-muted d-block" style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700;">Account (${role})</small>
+                            <span class="fw-bold text-dark text-truncate d-block" style="font-size: 0.88rem;">${escapeHtml(resolvedName)}</span>
+                        </div>
+                    </div>
+                </li>
+
+                <!-- Home Button -->
+                <li>
+                    <a class="dropdown-item d-flex align-items-center gap-3 py-2 px-3 text-dark" href="index.html">
+                        <i class="bi bi-house-door-fill text-danger fs-5"></i>
+                        <span class="fw-semibold">Home</span>
+                    </a>
+                </li>
+
+                <!-- My Profile / Dashboard Button -->
+                <li>
+                    <a class="dropdown-item d-flex align-items-center gap-3 py-2 px-3 text-dark" href="${portalUrl}">
+                        <i class="bi ${profileIcon} text-primary fs-5"></i>
+                        <span class="fw-semibold">${profileBtnLabel} (${role} Portal)</span>
+                    </a>
+                </li>
+
+                <!-- Theme Toggle -->
+                <li>
+                    <button class="dropdown-item d-flex align-items-center gap-3 py-2 px-3 text-dark w-100 text-start" onclick="toggleTheme()">
+                        <i class="themeToggleIcon bi bi-sun-fill text-warning fs-5"></i>
+                        <span class="fw-semibold">Toggle Theme</span>
+                    </button>
+                </li>
+
+                <!-- Divider -->
+                <li><hr class="dropdown-divider my-2"></li>
+
+                <!-- Logout Button -->
+                <li>
+                    <button class="dropdown-item d-flex align-items-center gap-3 py-2 px-3 text-danger fw-bold w-100 text-start" onclick="handleLogout(event)">
+                        <i class="bi bi-box-arrow-right fs-5 text-danger"></i>
+                        <span>Logout</span>
+                    </button>
+                </li>
+            </ul>
+        </div>
     `;
     initThemeToggle();
 }

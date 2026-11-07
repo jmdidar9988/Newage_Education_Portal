@@ -1692,3 +1692,89 @@ select.form-select option,
     transition: all 0.2s ease-in-out;
 }
 
+/* ==========================================================================
+   3-LINE (HAMBURGER) NAVBAR PORTAL DROPDOWN MENU
+   ========================================================================== */
+.portal-menu-btn {
+    width: 44px;
+    height: 44px;
+    background: rgba(255, 255, 255, 0.14) !important;
+    border: 1px solid rgba(255, 255, 255, 0.28) !important;
+    border-radius: 12px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer;
+    color: #ffffff !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.portal-menu-btn:hover,
+.portal-menu-btn:focus,
+.portal-menu-btn[aria-expanded="true"] {
+    background: rgba(255, 255, 255, 0.28) !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    transform: scale(1.05);
+}
+
+.portal-menu-dropdown {
+    min-width: 280px !important;
+    border-radius: 16px !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.18) !important;
+    border-top: 4px solid var(--ne-accent-red, #E63946) !important;
+    padding: 0.65rem !important;
+    background-color: #ffffff !important;
+    animation: fadeInDown 0.2s ease-out;
+}
+
+[data-bs-theme="dark"] .portal-menu-dropdown,
+[data-theme="dark"] .portal-menu-dropdown {
+    background-color: #1e293b !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-top: 4px solid var(--ne-accent-red, #E63946) !important;
+}
+
+[data-bs-theme="dark"] .portal-menu-dropdown .dropdown-item,
+[data-theme="dark"] .portal-menu-dropdown .dropdown-item {
+    color: #f1f5f9 !important;
+}
+
+[data-bs-theme="dark"] .portal-menu-dropdown .bg-light,
+[data-theme="dark"] .portal-menu-dropdown .bg-light {
+    background-color: #0f172a !important;
+}
+
+[data-bs-theme="dark"] .portal-menu-dropdown #navStudentId,
+[data-theme="dark"] .portal-menu-dropdown #navEmployeeName,
+[data-theme="dark"] .portal-menu-dropdown #navCeoName {
+    color: #f8fafc !important;
+}
+
+.portal-menu-dropdown .dropdown-item {
+    border-radius: 10px !important;
+    padding: 0.65rem 0.95rem !important;
+    font-weight: 500;
+    font-size: 0.92rem;
+    transition: all 0.15s ease-in-out;
+    cursor: pointer;
+}
+
+.portal-menu-dropdown .dropdown-item:hover {
+    background-color: #f1f5f9;
+    transform: translateX(3px);
+}
+
+[data-bs-theme="dark"] .portal-menu-dropdown .dropdown-item:hover,
+[data-theme="dark"] .portal-menu-dropdown .dropdown-item:hover {
+    background-color: #334155 !important;
+}
+
+#navPushNotificationItem button {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+
