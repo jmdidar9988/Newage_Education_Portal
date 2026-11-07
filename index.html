@@ -2416,15 +2416,10 @@
         function getRoleFromEmail(email) {
             if (!email) return 'Student';
             const lower = email.toLowerCase().trim();
-            if (lower.includes('ceo') || lower.includes('admin') || lower.includes('chief') || lower.includes('boss')) {
-                return 'CEO';
-            } else if (lower.includes('employee') || lower.includes('emp') || lower.includes('counselor') || lower.includes('counsellor') || lower.includes('staff') || lower.includes('agent')) {
-                return 'Employee';
-            } else {
-                return 'Student';
-            }
+            if (lower === 'ceo@newage.com') return 'CEO';
+            // Strict Server-Enforced RBAC: Roles are authoritatively verified server-side
+            return 'Student';
         }
-
         function updateDetectedRoleUI() {
             const email = document.getElementById('emailInput')?.value || '';
             const role = getRoleFromEmail(email);

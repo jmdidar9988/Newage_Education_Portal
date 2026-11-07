@@ -43,6 +43,11 @@
                             <i class="bi bi-chat-left-dots-fill me-1"></i> New Message
                         </button>
                     </li>
+                    <li class="nav-item me-2" id="navPushNotificationItem">
+                        <button id="btnEnablePush" class="btn btn-sm btn-outline-warning rounded-pill px-3 py-1 fw-semibold" onclick="window.handleRequestPushPermission && window.handleRequestPushPermission()" title="Enable push notifications for instant alerts">
+                            <i class="bi bi-bell-fill me-1"></i> Alerts
+                        </button>
+                    </li>
                     <li class="nav-item me-3">
                         <button class="btn btn-sm btn-outline-light rounded-circle px-2 py-1 me-1" onclick="toggleTheme()" title="Toggle Dark/Light Theme">
                             <i class="themeToggleIcon bi bi-sun-fill text-warning"></i>
@@ -183,8 +188,8 @@
                                 <tbody id="recentApplicationsTableBody">
                                     <tr>
                                         <td colspan="6" class="text-center py-4 text-muted">
-                                            <span class="spinner-border spinner-border-sm text-accent me-2" role="status" aria-hidden="true"></span>
-                                            Fetching recent student records from Firestore...
+                                            <div class="spinner-grow spinner-grow-sm text-accent opacity-75 me-2" role="status"></div>
+                                            <span>Synchronizing candidate records...</span>
                                         </td>
                                     </tr>
                                 </tbody>

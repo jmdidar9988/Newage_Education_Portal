@@ -58,6 +58,11 @@
                             <i class="bi bi-chat-left-dots-fill me-1"></i> New Message
                         </button>
                     </li>
+                    <li class="nav-item me-2" id="navPushNotificationItem">
+                        <button id="btnEnablePush" class="btn btn-sm btn-outline-warning rounded-pill px-3 py-1 fw-semibold" onclick="window.handleRequestPushPermission && window.handleRequestPushPermission()" title="Enable push notifications for instant alerts">
+                            <i class="bi bi-bell-fill me-1"></i> Alerts
+                        </button>
+                    </li>
                     <li class="nav-item me-3">
                         <button class="btn btn-sm btn-outline-light rounded-circle px-2 py-1 me-1"
                             onclick="toggleTheme()" title="Toggle Dark/Light Theme">
@@ -145,9 +150,8 @@
                         <tbody id="studentsTableBody">
                             <tr>
                                 <td colspan="6" class="text-center py-4 text-muted">
-                                    <span class="spinner-border spinner-border-sm text-danger me-2" role="status"
-                                        aria-hidden="true"></span>
-                                    Loading student pipeline records from Firestore...
+                                    <div class="spinner-grow spinner-grow-sm text-danger opacity-75 me-2" role="status"></div>
+                                    <span>Synchronizing student records...</span>
                                 </td>
                             </tr>
                         </tbody>
@@ -156,7 +160,7 @@
             </div>
             <div
                 class="card-footer bg-light py-2 px-4 d-flex justify-content-between align-items-center rounded-bottom-4 small text-muted">
-                <span><i class="bi bi-info-circle me-1 text-primary"></i> Real-time sync enabled with Firestore
+                <span><i class="bi bi-shield-check me-1 text-success"></i> Real-time live synchronization active
                     database</span>
                 <span>Sort: Most Recent Communication First</span>
             </div>

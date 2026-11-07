@@ -16,7 +16,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging();
 
-// Handle background messages
+// Handle background messages pushed from Firebase Cloud Messaging
 messaging.onBackgroundMessage((payload) => {
     console.log('[firebase-messaging-sw.js] Received background notification:', payload);
 
@@ -38,6 +38,29 @@ messaging.onBackgroundMessage((payload) => {
     };
 
     self.registration.showNotification(title, options);
+});
+
+// Listen for messages from client windows to dispatch test push notifications
+self.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'TEST_PUSH') {
+        const title = event.data.title || '🔔 Newage Portal Push Alert';
+        const options = {
+            body: event.data.body || 'Offline push notification service worker is fully active and listening.',
+            icon: '/logo.png',
+            badge: '/logo.png',
+            tag: 'test-push',
+            vibrate: [200, 100, 200],
+            data: {
+                url: event.data.url || '/student.html',
+                timestamp: Date.now()
+            },
+            actions: [
+                { action: 'open', title: 'Open Portal' },
+                { action: 'dismiss', title: 'Dismiss' }
+            ]
+        };
+        self.registration.showNotification(title, options);
+    }
 });
 
 // Handle notification click to navigate to the correct portal page
@@ -63,4 +86,3 @@ self.addEventListener('notificationclick', (event) => {
         })
     );
 });
-

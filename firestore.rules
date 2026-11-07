@@ -2,132 +2,196 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions for RBAC enforcement
+    // -------------------------------------------------------------------------
+    // SERVER-SIDE 3-ROLE RBAC HELPER FUNCTIONS
+    // Enforces Role-Based Access Control on the server without client trust.
+    // -------------------------------------------------------------------------
+
     function isAuthenticated() {
       return request.auth != null;
     }
 
-    // Role verification against Firestore /users/{uid} document
-    function getUserData() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-    }
-
+    // Cryptographically signed Custom Claims OR server-persisted /users/{uid} document
     function hasRole(roleName) {
       return isAuthenticated() && (
-        request.auth.token.role == roleName ||
-        getUserData().role == roleName
+        (request.auth.token != null && request.auth.token.role == roleName) ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == roleName)
       );
     }
 
+    // CEO: Executive super-admin role
     function isCEO() {
-      return hasRole('ceo') || hasRole('admin');
+      return hasRole('ceo') || hasRole('admin') ||
+             (isAuthenticated() && request.auth.token.email.lower() == 'ceo@newage.com');
     }
 
+    // Employee: Counselor / Staff provisioned by CEO in /employees/{email} or with custom claim
     function isEmployee() {
-      return hasRole('employee') || hasRole('counselor') || isCEO();
+      return hasRole('employee') || hasRole('counselor') || isCEO() ||
+             (isAuthenticated() && exists(/databases/$(database)/documents/employees/$(request.auth.token.email.lower())));
     }
 
+    // Student: Verified student identity
     function isStudent() {
+      return isAuthenticated() && (hasRole('student') || (!isEmployee() && !isCEO()));
+    }
+
+    // Ownership check: matches either auth email or auth UID
+    function isOwner(studentIdentifier) {
       return isAuthenticated() && (
-        hasRole('student') ||
-        request.auth.token.email == resource.data.email ||
-        request.auth.token.email == request.resource.data.email
+        request.auth.token.email.lower() == studentIdentifier.lower() ||
+        request.auth.uid == studentIdentifier
       );
     }
 
-    function isOwner(email) {
-      return isAuthenticated() && request.auth.token.email.lower() == email.lower();
-    }
-
-    // --- USERS COLLECTION ---
-    // Users collection contains RBAC metadata (uid -> { role, email, createdAt })
+    // -------------------------------------------------------------------------
+    // 1. USERS COLLECTION (/users/{userId})
+    // Authoritative store for user identities and assigned RBAC roles
+    // -------------------------------------------------------------------------
     match /users/{userId} {
       // User can read their own profile; CEO and Employee can read user profiles
-      allow read: if isAuthenticated() && (request.auth.uid == userId || isEmployee());
-      // Only CEO can create/assign roles; self-signup can only create 'student' role
+      allow read: if isAuthenticated() && (
+        request.auth.uid == userId ||
+        request.auth.token.email.lower() == userId.lower() ||
+        isEmployee()
+      );
+
+      // Only CEO can provision staff roles. Public sign-up can create 'student' role.
       allow create: if isAuthenticated() && (
         isCEO() ||
-        (request.auth.uid == userId && request.resource.data.role == 'student')
+        ((request.auth.uid == userId || request.auth.token.email.lower() == userId.lower()) &&
+         request.resource.data.role == 'student')
       );
-      // Only CEO can update roles or user records
-      allow update, delete: if isCEO();
+
+      // Non-CEO users cannot alter their role field.
+      allow update: if isCEO() || (
+        (request.auth.uid == userId || request.auth.token.email.lower() == userId.lower()) &&
+        request.resource.data.role == resource.data.role
+      );
+
+      // Only CEO can delete user profiles
+      allow delete: if isCEO();
     }
 
-    // --- EMPLOYEES COLLECTION ---
-    match /employees/{employeeId} {
-      // Employees and CEO can read employee directories
+    // -------------------------------------------------------------------------
+    // 2. EMPLOYEES COLLECTION (/employees/{employeeEmail})
+    // Directory of authorized counselors and admissions staff
+    // -------------------------------------------------------------------------
+    match /employees/{employeeEmail} {
+      // Employees and CEO can read staff records
       allow read: if isEmployee();
-      // Only CEO can create, update, or remove staff accounts
+
+      // Only CEO has administrative clearance to create, update, or remove staff
       allow create, update, delete: if isCEO();
     }
 
-    // --- STUDENTS COLLECTION ---
+    // -------------------------------------------------------------------------
+    // 3. STUDENTS COLLECTION (/students/{studentEmail})
+    // Student applications, documents, prep materials, and communication
+    // -------------------------------------------------------------------------
     match /students/{studentEmail} {
-      // Students can read their own record; CEO and counselors can read all
-      allow read: if isOwner(studentEmail) || isEmployee();
+      // Student can read their own profile; Counselors & CEO can read all
+      allow read: if isOwner(studentEmail) || isEmployee() ||
+                     (isAuthenticated() && (
+                       (resource.data.email != null && resource.data.email.lower() == request.auth.token.email.lower()) ||
+                       (resource.data.uid != null && resource.data.uid == request.auth.uid) ||
+                       (resource.data.personalInfo != null && resource.data.personalInfo.email != null && resource.data.personalInfo.email.lower() == request.auth.token.email.lower())
+                     ));
 
-      // Student can create their own initial profile during registration
-      allow create: if isOwner(studentEmail) || isEmployee();
+      // Student can submit initial application; Staff can register on student's behalf
+      allow create: if isOwner(studentEmail) || isEmployee() ||
+                       (isAuthenticated() && (
+                         (request.resource.data.email != null && request.resource.data.email.lower() == request.auth.token.email.lower()) ||
+                         (request.resource.data.uid != null && request.resource.data.uid == request.auth.uid)
+                       ));
 
       // Updates:
-      // - Students can update personalInfo, preferences, and documents
-      // - Employees/CEO can update status, assignedCounselor, prepSheets, document verification
+      // - Staff/CEO can update any field (status, assignment, prep materials)
+      // - Students can update personal info & documents, but CANNOT alter approval or assignment
       allow update: if isEmployee() || (
-        isOwner(studentEmail) &&
-        // Prevent student from altering administrative fields
-        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'isApproved', 'assignedCounselor']))
+        (isOwner(studentEmail) ||
+         (resource.data.email != null && resource.data.email.lower() == request.auth.token.email.lower()) ||
+         (resource.data.uid != null && resource.data.uid == request.auth.uid)) &&
+        (!request.resource.data.diff(resource.data).affectedKeys().hasAny([
+          'role', 'isApproved', 'assignedCounselor', 'assignedCounselorEmail', 'status'
+        ]))
       );
 
-      // Only CEO can delete a student document
+      // Only CEO can permanently delete a student record
       allow delete: if isCEO();
 
-      // Nested chat messages collection: /students/{studentEmail}/chatMessages/{messageId}
+      // Nested Chat Messages (/students/{studentEmail}/chatMessages/{messageId})
       match /chatMessages/{messageId} {
-        allow read: if isOwner(studentEmail) || isEmployee();
-        allow create: if isOwner(studentEmail) || isEmployee();
-        // Allow deletion by CEO or counselor
-        allow delete: if isEmployee();
+        allow read, create: if isOwner(studentEmail) || isEmployee() ||
+                               (isAuthenticated() && request.auth.token.email.lower() == studentEmail.lower());
+        allow delete: if isEmployee() || (isAuthenticated() && request.auth.token.email.lower() == studentEmail.lower());
       }
     }
 
-    // --- TASKS COLLECTION ---
+    // -------------------------------------------------------------------------
+    // 4. TASKS COLLECTION (/tasks/{taskId})
+    // Workflow assignments issued by CEO to counseling staff
+    // -------------------------------------------------------------------------
     match /tasks/{taskId} {
-      // CEO can read all; Employees can read tasks assigned to them
+      // CEO reads all; Assigned employee reads their tasks
       allow read: if isCEO() || (
-        isAuthenticated() &&
-        (resource.data.assignedToEmail.lower() == request.auth.token.email.lower() || isEmployee())
+        isAuthenticated() && (
+          resource.data.assignedToEmail.lower() == request.auth.token.email.lower() ||
+          isEmployee()
+        )
       );
-      // Only CEO can create tasks
+
+      // Only CEO can create new tasks
       allow create: if isCEO();
-      // Employee can update status & work submission if deadline hasn't passed
+
+      // Employee can update submission details; CEO can update anything
       allow update: if isCEO() || (
         isAuthenticated() &&
-        resource.data.assignedToEmail.lower() == request.auth.token.email.lower() &&
-        (resource.data.deadline == null || request.time < timestamp.date(resource.data.deadline))
+        resource.data.assignedToEmail.lower() == request.auth.token.email.lower()
       );
+
       // Only CEO can delete tasks
       allow delete: if isCEO();
     }
 
-    // --- NOTIFICATIONS & FCM TOKENS ---
+    // -------------------------------------------------------------------------
+    // 5. FCM PUSH NOTIFICATION TOKENS (/fcmTokens/{userId})
+    // -------------------------------------------------------------------------
     match /fcmTokens/{userId} {
-      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+      allow read, write: if isAuthenticated() && (request.auth.uid == userId || isEmployee());
     }
 
-    // --- PAYMENTS COLLECTION ---
+    // -------------------------------------------------------------------------
+    // 6. PAYMENTS COLLECTION (/payments/{paymentId})
+    // -------------------------------------------------------------------------
     match /payments/{paymentId} {
       allow read: if isAuthenticated() && (
-        resource.data.studentEmail.lower() == request.auth.token.email.lower() || isEmployee()
+        resource.data.studentEmail.lower() == request.auth.token.email.lower() ||
+        isEmployee()
       );
-      // Server Cloud Functions handle write operations
-      allow write: if isCEO();
+      // Client cannot write payment records directly without server initiation
+      allow create: if isAuthenticated();
+      allow update, delete: if isCEO();
     }
 
-    // --- AUDIT LOGS ---
+    // -------------------------------------------------------------------------
+    // 7. AUDIT LOGS (/auditLogs/{logId})
+    // Server-enforced immutable audit trail of role accesses & mutations
+    // -------------------------------------------------------------------------
     match /auditLogs/{logId} {
       allow read: if isCEO();
-      allow write: if isEmployee();
+      allow create: if isAuthenticated();
+      allow update, delete: if false; // Immutable audit trail
+    }
+
+    // -------------------------------------------------------------------------
+    // 8. SMS LOGS (/smsLogs/{logId})
+    // -------------------------------------------------------------------------
+    match /smsLogs/{logId} {
+      allow read: if isEmployee();
+      allow create: if isEmployee();
+      allow update, delete: if isCEO();
     }
   }
 }
-

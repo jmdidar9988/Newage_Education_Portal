@@ -10,8 +10,7 @@ service firebase.storage {
       return isAuthenticated() && (
         request.auth.token.role == 'ceo' ||
         request.auth.token.role == 'admin' ||
-        request.auth.token.email.matches('.*ceo.*') ||
-        request.auth.token.email.matches('.*admin.*')
+        request.auth.token.email.lower() == 'ceo@newage.com'
       );
     }
 
@@ -24,7 +23,10 @@ service firebase.storage {
     }
 
     function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
+      return isAuthenticated() && (
+        request.auth.uid == userId ||
+        request.auth.token.email.lower() == userId.lower()
+      );
     }
 
     // Student uploaded documents (e.g. passport, certificates, SOP)
@@ -49,13 +51,20 @@ service firebase.storage {
       allow delete: if isEmployee();
     }
 
-    // Task instruction PDFs and employee work submissions
-    // Path: /tasks/{taskId}/{allPaths=**}
-    match /tasks/{taskId}/{allPaths=**} {
+    // Task instruction attachments uploaded by CEO
+    // Path: /tasks/ceo_instructions/{allPaths=**}
+    match /tasks/ceo_instructions/{allPaths=**} {
+      allow read: if isEmployee();
+      allow write: if isCEO() && request.resource.size < 50 * 1024 * 1024;
+      allow delete: if isCEO();
+    }
+
+    // Work submissions uploaded by employees
+    // Path: /tasks/employee_submissions/{taskId}/{allPaths=**}
+    match /tasks/employee_submissions/{taskId}/{allPaths=**} {
       allow read: if isEmployee();
       allow write: if isEmployee() && request.resource.size < 50 * 1024 * 1024;
       allow delete: if isCEO();
     }
   }
 }
-

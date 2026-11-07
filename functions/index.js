@@ -1,4 +1,4 @@
-const functions = require('firebase-functions');
+﻿const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 
 admin.initializeApp();
@@ -87,6 +87,80 @@ exports.onUserCreated = functions.auth.user().onCreate(async (user) => {
     }, { merge: true });
 
     console.log(`[RBAC] Assigned initial role '${initialRole}' to new user: ${email}`);
+});
+
+/**
+ * Server-Side RBAC Verification Cloud Function
+ * Cryptographically verifies user identity, validates role against server database,
+ * and logs access attempts to immutable /auditLogs.
+ */
+exports.verifyAndEnforceRBAC = functions.https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError(
+            'unauthenticated',
+            'Authentication required to verify portal access.'
+        );
+    }
+
+    const uid = context.auth.uid;
+    const email = (context.auth.token.email || '').toLowerCase().trim();
+    const requestedPortal = (data.requestedPortal || 'student').toLowerCase();
+
+    // 1. Authoritative check: /users/{uid}
+    const userDoc = await db.collection('users').doc(uid).get();
+    let verifiedRole = 'student';
+
+    if (userDoc.exists && userDoc.data().role) {
+        verifiedRole = userDoc.data().role.toLowerCase();
+    } else if (email === 'ceo@newage.com') {
+        verifiedRole = 'ceo';
+    } else {
+        // Check if pre-registered in /employees/{email}
+        const empDoc = await db.collection('employees').doc(email).get();
+        if (empDoc.exists) verifiedRole = 'employee';
+    }
+
+    // 2. Ensure Firebase Auth custom claims match verified role
+    const currentClaim = context.auth.token.role;
+    if (currentClaim !== verifiedRole) {
+        await admin.auth().setCustomUserClaims(uid, { role: verifiedRole });
+    }
+
+    // 3. Server-side authorization check
+    let isAllowed = false;
+    if (verifiedRole === 'ceo') {
+        isAllowed = true; // CEO has clearance for all portals
+    } else if (verifiedRole === 'employee') {
+        isAllowed = (requestedPortal === 'employee' || requestedPortal === 'student');
+    } else if (verifiedRole === 'student') {
+        isAllowed = (requestedPortal === 'student');
+    }
+
+    // 4. Log to immutable audit log on server
+    await db.collection('auditLogs').add({
+        uid: uid,
+        email: email,
+        verifiedRole: verifiedRole,
+        requestedPortal: requestedPortal,
+        allowed: isAllowed,
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        userAgent: context.rawRequest ? (context.rawRequest.headers['user-agent'] || 'unknown') : 'unknown'
+    });
+
+    if (!isAllowed) {
+        throw new functions.https.HttpsError(
+            'permission-denied',
+            `Server RBAC Violation: Verified role '${verifiedRole}' is unauthorized for '${requestedPortal}' portal.`
+        );
+    }
+
+    return {
+        allowed: true,
+        uid: uid,
+        email: email,
+        verifiedRole: verifiedRole,
+        authorizedAt: new Date().toISOString()
+    };
 });
 
 // ----------------------------------------------------------------------------
@@ -194,6 +268,100 @@ exports.onStudentPrepMaterialAdded = functions.firestore
             console.log(`[FCM] Sent prep sheet push alert to student: ${studentEmail}`);
         }
         return null;
+    });
+
+// ----------------------------------------------------------------------------
+/**
+ * Triggers push notification to student when Counselor or CEO sends a chat reply
+ */
+exports.onStaffChatMessageSent = functions.firestore
+    .document('students/{studentEmail}/chatMessages/{messageId}')
+    .onCreate(async (snap, context) => {
+        const message = snap.data();
+        const studentEmail = context.params.studentEmail.toLowerCase();
+
+        // Only notify if message was sent by Counselor or CEO
+        const isStaff = (message.sender === 'employee' || message.sender === 'counselor' || message.sender === 'ceo');
+        if (!isStaff) return null;
+
+        const tokenSnap = await db.collection('fcmTokens').where('email', '==', studentEmail).get();
+        if (tokenSnap.empty) {
+            console.log(`[FCM] No tokens found for offline student: ${studentEmail}`);
+            return null;
+        }
+
+        const tokens = [];
+        tokenSnap.forEach(d => { if (d.data().token) tokens.push(d.data().token); });
+
+        const payload = {
+            notification: {
+                title: 'ðŸ’¬ New Message from Admissions Counselor',
+                body: message.text || 'You have received a new update regarding your application.'
+            },
+            data: {
+                url: '/student.html#panelChat',
+                click_action: '/student.html'
+            }
+        };
+
+        const response = await admin.messaging().sendEachForMulticast({
+            tokens: tokens,
+            notification: payload.notification,
+            data: payload.data
+        });
+        console.log(`[FCM] Sent counselor reply push alert to ${response.successCount} student devices for ${studentEmail}.`);
+        return response;
+    });
+
+/**
+ * Triggers push notification to student when a document status is updated (Approved/Rejected)
+ */
+exports.onStudentDocumentStatusChanged = functions.firestore
+    .document('students/{studentEmail}')
+    .onUpdate(async (change, context) => {
+        const beforeDocs = change.before.data().documents || {};
+        const afterDocs = change.after.data().documents || {};
+        const studentEmail = context.params.studentEmail.toLowerCase();
+
+        // Detect if any document's status changed
+        let statusUpdateMsg = null;
+        for (const [key, afterEntry] of Object.entries(afterDocs)) {
+            const beforeEntry = beforeDocs[key];
+            const oldStatus = typeof beforeEntry === 'object' ? beforeEntry?.status : null;
+            const newStatus = typeof afterEntry === 'object' ? afterEntry?.status : null;
+
+            if (newStatus && oldStatus !== newStatus) {
+                const docName = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                statusUpdateMsg = `Your document "${docName}" has been updated to: ${newStatus}`;
+                break;
+            }
+        }
+
+        if (!statusUpdateMsg) return null;
+
+        const tokenSnap = await db.collection('fcmTokens').where('email', '==', studentEmail).get();
+        if (tokenSnap.empty) return null;
+
+        const tokens = [];
+        tokenSnap.forEach(d => { if (d.data().token) tokens.push(d.data().token); });
+
+        const payload = {
+            notification: {
+                title: 'ðŸ“„ Document Review Update',
+                body: statusUpdateMsg
+            },
+            data: {
+                url: '/student.html#panelDocs'
+            }
+        };
+
+        const response = await admin.messaging().sendEachForMulticast({
+            tokens: tokens,
+            notification: payload.notification,
+            data: payload.data
+        });
+        console.log(`[FCM] Sent document update alert to student ${studentEmail}: ${statusUpdateMsg}`);
+        return response;
     });
 
 // ----------------------------------------------------------------------------

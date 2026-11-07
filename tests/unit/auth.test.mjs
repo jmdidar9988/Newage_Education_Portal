@@ -2,8 +2,8 @@
  * Automated Unit Test Suite for Newage Portal Core Logic
  * Tests:
  * 1. String Sanitization & XSS Prevention (escapeHtml)
- * 2. Role Resolution Heuristics (getRoleFromEmail)
- * 3. Verified Role RBAC Rules
+ * 2. Strict Role Resolution (getRoleFromEmail)
+ * 3. Server-Enforced RBAC & Claim Verification
  * 4. Document upload metadata schema validation
  */
 
@@ -24,13 +24,35 @@ function escapeHtml(str) {
 function getRoleFromEmail(email) {
     if (!email) return 'Student';
     const lower = email.toLowerCase().trim();
-    if (lower.includes('ceo') || lower.includes('admin') || lower.includes('chief') || lower.includes('boss')) {
+    if (lower === 'ceo@newage.com') {
         return 'CEO';
-    } else if (lower.includes('employee') || lower.includes('emp') || lower.includes('counselor') || lower.includes('counsellor') || lower.includes('staff') || lower.includes('agent')) {
-        return 'Employee';
-    } else {
-        return 'Student';
     }
+    // Strict Server-Enforced RBAC: Insecure substring matching is eliminated
+    return 'Student';
+}
+
+function verifyUserRoleServerSide(authClaimRole, firestoreUserDoc, email) {
+    const cleanEmail = (email || '').toLowerCase().trim();
+    if (cleanEmail === 'ceo@newage.com') return 'CEO';
+
+    // 1. Cryptographically signed Custom Claim takes precedence
+    if (authClaimRole) {
+        const claim = authClaimRole.toLowerCase();
+        if (claim === 'ceo' || claim === 'admin') return 'CEO';
+        if (claim === 'employee' || claim === 'counselor') return 'Employee';
+        if (claim === 'student') return 'Student';
+    }
+
+    // 2. Authoritative Firestore /users/{uid} document
+    if (firestoreUserDoc && firestoreUserDoc.role) {
+        const role = firestoreUserDoc.role.toLowerCase();
+        if (role === 'ceo' || role === 'admin') return 'CEO';
+        if (role === 'employee' || role === 'counselor') return 'Employee';
+        if (role === 'student') return 'Student';
+    }
+
+    // 3. Fallback: Default strictly to Student
+    return 'Student';
 }
 
 function validateDocumentMetadata(docData) {
@@ -50,7 +72,7 @@ function validateDocumentMetadata(docData) {
     return { valid: true };
 }
 
-describe('Newage Portal Core Logic & RBAC Test Suite', () => {
+describe('Newage Portal Core Logic & Server-Side RBAC Test Suite', () => {
 
     describe('XSS Prevention (escapeHtml)', () => {
         it('should escape dangerous HTML script tags', () => {
@@ -72,23 +94,43 @@ describe('Newage Portal Core Logic & RBAC Test Suite', () => {
         });
     });
 
-    describe('RBAC Role Assignment Heuristics (getRoleFromEmail)', () => {
-        it('should classify CEO emails accurately', () => {
+    describe('Strict RBAC Role Assignment (Bypass Prevention)', () => {
+        it('should strictly allow designated founder CEO email only', () => {
             assert.equal(getRoleFromEmail('ceo@newage.com'), 'CEO');
-            assert.equal(getRoleFromEmail('admin.shuvo@newage.com'), 'CEO');
-            assert.equal(getRoleFromEmail('chief.officer@domain.com'), 'CEO');
         });
 
-        it('should classify Employee/Counselor emails accurately', () => {
-            assert.equal(getRoleFromEmail('counselor.kabir@newage.com'), 'Employee');
-            assert.equal(getRoleFromEmail('employee.staff@newage.com'), 'Employee');
-            assert.equal(getRoleFromEmail('admissions.counsellor@newage.com'), 'Employee');
+        it('should prevent spoofing via email substring tricks', () => {
+            // Insecure email keyword checks would have granted CEO/Employee permissions to these:
+            assert.equal(getRoleFromEmail('fakeceo@gmail.com'), 'Student');
+            assert.equal(getRoleFromEmail('marceo.silva@yahoo.com'), 'Student');
+            assert.equal(getRoleFromEmail('counselor.fake@hotmail.com'), 'Student');
+            assert.equal(getRoleFromEmail('employee123@gmail.com'), 'Student');
         });
 
-        it('should classify all prospective candidates as Students by default', () => {
+        it('should classify all regular candidate emails as Students by default', () => {
             assert.equal(getRoleFromEmail('sakib.rahman@gmail.com'), 'Student');
             assert.equal(getRoleFromEmail('tanvir.hossain@yahoo.com'), 'Student');
             assert.equal(getRoleFromEmail(''), 'Student');
+        });
+    });
+
+    describe('Server-Side Custom Claims & Firestore RBAC Enforcement', () => {
+        it('should verify CEO permissions via signed Firebase Auth Custom Claims', () => {
+            const role = verifyUserRoleServerSide('ceo', null, 'staff@newage.com');
+            assert.equal(role, 'CEO');
+        });
+
+        it('should verify Employee permissions via signed claims or Firestore document', () => {
+            const roleFromClaim = verifyUserRoleServerSide('employee', null, 'agent@newage.com');
+            assert.equal(roleFromClaim, 'Employee');
+
+            const roleFromDoc = verifyUserRoleServerSide(null, { role: 'employee' }, 'agent@newage.com');
+            assert.equal(roleFromDoc, 'Employee');
+        });
+
+        it('should deny unauthorized privilege escalation when claims and documents lack permissions', () => {
+            const hackerAttempt = verifyUserRoleServerSide(null, null, 'hacker.ceo@domain.com');
+            assert.equal(hackerAttempt, 'Student');
         });
     });
 
@@ -105,7 +147,6 @@ describe('Newage Portal Core Logic & RBAC Test Suite', () => {
         });
 
         it('should reject Base64 payloads that violate Firestore storage cap policy', () => {
-            // Emulate a 600KB Base64 string
             const massiveBase64 = 'data:application/pdf;base64,' + 'A'.repeat(600000);
             const invalidMetadata = {
                 url: massiveBase64,
@@ -117,4 +158,3 @@ describe('Newage Portal Core Logic & RBAC Test Suite', () => {
         });
     });
 });
-

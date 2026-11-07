@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -103,6 +103,25 @@
         color: white;
         transform: rotate(90deg);
       }
+      .executive-tile.tile-locked {
+        opacity: 0.65 !important;
+        background: #f8fafc !important;
+        border: 1px dashed #cbd5e1 !important;
+        cursor: not-allowed !important;
+      }
+      .executive-tile.tile-locked:hover {
+        transform: none !important;
+        box-shadow: none !important;
+        border-color: #cbd5e1 !important;
+      }
+      .pulse-glow {
+        animation: pulseGlowBtn 2s infinite ease-in-out;
+      }
+      @keyframes pulseGlowBtn {
+        0% { box-shadow: 0 0 0 0 rgba(230, 57, 70, 0.45); }
+        70% { box-shadow: 0 0 0 12px rgba(230, 57, 70, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(230, 57, 70, 0); }
+      }
     </style>
     <!-- Firebase App (modular CDN) -->
     <script type="module" src="auth.js"></script>
@@ -128,6 +147,11 @@
                             <i class="bi bi-house-door-fill me-1 text-danger"></i> Home
                         </a>
                     </li>
+                    <li class="nav-item me-2" id="navPushNotificationItem">
+                        <button id="btnEnablePush" class="btn btn-sm btn-outline-warning rounded-pill px-3 py-1 fw-semibold" onclick="window.handleRequestPushPermission && window.handleRequestPushPermission()" title="Enable push notifications for instant alerts">
+                            <i class="bi bi-bell-fill me-1"></i> Alerts
+                        </button>
+                    </li>
                     <li class="nav-item me-3">
                         <button class="btn btn-sm btn-outline-light rounded-circle px-2 py-1 me-1" onclick="toggleTheme()" title="Toggle Dark/Light Theme">
                             <i class="themeToggleIcon bi bi-sun-fill text-warning"></i>
@@ -139,7 +163,7 @@
                         </a>
                     </li>
                     <li class="nav-item me-3">
-                        <span class="text-white-50" id="navStudentId"><i class="bi bi-mortarboard me-1"></i> <span class="spinner-border spinner-border-sm"></span></span>
+                        <span class="text-white-50" id="navStudentId"><i class="bi bi-mortarboard me-1"></i> Student Portal</span>
                     </li>
                     <li class="nav-item">
                         <a class="btn btn-newage-outline py-1 px-3 btn-sm" href="#" onclick="window.handleLogout && window.handleLogout(event)">
@@ -230,10 +254,10 @@
                         <div class="row align-items-center g-4">
                             <div class="col-md-4 text-center border-end pe-md-4">
                                 <div class="bg-danger text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3 shadow-sm" style="width: 84px; height: 84px; font-size: 2.2rem;" id="profileAvatar">
-                                    <span class="spinner-border spinner-border-sm"></span>
+                                    <i class="bi bi-person-fill"></i>
                                 </div>
-                                <h5 class="mb-1 fw-bold dynamic-text" id="profileName">Loading...</h5>
-                                <p class="dynamic-text-muted small mb-2"><i class="bi bi-envelope me-1"></i> <span id="profileEmail" class="dynamic-text-muted">...</span></p>
+                                <h5 class="mb-1 fw-bold dynamic-text" id="profileName">Student Portal</h5>
+                                <p class="dynamic-text-muted small mb-2"><i class="bi bi-envelope me-1"></i> <span id="profileEmail" class="dynamic-text-muted">Active Session</span></p>
                                 <span id="profileStatusBadge" class="badge bg-warning text-dark px-3 py-1.5 rounded-pill mb-2"><i class="bi bi-clock-history me-1"></i>Pending</span>
                             </div>
                             <div class="col-md-8 ps-md-4">
@@ -561,7 +585,8 @@
                           <div class="p-3 bg-light rounded-bottom-4">
                               <div id="studentChatMessages" class="border rounded-3 bg-white p-3 mb-3" style="height: 340px; overflow-y: auto;">
                                   <div class="text-center text-muted py-4 small">
-                                      <span class="spinner-border spinner-border-sm text-danger me-1"></span> Loading chat history...
+                                      <i class="bi bi-chat-dots fs-3 d-block mb-1 text-secondary opacity-50"></i>
+                                      Admissions Live Support
                                   </div>
                               </div>
                               <div class="input-group">
@@ -585,8 +610,8 @@
                     </div>
                     <div class="p-4" id="addedApplicationsContent">
                         <div class="text-center py-4 text-muted">
-                            <span class="spinner-border spinner-border-sm text-danger me-2" role="status" aria-hidden="true"></span>
-                            Loading application records...
+                            <div class="spinner-grow spinner-grow-sm text-danger opacity-75 me-2" role="status"></div>
+                            <span>Synchronizing applications...</span>
                         </div>
                     </div>
                 </section>
@@ -664,7 +689,8 @@
         const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`;
 
         // ── Firebase Auth & Firestore (shared instance from auth.js) ───────────
-        import { auth, db, storage, storageRef, uploadBytes, uploadBytesResumable, getDownloadURL, onAuthStateChanged, collection, addDoc, query, where, orderBy, getDoc, getDocs, setDoc, updateDoc, deleteDoc, doc, serverTimestamp, escapeHtml as escapeHtmlAuth, arrayUnion, onSnapshot } from "./auth.js";
+        import { auth, db, storage, storageRef, uploadBytes, uploadBytesResumable, getDownloadURL, onAuthStateChanged, collection, addDoc, query, where, orderBy, getDoc, getDocs, setDoc, updateDoc, deleteDoc, doc, serverTimestamp, escapeHtml as escapeHtmlAuth, arrayUnion, onSnapshot, enforcePageRoleGuard, checkIfApplicationCompleted } from "./auth.js";
+        enforcePageRoleGuard('Student');
 
         // Track logged-in user, their Firestore document ID, and full data object
         let currentUser = null;
@@ -1056,7 +1082,7 @@
 
         // ── Show new-student call-to-action banner & hide uploads ─────────
         function showNewStudentState(email) {
-            const displayName = nameFromEmail(email);
+            const displayName = (currentStudentData?.personalInfo?.fullName) || (currentStudentData?.fullName) || (auth.currentUser?.displayName) || nameFromEmail(email);
             const initials = getInitials(displayName);
 
             const navEl = document.getElementById('navStudentId');
@@ -1140,6 +1166,17 @@
             const email = (user.email || '').trim();
             const emailClean = email.toLowerCase();
             studentDocId = emailClean;
+
+            // Instant Profile Hydration (0ms) - display credentials immediately
+            const initialName = user.displayName || localStorage.getItem('newage_student_name') || nameFromEmail(email);
+            setText('profileName', initialName);
+            setText('profileEmail', email);
+            const welcomeCandidateEl = document.getElementById('welcomeCandidateName');
+            if (welcomeCandidateEl) welcomeCandidateEl.textContent = initialName;
+            const avatarEl = document.getElementById('profileAvatar');
+            if (avatarEl) avatarEl.textContent = getInitials(initialName);
+            const navEl = document.getElementById('navStudentId');
+            if (navEl) navEl.innerHTML = `<i class="bi bi-mortarboard me-1"></i> ${escapeHtml(initialName)}`;
 
             // ── Real-time Student Chat Engine ────────────────────────────────
             const chatMessagesDiv = document.getElementById('studentChatMessages');
@@ -1245,45 +1282,8 @@
                 };
             }
             
-            // Console Debugging Requirement
-            console.log("Attempting to fetch profile for:", auth.currentUser ? auth.currentUser.email : email);
-
-            // Resolve exact Student Document ID
-            let resolvedDocId = emailClean;
-            try {
-                const snap = await getDoc(doc(db, "students", emailClean));
-                if (snap && snap.exists()) {
-                    resolvedDocId = emailClean;
-                } else {
-                    const snapCase = await getDoc(doc(db, "students", email));
-                    if (snapCase && snapCase.exists()) {
-                        resolvedDocId = email;
-                    } else {
-                        const snapUid = await getDoc(doc(db, "students", user.uid));
-                        if (snapUid && snapUid.exists()) {
-                            resolvedDocId = user.uid;
-                        } else {
-                            let querySnapshot = await getDocs(query(
-                                collection(db, 'students'),
-                                where('personalInfo.email', '==', user.email)
-                            ));
-                            if (querySnapshot.empty) {
-                                querySnapshot = await getDocs(query(
-                                    collection(db, 'students'),
-                                    where('email', '==', user.email)
-                                ));
-                            }
-                            if (!querySnapshot.empty) {
-                                resolvedDocId = querySnapshot.docs[0].id;
-                            }
-                        }
-                    }
-                }
-            } catch (err) {
-                console.warn("Direct doc ID resolution warning:", err);
-            }
-
-            studentDocId = resolvedDocId;
+            // Instant Direct Resolution: Primary key is clean email (0ms network delay)
+            studentDocId = emailClean;
             window.clearStudentChatUnread = async () => {
                 if (studentDocId) {
                     try {
@@ -1298,17 +1298,59 @@
             };
 
             // Start real-time Firestore observer for Student Document
-            onSnapshot(doc(db, "students", studentDocId), (docSnap) => {
-                const profileExists = Boolean(docSnap && docSnap.exists());
-                console.log("Real-time profile listener update: exists =", profileExists);
+            // â”€â”€ Progressive Portal Lock / Unlock State Manager â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            function updatePortalLockState(isSubmitted) {
+                window._isApplicationSubmitted = isSubmitted;
 
-                // UI elements
+                const tiles = [
+                    { id: 'btnInfo', label: 'My Information', category: 'Personal Profile' },
+                    { id: 'btnDocs', label: 'My Documents', category: 'Document Vault' },
+                    { id: 'btnMats', label: 'Preparation Materials', category: 'Interview Sheets' },
+                    { id: 'btnChat', label: 'Support Live Chat', category: 'Live Support' }
+                ];
+
+                tiles.forEach(t => {
+                    const el = document.getElementById(t.id);
+                    if (!el) return;
+                    const badgeContainer = el.querySelector('.ps-3');
+                    if (!badgeContainer) return;
+
+                    if (!isSubmitted) {
+                        el.classList.add('tile-locked');
+                        el.setAttribute('data-locked', 'true');
+                        el.title = "Locked: Please complete and submit your official Application Form first.";
+                        badgeContainer.innerHTML = `
+                            <span class="badge bg-secondary-subtle text-secondary border px-2.5 py-1.5 rounded-pill small">
+                                <i class="bi bi-lock-fill me-1"></i>Locked
+                            </span>
+                            <i class="bi bi-lock-fill fs-5 text-muted ms-1"></i>`;
+                    } else {
+                        el.classList.remove('tile-locked');
+                        el.removeAttribute('data-locked');
+                        el.title = `Click to open ${t.label}`;
+                        const badgeStyle = t.id === 'btnChat'
+                            ? 'badge bg-success-subtle text-success border border-success px-2.5 py-1.5 rounded-pill small'
+                            : 'badge bg-light text-dark border small px-2.5 py-1.5 rounded-pill';
+                        badgeContainer.innerHTML = `
+                            <span class="${badgeStyle} d-none d-sm-inline">${t.category}</span>
+                            <i class="bi bi-arrow-right-circle-fill fs-4 text-danger ms-1"></i>`;
+                    }
+                });
+
                 const appFormPromptSection = document.getElementById('section-application-form-prompt');
                 const overallStatusBanner = document.getElementById('section-overall-status-banner');
                 const myInfoSection = document.getElementById('section-my-information');
                 const addedAppsSection = document.getElementById('section-added-applications');
 
-                if (profileExists) {
+                const navAppFormContainer = document.getElementById('nav-application-form-container');
+                if (isSubmitted) {
+                    if (navAppFormContainer) {
+                        navAppFormContainer.innerHTML = `
+                            <span class="badge bg-white-subtle text-white border border-light-subtle small px-2.5 py-1.5 rounded-pill" title="Application Form Completed & Locked">
+                                <i class="bi bi-lock-fill me-1 text-warning"></i> Application: Submitted
+                            </span>`;
+                        navAppFormContainer.classList.remove('d-none');
+                    }
                     if (appFormPromptSection) {
                         appFormPromptSection.classList.add('d-none');
                         appFormPromptSection.style.display = 'none';
@@ -1325,9 +1367,40 @@
                         addedAppsSection.classList.remove('d-none');
                         addedAppsSection.style.display = 'block';
                     }
+                } else {
+                    if (appFormPromptSection) {
+                        appFormPromptSection.classList.remove('d-none');
+                        appFormPromptSection.style.display = 'block';
+                    }
+                    if (overallStatusBanner) {
+                        overallStatusBanner.classList.add('d-none');
+                        overallStatusBanner.style.display = 'none';
+                    }
+                    if (myInfoSection) {
+                        myInfoSection.classList.add('d-none');
+                        myInfoSection.style.display = 'none';
+                    }
+                    if (addedAppsSection) {
+                        addedAppsSection.classList.add('d-none');
+                        addedAppsSection.style.display = 'none';
+                    }
+                }
+            }
 
-                    const studentData = docSnap.data();
-                    
+            // Start real-time Firestore observer for Student Document
+            onSnapshot(doc(db, "students", studentDocId), (docSnap) => {
+                const studentData = (docSnap && docSnap.exists()) ? docSnap.data() : null;
+                currentStudentData = studentData;
+
+                // Canonical check: Completed if filled by student, previously, or by employee/CEO
+                const isFormSubmitted = checkIfApplicationCompleted(studentData);
+                console.log("Real-time profile listener update: isFormSubmitted =", isFormSubmitted, studentData);
+
+                updatePortalLockState(isFormSubmitted);
+
+                if (isFormSubmitted) {
+                    populateProfile(studentData, studentDocId);
+
                     // Render dynamic unread support chat banner & badge
                     const alertBanner = document.getElementById('studentUnreadChatAlert');
                     if (alertBanner) {
@@ -1356,31 +1429,20 @@
                         }
                     }
 
-                    populateProfile(studentData, studentDocId);
+                    // Check for return toast
+                    if (window.location.search.includes('status=form_submitted')) {
+                        showToast("Application Form Submitted! All features are now unlocked.", "success");
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    }
                 } else {
-                    if (appFormPromptSection) {
-                        appFormPromptSection.classList.remove('d-none');
-                        appFormPromptSection.style.display = 'block';
-                    }
-                    if (overallStatusBanner) {
-                        overallStatusBanner.classList.add('d-none');
-                        overallStatusBanner.style.display = 'none';
-                    }
-                    if (myInfoSection) {
-                        myInfoSection.classList.add('d-none');
-                        myInfoSection.style.display = 'none';
-                    }
-                    if (addedAppsSection) {
-                        addedAppsSection.classList.add('d-none');
-                        addedAppsSection.style.display = 'none';
-                    }
-
                     showNewStudentState(user.email);
                 }
+            }, (snapshotErr) => {
+                console.warn('Student profile onSnapshot error:', snapshotErr);
+                updatePortalLockState(false);
+                showNewStudentState(user.email);
             });
         });
-
-        // ── Helper: Extract URL and Approval Status from documents object ───
         function getDocInfo(documents, key) {
             if (!documents) return { url: null, status: null };
             const entry = documents[key];
@@ -1785,6 +1847,35 @@
     <!-- Screen-Centered Zoom Logic -->
     <script>
       function openNeoPanel(target) {
+        if (!window._isApplicationSubmitted) {
+          const panelNames = {
+            'info': 'My Information',
+            'docs': 'Document Uploads',
+            'mats': 'Interview Preparation Materials',
+            'chat': 'Admission Support Live Chat'
+          };
+          const feature = panelNames[target] || 'this section';
+          if (window.Swal) {
+            window.Swal.fire({
+              icon: 'warning',
+              title: 'ðŸ”’ Application Form Required',
+              html: `Please complete and submit your official <b>Student Application Form</b> first to unlock <b>${feature}</b>.`,
+              confirmButtonText: '<i class="bi bi-file-earmark-plus-fill me-1"></i> Fill Application Form Now',
+              confirmButtonColor: '#e63946',
+              showCancelButton: true,
+              cancelButtonText: 'Later'
+            }).then((res) => {
+              if (res.isConfirmed) {
+                window.location.href = 'application_form.html';
+              }
+            });
+          } else {
+            if (confirm(`Application Form Required:\n\nPlease complete and submit your official Student Application Form first to unlock ${feature}.\n\nWould you like to fill the Application Form now?`)) {
+              window.location.href = 'application_form.html';
+            }
+          }
+          return;
+        }
         closeNeoPanels(); // reset states
         
         // Show Backdrop
