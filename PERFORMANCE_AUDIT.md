@@ -121,3 +121,4 @@ newage-education-portal/
 5. **Visual Academic Test Dashboard:**
    - Open `http://localhost:8080/test-runner.html` directly in your browser.
    - Click **Run All Automated Tests** to see live visual test assertions and real-time latency dials.
+

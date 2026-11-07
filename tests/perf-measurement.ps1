@@ -84,3 +84,4 @@ $lighthouse | Format-Table -AutoSize
 Write-Host "==========================================================" -ForegroundColor Cyan
 Write-Host "  AUDIT COMPLETE: All performance thresholds satisfied.   " -ForegroundColor Green
 Write-Host "==========================================================" -ForegroundColor Cyan
+
