@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Payment & Transactional SMS Client Integration Surface
  * Connects Newage Education Portal to Stripe Sandbox, bKash Tokenized Checkout,
  * and Serverless SMS Gateway behind Cloud Functions.
@@ -73,12 +73,12 @@ export async function initiatePaymentFlow(serviceType = 'application_fee', gatew
                     <div class="d-flex gap-2">
                         <label class="border rounded p-3 text-center flex-fill cursor-pointer gateway-option ${gatewayChoice === 'bkash' ? 'border-danger bg-danger-subtle' : ''}" style="cursor: pointer;">
                             <input type="radio" name="swalGateway" value="bkash" class="d-none" ${gatewayChoice === 'bkash' ? 'checked' : ''}>
-                            <div class="fw-bold text-danger"><i class="bi bi-phone-fill fs-4 d-block mb-1"></i> bKash Sandbox</div>
+                            <div class="fw-bold text-danger"><i class="bi bi-phone-fill fs-4 d-block mb-1"></i> bKash</div>
                             <small class="text-muted">Instant Mobile Wallet</small>
                         </label>
                         <label class="border rounded p-3 text-center flex-fill cursor-pointer gateway-option ${gatewayChoice === 'stripe' ? 'border-primary bg-primary-subtle' : ''}" style="cursor: pointer;">
                             <input type="radio" name="swalGateway" value="stripe" class="d-none" ${gatewayChoice === 'stripe' ? 'checked' : ''}>
-                            <div class="fw-bold text-primary"><i class="bi bi-credit-card-2-front-fill fs-4 d-block mb-1"></i> Stripe Sandbox</div>
+                            <div class="fw-bold text-primary"><i class="bi bi-credit-card-2-front-fill fs-4 d-block mb-1"></i> Stripe</div>
                             <small class="text-muted">Cards / International</small>
                         </label>
                     </div>
@@ -201,7 +201,7 @@ async function executeBKashInteractiveFlow(user, service) {
         await setDoc(studentRef, {
             financialProfile: {
                 feeStatus: 'Paid',
-                lastPaymentGateway: 'bKash Sandbox',
+                lastPaymentGateway: 'bKash',
                 lastPaymentAmount: service.amount,
                 lastTrxID: trxId,
                 paidAt: serverTimestamp()
@@ -295,7 +295,7 @@ async function executeStripeInteractiveFlow(user, service) {
         await setDoc(studentRef, {
             financialProfile: {
                 feeStatus: 'Paid',
-                lastPaymentGateway: 'Stripe Sandbox',
+                lastPaymentGateway: 'Stripe',
                 lastPaymentAmount: service.amount,
                 lastTrxID: chargeId,
                 paidAt: serverTimestamp()
