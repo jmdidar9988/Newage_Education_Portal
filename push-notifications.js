@@ -2,6 +2,7 @@
 // Handles service worker registration, push permission requests, token registration, and foreground notifications
 
 import { initializeApp, getApp, getApps } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { getMessaging, getToken, onMessage, isSupported } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging.js";
 import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
@@ -15,6 +16,7 @@ const firebaseConfig = {
 };
 
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+const auth = getAuth(app);
 const db = getFirestore(app);
 
 // Public VAPID Key for Web Push (Firebase Console -> Project Settings -> Cloud Messaging)
@@ -49,14 +51,20 @@ export async function initPushNotifications(user, userRole = 'Student') {
 
         messagingInstance = getMessaging(app);
 
-        // Check current notification permission
+        // Automatically activate push notifications for everyone (no manual on/off toggle needed)
         if (Notification.permission === 'granted') {
             await registerUserFCMToken(user, userRole, activeRegistration);
-            updatePushBadgeUI(true);
-        } else {
-            console.log('[FCM] Notification permission state:', Notification.permission);
-            updatePushBadgeUI(false);
+        } else if (Notification.permission === 'default') {
+            try {
+                const autoGranted = await Notification.requestPermission();
+                if (autoGranted === 'granted') {
+                    await registerUserFCMToken(user, userRole, activeRegistration);
+                }
+            } catch (autoErr) {
+                console.warn('[FCM] Auto permission prompt note:', autoErr);
+            }
         }
+        updatePushBadgeUI();
 
         // Listen for foreground push messages
         onMessage(messagingInstance, (payload) => {
@@ -144,25 +152,17 @@ async function registerUserFCMToken(user, userRole, serviceWorkerRegistration) {
 }
 
 /**
- * Updates navbar push notification button / badge state
+ * Updates navbar push notification button / badge state (always labeled "Notification" without on/off toggle)
  */
-function updatePushBadgeUI(isSubscribed) {
+function updatePushBadgeUI() {
     const container = document.getElementById('navPushNotificationItem');
     if (!container) return;
 
-    if (isSubscribed) {
-        container.innerHTML = `
-            <button class="dropdown-item d-flex align-items-center gap-3 py-2 px-3 text-dark w-100 text-start" onclick="window.triggerTestPushNotification && window.triggerTestPushNotification()" title="Click to test live OS push notification">
-                <i class="bi bi-bell-fill text-warning fs-5"></i>
-                <span class="fw-semibold">Alerts: <span class="badge bg-success-subtle text-success border border-success ms-1">Active</span></span>
-            </button>`;
-    } else {
-        container.innerHTML = `
-            <button id="btnEnablePush" class="dropdown-item d-flex align-items-center gap-3 py-2 px-3 text-dark w-100 text-start" onclick="window.handleRequestPushPermission && window.handleRequestPushPermission()" title="Enable push notifications for instant alerts">
-                <i class="bi bi-bell-fill text-warning fs-5"></i>
-                <span class="fw-semibold">Enable Alerts</span>
-            </button>`;
-    }
+    container.innerHTML = `
+        <button id="btnEnablePush" class="dropdown-item d-flex align-items-center gap-3 py-2 px-3 text-dark w-100 text-start" onclick="window.handleRequestPushPermission && window.handleRequestPushPermission()" title="Notification">
+            <i class="bi bi-bell-fill text-warning fs-5"></i>
+            <span class="fw-semibold">Notification</span>
+        </button>`;
 }
 
 /**
@@ -256,6 +256,15 @@ function displayForegroundNotificationToast(payload) {
         });
     }
 }
+
+// Auto-initialize push notification service for any authenticated user
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        const path = window.location.pathname.toLowerCase();
+        const role = (path.includes('employee') ? 'Employee' : (path.includes('ceo') ? 'CEO' : 'Student'));
+        initPushNotifications(user, role).catch(err => console.warn('[FCM] Auto push notification init notice:', err));
+    }
+});
 
 // Expose on window for easy access
 if (typeof window !== 'undefined') {

@@ -1257,7 +1257,7 @@ export async function updateHomeNavbarAuthUI(user) {
                 <li>
                     <button class="dropdown-item d-flex align-items-center gap-3 py-2 px-3 text-dark w-100 text-start" onclick="toggleTheme()">
                         <i class="themeToggleIcon bi bi-sun-fill text-warning fs-5"></i>
-                        <span class="fw-semibold">Toggle Theme</span>
+                        <span class="fw-semibold">Theme</span>
                     </button>
                 </li>
 
