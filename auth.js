@@ -1,4 +1,4 @@
-﻿// Firebase Authentication & Firestore Module for Newage Education Web Portal
+// Firebase Authentication & Firestore Module for Newage Education Web Portal
 // Modular Firebase SDK v10
 
 import { initializeApp, getApp, getApps } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -7,6 +7,7 @@ import {
     getStorage,
     ref as storageRef,
     uploadBytes,
+    uploadBytesResumable,
     getDownloadURL
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 import {
@@ -86,6 +87,7 @@ try {
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
+try { storage.maxUploadRetryTime = 4000; storage.maxOperationRetryTime = 4000; } catch (_) {}
 
 // 🔒 Set Tab-Scoped Session Persistence
 // Ensures each browser tab can have its own independent login (Student, Employee, CEO) without overriding each other
@@ -119,6 +121,7 @@ export {
     onSnapshot,
     storageRef,
     uploadBytes,
+    uploadBytesResumable,
     getDownloadURL
 };
 
@@ -3471,6 +3474,22 @@ export function openPrepSheetModal(studentId) {
     }
 }
 window.openPrepSheetModal = openPrepSheetModal;
+
+// High-Speed Cloudinary Fallback Helper (removes 1MB Firestore cap on large uploads)
+async function uploadToCloudinaryFallback(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', 'newage_present');
+    const resp = await fetch('https://api.cloudinary.com/v1_1/v5e5mn0a/auto/upload', {
+        method: 'POST',
+        body: formData
+    });
+    if (!resp.ok) {
+        throw new Error(`Cloudinary upload failed (HTTP ${resp.status})`);
+    }
+    const data = await resp.json();
+    return data.secure_url || data.url;
+}
 
 export async function uploadPrepSheet(studentId) {
     const targetStudentId = studentId || window._currentPrepSheetStudentId || window._currentEditStudentId;

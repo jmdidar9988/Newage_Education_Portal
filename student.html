@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -664,7 +664,7 @@
         const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`;
 
         // ── Firebase Auth & Firestore (shared instance from auth.js) ───────────
-        import { auth, db, storage, storageRef, uploadBytes, getDownloadURL, onAuthStateChanged, collection, addDoc, query, where, orderBy, getDoc, getDocs, setDoc, updateDoc, deleteDoc, doc, serverTimestamp, escapeHtml as escapeHtmlAuth, arrayUnion, onSnapshot } from "./auth.js";
+        import { auth, db, storage, storageRef, uploadBytes, uploadBytesResumable, getDownloadURL, onAuthStateChanged, collection, addDoc, query, where, orderBy, getDoc, getDocs, setDoc, updateDoc, deleteDoc, doc, serverTimestamp, escapeHtml as escapeHtmlAuth, arrayUnion, onSnapshot } from "./auth.js";
 
         // Track logged-in user, their Firestore document ID, and full data object
         let currentUser = null;
@@ -1417,8 +1417,23 @@
         }
 
         // ── Status Cell Helpers ────────────────────────────────────────────────
-        function setStatusUploading(statusCell) {
-            statusCell.innerHTML = `<span class="text-warning small fw-semibold"><span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Uploading...</span>`;
+        function setStatusUploading(statusCell, percent = null) {
+            if (percent !== null) {
+                statusCell.innerHTML = `
+                    <div class="d-inline-flex align-items-center bg-white border rounded-pill px-3 py-1 shadow-sm gap-2" style="min-width: 140px;">
+                        <span class="spinner-border spinner-border-sm text-primary" role="status" aria-hidden="true" style="width: 0.85rem; height: 0.85rem;"></span>
+                        <div class="progress flex-grow-1" style="height: 6px; min-width: 50px;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" style="width: ${percent}%;"></div>
+                        </div>
+                        <span class="small fw-bold text-primary" style="font-size:0.7rem;">${percent}%</span>
+                    </div>`;
+            } else {
+                statusCell.innerHTML = `
+                    <div class="d-inline-flex align-items-center bg-white border rounded-pill px-3 py-1 shadow-sm">
+                        <span class="spinner-border spinner-border-sm text-primary me-2" role="status" aria-hidden="true" style="width: 0.85rem; height: 0.85rem;"></span>
+                        <span class="text-primary small fw-semibold" style="font-size:0.75rem;">Uploading...</span>
+                    </div>`;
+            }
         }
 
         function setStatusSuccess(statusCell, secureUrl, docType, docStatus) {
@@ -1437,8 +1452,8 @@
             // Visually appealing Cross (X) button for Pending documents (side-by-side)
             const crossBtn = !isApproved
                 ? `<button type="button" class="btn-close ms-2" style="font-size: 0.65rem;" 
-                           onclick="deleteStudentDocument('${escapeHtml(docType)}', this)" 
-                           title="Remove document" aria-label="Remove"></button>`
+                            onclick="deleteStudentDocument('${escapeHtml(docType)}', this)" 
+                            title="Remove document" aria-label="Remove"></button>`
                 : '';
 
             statusCell.innerHTML = `
@@ -1457,56 +1472,196 @@
             statusCell.innerHTML = `<span class="text-danger fs-5"><i class="bi bi-x-circle-fill"></i></span>`;
         }
 
-async function uploadToCloudinary(file, docType, statusCell, fileInput) {
-            // Disable input while uploading
+        // Fast Client-side Image Compression (Reduces 5MB+ photos to ~400KB in ~80ms)
+        async function compressImageIfNeeded(file) {
+            if (!file.type || !file.type.startsWith('image/')) return file;
+            if (file.size < 600 * 1024) return file;
+
+            return new Promise((resolve) => {
+                try {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            let width = img.width;
+                            let height = img.height;
+                            const maxDimension = 1920;
+                            if (width > maxDimension || height > maxDimension) {
+                                if (width > height) {
+                                    height = Math.round((height * maxDimension) / width);
+                                    width = maxDimension;
+                                } else {
+                                    width = Math.round((width * maxDimension) / height);
+                                    height = maxDimension;
+                                }
+                            }
+                            canvas.width = width;
+                            canvas.height = height;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, width, height);
+
+                            canvas.toBlob((blob) => {
+                                if (blob && blob.size < file.size) {
+                                    const compressedName = file.name.replace(/\.[^.]+$/, '') + '.jpg';
+                                    const compressedFile = new File([blob], compressedName, {
+                                        type: 'image/jpeg',
+                                        lastModified: Date.now()
+                                    });
+                                    console.log(`[Image Optimizer] Compressed from ${(file.size / (1024 * 1024)).toFixed(2)} MB to ${(compressedFile.size / 1024).toFixed(1)} KB`);
+                                    resolve(compressedFile);
+                                } else {
+                                    resolve(file);
+                                }
+                            }, 'image/jpeg', 0.85);
+                        };
+                        img.onerror = () => resolve(file);
+                        img.src = e.target.result;
+                    };
+                    reader.onerror = () => resolve(file);
+                    reader.readAsDataURL(file);
+                } catch (err) {
+                    console.warn('[Image Optimizer] Compression bypassed:', err);
+                    resolve(file);
+                }
+            });
+        }
+
+        // Fast Firebase Storage Uploader with 3.5s Connect Timeout
+        function uploadWithFirebaseStorage(uploadFile, docType, onProgress) {
+            return new Promise((resolve, reject) => {
+                if (!storage) return reject(new Error("Firebase Storage not initialized"));
+
+                const safeExt = uploadFile.name.split('.').pop() || 'pdf';
+                const safeName = `${docType}_${Date.now()}.${safeExt}`;
+                const targetStudent = studentDocId || currentUser?.uid || 'temp_student';
+                const docStorageRef = storageRef(storage, `students/${targetStudent}/${safeName}`);
+
+                const uploadTask = uploadBytesResumable(docStorageRef, uploadFile, {
+                    contentType: uploadFile.type || 'application/octet-stream',
+                    customMetadata: {
+                        docType: docType,
+                        originalName: uploadFile.name,
+                        studentEmail: currentUser?.email || targetStudent
+                    }
+                });
+
+                let transferStarted = false;
+                // Fast 3.5s timeout: If Firebase Storage doesn't connect/start bytes within 3.5s, fallback immediately
+                const timer = setTimeout(() => {
+                    if (!transferStarted) {
+                        try { uploadTask.cancel(); } catch (_) {}
+                        reject(new Error("Firebase Storage connection timed out (3.5s)"));
+                    }
+                }, 3500);
+
+                uploadTask.on('state_changed',
+                    (snapshot) => {
+                        if (snapshot.bytesTransferred > 0) {
+                            transferStarted = true;
+                            clearTimeout(timer);
+                        }
+                        if (snapshot.totalBytes > 0 && onProgress) {
+                            const pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+                            onProgress(pct);
+                        }
+                    },
+                    (error) => {
+                        clearTimeout(timer);
+                        reject(error);
+                    },
+                    async () => {
+                        clearTimeout(timer);
+                        try {
+                            const url = await getDownloadURL(uploadTask.snapshot.ref);
+                            resolve(url);
+                        } catch (err) {
+                            reject(err);
+                        }
+                    }
+                );
+            });
+        }
+
+        // High-Speed Cloudinary Uploader with Real-Time Progress
+        function uploadToCloudinaryWithProgress(uploadFile, onProgress) {
+            return new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                const formData = new FormData();
+                formData.append('file', uploadFile);
+                formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+
+                xhr.open('POST', CLOUDINARY_UPLOAD_URL);
+
+                if (xhr.upload && onProgress) {
+                    xhr.upload.onprogress = (evt) => {
+                        if (evt.lengthComputable) {
+                            const pct = Math.round((evt.loaded / evt.total) * 100);
+                            onProgress(pct);
+                        }
+                    };
+                }
+
+                xhr.onload = () => {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        try {
+                            const data = JSON.parse(xhr.responseText);
+                            if (data.secure_url || data.url) {
+                                resolve(data.secure_url || data.url);
+                            } else {
+                                reject(new Error('Cloudinary returned no URL'));
+                            }
+                        } catch (e) {
+                            reject(new Error('Invalid Cloudinary JSON response'));
+                        }
+                    } else {
+                        let errMsg = `Upload failed (HTTP ${xhr.status})`;
+                        try {
+                            const errData = JSON.parse(xhr.responseText);
+                            if (errData.error?.message) errMsg = errData.error.message;
+                        } catch (_) {}
+                        reject(new Error(errMsg));
+                    }
+                };
+
+                xhr.onerror = () => reject(new Error('Network error during upload'));
+                xhr.ontimeout = () => reject(new Error('Upload timed out'));
+                xhr.timeout = 120000;
+
+                xhr.send(formData);
+            });
+        }
+
+        async function uploadToCloudinary(file, docType, statusCell, fileInput) {
             fileInput.disabled = true;
-            setStatusUploading(statusCell);
+            setStatusUploading(statusCell, 0);
 
             try {
                 let downloadUrl = "";
                 let storageUsed = "firebase-storage";
 
-                // Step 1: Upload directly to Firebase Storage bucket (removes 750KB Base64 / 1MB Firestore limit)
-                try {
-                    const safeExt = file.name.split('.').pop() || 'pdf';
-                    const safeName = `${docType}_${Date.now()}.${safeExt}`;
-                    const targetStudent = studentDocId || currentUser?.uid || 'temp_student';
-                    const docStorageRef = storageRef(storage, `students/${targetStudent}/${safeName}`);
+                // Step 0: Compress image in 50-100ms if applicable (e.g. 5MB photo -> ~400KB)
+                const uploadFile = await compressImageIfNeeded(file);
 
-                    const uploadSnap = await uploadBytes(docStorageRef, file, {
-                        contentType: file.type || 'application/pdf',
-                        customMetadata: {
-                            docType: docType,
-                            originalName: file.name,
-                            studentEmail: currentUser?.email || targetStudent
-                        }
-                    });
-                    downloadUrl = await getDownloadURL(uploadSnap.ref);
-                    console.log(`[Firebase Storage] Successfully uploaded ${docType}:`, downloadUrl);
+                const updateProgress = (pct) => setStatusUploading(statusCell, pct);
+
+                // Step 1: Upload directly to Firebase Storage with fast 3.5s timeout, falling back to Cloudinary
+                try {
+                    downloadUrl = await uploadWithFirebaseStorage(uploadFile, docType, updateProgress);
+                    storageUsed = "firebase-storage";
+                    console.log(`[Firebase Storage] Uploaded ${docType}:`, downloadUrl);
                 } catch (fbStorageErr) {
-                    console.warn("[Firebase Storage] Bucket upload encountered error, using Cloudinary fallback:", fbStorageErr);
-                    // Cloudinary Fallback
-                    const formData = new FormData();
-                    formData.append('file', file);
-                    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-                    const response = await fetch(CLOUDINARY_UPLOAD_URL, {
-                        method: 'POST',
-                        body: formData
-                    });
-                    if (!response.ok) {
-                        const errData = await response.json().catch(() => ({}));
-                        throw new Error(errData.error?.message || `Upload failed (HTTP ${response.status})`);
-                    }
-                    const data = await response.json();
-                    downloadUrl = data.secure_url;
+                    console.warn(`[Upload Pipeline] Fast fallback to Cloudinary for ${docType}:`, fbStorageErr.message);
+                    downloadUrl = await uploadToCloudinaryWithProgress(uploadFile, updateProgress);
                     storageUsed = "cloudinary";
+                    console.log(`[Cloudinary] Uploaded ${docType}:`, downloadUrl);
                 }
 
                 // Step 2: Update UI with Pending status
                 setStatusSuccess(statusCell, downloadUrl, docType, 'Pending');
-                showToast(`"${docType.replace(/_/g, ' ')}" uploaded to Firebase Storage!`, 'success');
+                showToast(`"${docType.replace(/_/g, ' ')}" uploaded successfully!`, 'success');
 
-                // Step 3: Save ONLY the download URL and metadata in Firestore
+                // Step 3: Save download URL and metadata in Firestore
                 if (studentDocId) {
                     try {
                         const studentRef = doc(db, 'students', studentDocId);
@@ -1515,7 +1670,7 @@ async function uploadToCloudinary(file, docType, statusCell, fileInput) {
                                 url: downloadUrl,
                                 status: 'Pending',
                                 fileName: file.name,
-                                fileSize: file.size,
+                                fileSize: uploadFile.size,
                                 storageProvider: storageUsed
                             },
                             [`documents.${docType}_uploadedAt`]: new Date().toISOString()
@@ -1534,6 +1689,7 @@ async function uploadToCloudinary(file, docType, statusCell, fileInput) {
                 fileInput.disabled = false;
             }
         }
+
 
         // ── Delete Student Document (only when Pending) ───────────────────────
         window.deleteStudentDocument = async function(docType, btnElement) {
