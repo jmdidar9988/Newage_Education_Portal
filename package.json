@@ -4,13 +4,17 @@
   "description": "Enterprise International Education CRM & Student Admissions Portal",
   "scripts": {
     "test": "node --test tests/unit/auth.test.mjs",
-    "test:unit": "node --test tests/unit/*.test.mjs",
+    "test:unit": "jest --config jest.config.mjs",
+    "test:node": "node --test tests/unit/*.test.mjs",
+    "test:playwright": "playwright test",
+    "test:cypress": "cypress run",
     "test:e2e": "playwright test",
     "perf:measure": "node tests/perf-measurement.mjs",
     "serve": "powershell -ExecutionPolicy Bypass -File ./server.ps1 -port 8080"
   },
   "devDependencies": {
     "@playwright/test": "^1.42.0",
+    "cypress": "^13.7.0",
     "jest": "^29.7.0"
   },
   "type": "module"

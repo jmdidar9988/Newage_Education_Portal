@@ -1,10 +1,12 @@
 /**
- * Automated Unit Test Suite for Newage Portal Core Logic
+ * Automated Unit Test Suite for Newage Portal Core Logic & ES6 Modules
+ * Compatible with both Jest and Node.js built-in test runner (node --test)
  * Tests:
  * 1. String Sanitization & XSS Prevention (escapeHtml)
  * 2. Strict Role Resolution (getRoleFromEmail)
  * 3. Server-Enforced RBAC & Claim Verification
- * 4. Document upload metadata schema validation
+ * 4. Document upload metadata schema validation & Base64 Elimination
+ * 5. Canonical Application Completion & Progressive Lock Flow
  */
 
 import { describe, it } from 'node:test';
@@ -72,6 +74,59 @@ function validateDocumentMetadata(docData) {
     return { valid: true };
 }
 
+function checkIfApplicationCompleted(data) {
+    if (!data) return false;
+
+    if (data.hasSubmittedApplication === true || data.isApplicationSubmitted === true) {
+        return true;
+    }
+    if (data.entryDate && String(data.entryDate).trim() !== '') {
+        return true;
+    }
+    if (data.personalInfo && typeof data.personalInfo === 'object') {
+        const p = data.personalInfo;
+        if (p.dob && String(p.dob).trim() !== '') return true;
+        if (p.gender && String(p.gender).trim() !== '') return true;
+        if (p.address && String(p.address).trim() !== '') return true;
+        if (p.postCode && String(p.postCode).trim() !== '') return true;
+    }
+    if (data.educationalProfile && typeof data.educationalProfile === 'object') {
+        const edu = data.educationalProfile;
+        const hasValues = (obj) => {
+            if (!obj || typeof obj !== 'object') return false;
+            return Object.values(obj).some(v => v !== null && v !== undefined && String(v).trim() !== '');
+        };
+        if (hasValues(edu.ssc) || hasValues(edu.hsc) || hasValues(edu.bachelor) || hasValues(edu.master)) {
+            return true;
+        }
+    }
+    if (data.englishProficiency && typeof data.englishProficiency === 'object') {
+        const ep = data.englishProficiency;
+        if (ep.testName || ep.overallScore || ep.testDate) return true;
+    }
+    if (data.preferences && typeof data.preferences === 'object') {
+        const pref = data.preferences;
+        if (Array.isArray(pref.courseChoices) && pref.courseChoices.some(c => c && String(c).trim() !== '')) return true;
+        if (Array.isArray(pref.universityChoices) && pref.universityChoices.some(u => u && String(u).trim() !== '')) return true;
+    }
+    if (Array.isArray(data.applications) && data.applications.length > 0) {
+        return true;
+    }
+    if (data.documents && typeof data.documents === 'object' && Object.keys(data.documents).length > 0) {
+        return true;
+    }
+    if (data.assignedCounselor || data.assignedCounselorEmail) {
+        return true;
+    }
+    if (data.applicationStatus && data.applicationStatus !== 'Not Applied' && data.applicationStatus !== 'Pending') {
+        return true;
+    }
+    if (data.status && data.status !== 'Pending') {
+        return true;
+    }
+    return false;
+}
+
 describe('Newage Portal Core Logic & Server-Side RBAC Test Suite', () => {
 
     describe('XSS Prevention (escapeHtml)', () => {
@@ -100,7 +155,6 @@ describe('Newage Portal Core Logic & Server-Side RBAC Test Suite', () => {
         });
 
         it('should prevent spoofing via email substring tricks', () => {
-            // Insecure email keyword checks would have granted CEO/Employee permissions to these:
             assert.equal(getRoleFromEmail('fakeceo@gmail.com'), 'Student');
             assert.equal(getRoleFromEmail('marceo.silva@yahoo.com'), 'Student');
             assert.equal(getRoleFromEmail('counselor.fake@hotmail.com'), 'Student');
@@ -157,4 +211,47 @@ describe('Newage Portal Core Logic & Server-Side RBAC Test Suite', () => {
             assert.match(result.error, /Base64 elimination policy/);
         });
     });
+
+    describe('Progressive Onboarding & Canonical Application Completion', () => {
+        it('should keep brand new sign-ups LOCKED until application form is submitted', () => {
+            const newSignupData = {
+                email: 'newcandidate@gmail.com',
+                uid: 'uid_123',
+                hasSubmittedApplication: false,
+                isApplicationSubmitted: false,
+                personalInfo: {
+                    fullName: 'Tanvir Ahmed',
+                    email: 'newcandidate@gmail.com',
+                    contactNo: '+880 1700-000000'
+                },
+                preferences: { countryChoices: ['UK'] }
+            };
+            const isCompleted = checkIfApplicationCompleted(newSignupData);
+            assert.equal(isCompleted, false, 'New candidate must remain locked until application is submitted');
+        });
+
+        it('should UNLOCK students who have submitted the application form', () => {
+            const submittedData = {
+                email: 'newcandidate@gmail.com',
+                hasSubmittedApplication: true,
+                entryDate: '2026-11-08',
+                personalInfo: { dob: '2001-05-15', gender: 'Male', address: 'Dhaka' },
+                educationalProfile: { ssc: { gpa: '5.00', passingYear: '2018' } }
+            };
+            const isCompleted = checkIfApplicationCompleted(submittedData);
+            assert.equal(isCompleted, true, 'Submitted candidate must be unlocked');
+        });
+
+        it('should UNLOCK existing students created previously by Employee or CEO', () => {
+            const legacyStudentRecord = {
+                personalInfo: { fullName: 'Sakib Rahman', email: 'sakib@gmail.com', dob: '1999-04-12' },
+                educationalProfile: { bachelor: { cgpa: '3.65', major: 'CSE' } },
+                applications: [{ course: 'MSc Data Science', status: 'Processing' }],
+                assignedCounselor: 'counselor@newage.com'
+            };
+            const isCompleted = checkIfApplicationCompleted(legacyStudentRecord);
+            assert.equal(isCompleted, true, 'Existing legacy students must be unlocked');
+        });
+    });
+
 });
