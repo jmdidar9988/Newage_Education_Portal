@@ -66,7 +66,7 @@
   - **Firebase v10 SDK**: Modular JavaScript SDK (`firebase/app`, `firebase/auth`, `firebase/firestore`).
   - **Cloud Database**: Real-time Firebase Firestore (`students` and `tasks` collections).
 - **Document & Asset Storage**:
-  - **HTML5 FileReader API**: Base64 Data URL encoding for PDF and image document uploads.
+  - **Firebase Cloud Storage Pipeline**: Decoupled binary object storage streaming files to dedicated Cloud Storage buckets, storing only secure HTTPS download URLs and schema metadata in Firestore (completely removing the ~750 KB Base64 cap and 1 MB Firestore document limit).
   - **Atomic Array Operations**: Firestore `arrayUnion()` for safe sequential document appending.
 - **Dev Tooling**:
   - **PowerShell Local Web Server**: Lightweight PowerShell HTTP server script (`server.ps1`).
@@ -150,14 +150,14 @@ students/{studentId}
     }
   ],
   "documents": {
-    "ssc_certificate": { "status": "Verified", "url": "data:application/pdf;base64,..." },
-    "passport": { "status": "Pending", "url": "data:application/pdf;base64,..." }
+    "ssc_certificate": { "status": "Verified", "url": "https://firebasestorage.googleapis.com/v0/b/newage-web.firebasestorage.app/o/students%2F...pdf?alt=media", "fileName": "ssc_certificate.pdf", "fileSize": 1845200, "storageProvider": "firebase-storage" },
+    "passport": { "status": "Pending", "url": "https://firebasestorage.googleapis.com/v0/b/newage-web.firebasestorage.app/o/students%2F...pdf?alt=media", "fileName": "passport.pdf", "fileSize": 3241100, "storageProvider": "firebase-storage" }
   },
   "prepSheets": [
     {
       "id": "sheet_1700000000000",
       "title": "Sheet 1",
-      "url": "data:application/pdf;base64,...",
+      "url": "https://firebasestorage.googleapis.com/v0/b/newage-web.firebasestorage.app/o/prepSheets%2F...pdf?alt=media",
       "uploadedAt": "2026-07-26T21:00:00.000Z"
     }
   ],
@@ -176,7 +176,7 @@ tasks/{taskId}
   "assignedToName": "Kabir Hossain",
   "description": "Review application documents",
   "deadline": "2026-08-30T10:00:00.000Z",
-  "pdfData": "data:application/pdf;base64,...",
+  "pdfData": "https://firebasestorage.googleapis.com/v0/b/newage-web.firebasestorage.app/o/tasks%2F...pdf?alt=media",
   "pdfName": "instructions.pdf",
   "status": "pending",
   "seenByEmployee": false,
