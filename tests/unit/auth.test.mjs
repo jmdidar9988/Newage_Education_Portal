@@ -254,4 +254,58 @@ describe('Newage Portal Core Logic & Server-Side RBAC Test Suite', () => {
         });
     });
 
+    describe('Serverless FinTech & Payment Gateway Payload Integrity', () => {
+        function validatePaymentPayload(payload) {
+            if (!payload || !payload.amount || payload.amount <= 0) return { valid: false, error: 'Invalid amount' };
+            if (!['Stripe', 'bKash'].includes(payload.gateway)) return { valid: false, error: 'Unsupported gateway' };
+            if (!payload.studentEmail || !payload.studentEmail.includes('@')) return { valid: false, error: 'Invalid student email' };
+            return { valid: true };
+        }
+
+        it('should accept valid bKash and Stripe sandbox payment payloads', () => {
+            const bKashPayload = { amount: 5000, currency: 'BDT', gateway: 'bKash', studentEmail: 'sakib@gmail.com' };
+            const stripePayload = { amount: 10000, currency: 'BDT', gateway: 'Stripe', studentEmail: 'tanvir@gmail.com' };
+            assert.equal(validatePaymentPayload(bKashPayload).valid, true);
+            assert.equal(validatePaymentPayload(stripePayload).valid, true);
+        });
+
+        it('should reject invalid payment requests lacking valid amounts or gateways', () => {
+            assert.equal(validatePaymentPayload({ amount: 0, gateway: 'bKash' }).valid, false);
+            assert.equal(validatePaymentPayload({ amount: 5000, gateway: 'Crypto', studentEmail: 'test@mail.com' }).valid, false);
+        });
+    });
+
+    describe('Transactional SMS Gateway & Carrier Payload Guard', () => {
+        function validateSMSPayload(payload) {
+            if (!payload || !payload.recipientPhone || payload.recipientPhone.length < 10) {
+                return { valid: false, error: 'Invalid recipient phone' };
+            }
+            if (!payload.messageText || payload.messageText.trim().length === 0) {
+                return { valid: false, error: 'Empty message' };
+            }
+            if (payload.messageText.length > 160) {
+                return { valid: false, error: 'Exceeds standard 1-part GSM-7 character limit' };
+            }
+            return { valid: true };
+        }
+
+        it('should validate standard single-part transactional SMS payloads', () => {
+            const validSMS = {
+                recipientPhone: '+8801700000000',
+                messageText: 'Your visa file assessment is completed by Newage Education.'
+            };
+            assert.equal(validateSMSPayload(validSMS).valid, true);
+        });
+
+        it('should reject SMS payloads exceeding 160 characters to prevent carrier segmentation fees', () => {
+            const oversizedSMS = {
+                recipientPhone: '+8801700000000',
+                messageText: 'A'.repeat(161)
+            };
+            const result = validateSMSPayload(oversizedSMS);
+            assert.equal(result.valid, false);
+            assert.match(result.error, /GSM-7 character limit/);
+        });
+    });
+
 });

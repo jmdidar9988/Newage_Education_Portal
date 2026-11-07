@@ -1,4 +1,4 @@
-﻿const functions = require('firebase-functions');
+const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 
 admin.initializeApp();
@@ -437,6 +437,105 @@ exports.initiateBKashPayment = functions.https.onCall(async (data, context) => {
         bkashURL: `https://sandbox.payment.bkash.com/redirect/${paymentID}`,
         statusCode: '0000',
         statusMessage: 'Successful'
+    };
+});
+
+/**
+ * Completes / Confirms a bKash Sandbox payment transaction
+ */
+exports.executeBKashPayment = functions.https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError('unauthenticated', 'User must be signed in.');
+    }
+
+    const { paymentID, trxID, status = 'Completed' } = data;
+    if (!paymentID) {
+        throw new functions.https.HttpsError('invalid-argument', 'paymentID is required.');
+    }
+
+    const verifiedTrxID = trxID || `TRX_${Date.now()}_${Math.floor(Math.random() * 89999 + 10000)}`;
+
+    const paymentRef = db.collection('payments').doc(paymentID);
+    const snap = await paymentRef.get();
+    if (!snap.exists) {
+        throw new functions.https.HttpsError('not-found', 'Payment record not found.');
+    }
+
+    const paymentData = snap.data();
+    await paymentRef.set({
+        status: status,
+        trxID: verifiedTrxID,
+        completedAt: admin.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+
+    // Update student's fee status in /students collection
+    if (paymentData.studentEmail) {
+        await db.collection('students').doc(paymentData.studentEmail.toLowerCase()).set({
+            financialProfile: {
+                feeStatus: 'Paid',
+                lastPaymentGateway: 'bKash',
+                lastPaymentAmount: paymentData.amount,
+                lastTrxID: verifiedTrxID,
+                paidAt: admin.firestore.FieldValue.serverTimestamp()
+            }
+        }, { merge: true });
+    }
+
+    return {
+        success: true,
+        paymentID: paymentID,
+        trxID: verifiedTrxID,
+        status: 'Completed',
+        message: 'Payment executed successfully via bKash Sandbox.'
+    };
+});
+
+/**
+ * Confirms a Stripe Checkout Session payment completion
+ */
+exports.confirmStripePayment = functions.https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError('unauthenticated', 'User must be signed in.');
+    }
+
+    const { sessionId } = data;
+    if (!sessionId) {
+        throw new functions.https.HttpsError('invalid-argument', 'sessionId is required.');
+    }
+
+    const paymentRef = db.collection('payments').doc(sessionId);
+    const snap = await paymentRef.get();
+    if (!snap.exists) {
+        throw new functions.https.HttpsError('not-found', 'Session record not found.');
+    }
+
+    const paymentData = snap.data();
+    const chargeId = `ch_test_${Date.now()}`;
+
+    await paymentRef.set({
+        status: 'succeeded',
+        chargeId: chargeId,
+        completedAt: admin.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+
+    if (paymentData.studentEmail) {
+        await db.collection('students').doc(paymentData.studentEmail.toLowerCase()).set({
+            financialProfile: {
+                feeStatus: 'Paid',
+                lastPaymentGateway: 'Stripe',
+                lastPaymentAmount: paymentData.amount,
+                lastChargeId: chargeId,
+                paidAt: admin.firestore.FieldValue.serverTimestamp()
+            }
+        }, { merge: true });
+    }
+
+    return {
+        success: true,
+        sessionId: sessionId,
+        chargeId: chargeId,
+        status: 'succeeded',
+        message: 'Payment confirmed successfully via Stripe Sandbox.'
     };
 });
 

@@ -14,6 +14,8 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <!-- Firebase Cloud Messaging Push Notification Client -->
     <script type="module" src="push-notifications.js"></script>
+    <!-- Serverless Payment & Transactional SMS Client Integration -->
+    <script type="module" src="payment-sms.js"></script>
     <!-- Custom CSS -->
     <link rel="stylesheet" href="style.css">
     <!-- Full-Screen Lightbox Modal Styles -->
@@ -346,6 +348,23 @@
                         </div>
                         <div class="d-flex align-items-center gap-2 ps-3">
                             <span class="badge bg-success-subtle text-success border border-success px-2.5 py-1.5 rounded-pill small d-none d-sm-inline">● Online</span>
+                            <i class="bi bi-arrow-right-circle-fill fs-4 text-danger"></i>
+                        </div>
+                    </div>
+
+                    <!-- 5. Payment & Invoicing Gateway -->
+                    <div class="executive-tile" id="btnPayment" onclick="initiatePaymentFlow()">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="executive-tile-icon-box" style="background: linear-gradient(135deg, #1d3557 0%, #457b9d 100%); color: #fff;">
+                                <i class="bi bi-credit-card-2-front-fill"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-1 dynamic-header-text">Admissions Payment &amp; Invoicing Gateway</h6>
+                                <p class="text-muted small mb-0">Pay application fees, visa assessment, or notarization charges via Stripe / bKash</p>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 ps-3">
+                            <span class="badge bg-danger-subtle text-danger border border-danger px-2.5 py-1.5 rounded-pill small d-none d-sm-inline">Fintech Sandbox</span>
                             <i class="bi bi-arrow-right-circle-fill fs-4 text-danger"></i>
                         </div>
                     </div>

@@ -54,6 +54,21 @@
   - **WhatsApp** (bottom: 25px): Links directly to WhatsApp API (`https://api.whatsapp.com/send/?phone=8801907130612`).
   - **Facebook** (bottom: 80px): Links directly to the Facebook share page (`https://www.facebook.com/share/18BbYk9GWx/`).
 
+### 8. 💳 Serverless FinTech Integration (Stripe & bKash Sandboxes)
+- **Multi-Rail Payment Gateway**: Candidates can securely settle university application processing fees, visa documentation charges, and notarization fees.
+- **bKash Tokenized Checkout Sandbox**: Domestic mobile wallet integration allowing students to simulate PIN/OTP verification with instant transaction confirmation.
+- **Stripe Checkout Sandbox**: International credit/debit card processing with 3D Secure verification simulated via Cloud Functions.
+- **Automated Digital Receipt Generator**: Instantly generates an official printable payment receipt with verified transaction ID (`trxId`), QR verification, and registers payment records to Firestore (`/payments`).
+
+### 9. 📱 Transactional SMS Gateway (Bulk SMS BD / Twilio FaaS Rail)
+- **Counselor SMS Dispatch Surface**: Staff and CEO can dispatch real-time transactional SMS alerts directly to candidates' mobile numbers from the student dossier modal.
+- **Pre-Built Telco Templates**: Includes quick templates for "Visa Assessment Complete", "Interview Preparation Reminder", "Offer Letter Issued", and "Document Submission Deadline".
+- **Serverless Audit Logging**: Enforces GSM-7 character length limits and registers every dispatched SMS to the immutable `/smsLogs` collection.
+
+### 10. 📚 Academic Literature Review & Theoretical Foundations
+- **Peer-Reviewed Foundations**: Comprehensive 32-source literature review covering NIST RBAC models, Single-Page Application security vulnerabilities, Web Push Protocol (IETF RFC 8030), and NoSQL storage decoupling.
+- **Documentation**: See [`LITERATURE_REVIEW.md`](LITERATURE_REVIEW.md) and [`PERFORMANCE_AUDIT.md`](PERFORMANCE_AUDIT.md).
+
 ---
 
 ## 🛠️ Tech Stack
