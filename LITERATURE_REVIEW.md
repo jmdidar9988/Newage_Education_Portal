@@ -241,3 +241,4 @@ The table below contrasts traditional educational consultancy portals against th
 30. **UNESCO Institute for Statistics.** (2023). *Global Flow of Tertiary-Level Students*. United Nations Educational, Scientific and Cultural Organization. https://uis.unesco.org
 31. **van Eyk, E., Iosup, A., Seif, S., & Thömmes, M.** (2018). The SPEC-RG reference architecture for FaaS and serverless computing. *IEEE Internet Computing*, 23(6), 7–18. https://doi.org/10.1109/MIC.2019.2959441
 32. **World Bank.** (2022). *The Global Findex Database 2021: Financial Inclusion, Digital Payments, and Resilience in the Age of COVID-19*. World Bank Publications. https://doi.org/10.1596/978-1-4648-1897-4
+

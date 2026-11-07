@@ -489,3 +489,4 @@ export async function openSMSDispatchModal(recipientPhone = '', recipientName = 
 // Expose on window for easy HTML access
 window.initiatePaymentFlow = initiatePaymentFlow;
 window.openSMSDispatchModal = openSMSDispatchModal;
+
