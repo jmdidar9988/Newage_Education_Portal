@@ -1,4 +1,4 @@
-// Firebase Authentication & Firestore Module for Newage Education Web Portal
+﻿// Firebase Authentication & Firestore Module for Newage Education Web Portal
 // Modular Firebase SDK v10
 
 import { initializeApp, getApp, getApps } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -149,13 +149,12 @@ export function escapeHtml(str) {
 export function getRoleFromEmail(email) {
     if (!email) return 'Student';
     const lower = email.toLowerCase().trim();
-    if (lower.includes('ceo') || lower.includes('admin') || lower.includes('chief') || lower.includes('boss')) {
+    if (lower === 'ceo@newage.com') {
         return 'CEO';
-    } else if (lower.includes('employee') || lower.includes('emp') || lower.includes('counselor') || lower.includes('counsellor') || lower.includes('staff') || lower.includes('agent')) {
-        return 'Employee';
-    } else {
-        return 'Student';
     }
+    // Strict Server-Enforced RBAC: Insecure substring matching (e.g. fakeceo@, counselor.fake@) is eliminated
+    // All candidates default to Student client-side; elevated roles require server Custom Claims or Firestore records.
+    return 'Student';
 }
 
 /**
